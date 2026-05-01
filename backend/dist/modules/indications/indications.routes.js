@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.indicationsRoutes = void 0;
+const express_1 = require("express");
+const indications_controller_1 = require("./indications.controller");
+const auth_1 = require("../../shared/middlewares/auth");
+const roleGuard_1 = require("../../shared/middlewares/roleGuard");
+const indicationsRoutes = (0, express_1.Router)();
+exports.indicationsRoutes = indicationsRoutes;
+indicationsRoutes.post('/', auth_1.authMiddleware, (0, roleGuard_1.roleGuard)(['donor']), indications_controller_1.IndicationsController.create);
+indicationsRoutes.get('/', auth_1.authMiddleware, (0, roleGuard_1.roleGuard)(['entity', 'admin']), indications_controller_1.IndicationsController.list);
+indicationsRoutes.post('/:id/convert', auth_1.authMiddleware, (0, roleGuard_1.roleGuard)(['entity', 'admin']), indications_controller_1.IndicationsController.convert);
+indicationsRoutes.patch('/:id/status', auth_1.authMiddleware, (0, roleGuard_1.roleGuard)(['admin']), indications_controller_1.IndicationsController.updateStatus);

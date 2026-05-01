@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.familiesRoutes = void 0;
+const express_1 = require("express");
+const families_controller_1 = require("./families.controller");
+const auth_1 = require("../../shared/middlewares/auth");
+const roleGuard_1 = require("../../shared/middlewares/roleGuard");
+const familiesRoutes = (0, express_1.Router)();
+exports.familiesRoutes = familiesRoutes;
+familiesRoutes.get('/public', families_controller_1.FamiliesController.getPublic);
+familiesRoutes.get('/:id', auth_1.authMiddleware, families_controller_1.FamiliesController.getById);
+familiesRoutes.post('/', auth_1.authMiddleware, (0, roleGuard_1.roleGuard)(['entity', 'admin']), families_controller_1.FamiliesController.create);
+familiesRoutes.patch('/:id/status', auth_1.authMiddleware, (0, roleGuard_1.roleGuard)(['admin']), families_controller_1.FamiliesController.updateStatus);

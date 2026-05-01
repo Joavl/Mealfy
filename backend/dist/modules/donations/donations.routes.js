@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.donationsRoutes = void 0;
+const express_1 = require("express");
+const donations_controller_1 = require("./donations.controller");
+const auth_1 = require("../../shared/middlewares/auth");
+const roleGuard_1 = require("../../shared/middlewares/roleGuard");
+const donationsRoutes = (0, express_1.Router)();
+exports.donationsRoutes = donationsRoutes;
+donationsRoutes.post('/', auth_1.authMiddleware, (0, roleGuard_1.roleGuard)(['donor']), donations_controller_1.DonationsController.create);
+donationsRoutes.post('/batch', auth_1.authMiddleware, (0, roleGuard_1.roleGuard)(['donor']), donations_controller_1.DonationsController.batch);
+donationsRoutes.get('/me', auth_1.authMiddleware, (0, roleGuard_1.roleGuard)(['donor']), donations_controller_1.DonationsController.listMe);
