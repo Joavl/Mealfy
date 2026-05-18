@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Mealfy",
+    "slug": "mealfy",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "mealfy",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0b5a78"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mealfy.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0b5a78"
+      },
+      "package": "com.mealfy.app"
+    },
+    "extra": {
+      "apiUrl": "http://localhost:3000"
+    }
+  }
+}

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "dotnet run --project server/src/Mealfy.Api",
+    "dev:mobile": "npm run start --prefix mobile",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

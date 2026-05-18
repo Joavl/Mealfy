@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+*.user
+appsettings.*.local.json
+**/firebase-adminsdk*.json
+**/secrets/
+*.dev.db
+*.dev.db-journal

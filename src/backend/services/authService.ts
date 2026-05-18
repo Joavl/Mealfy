@@ -4,7 +4,7 @@ import { storage } from '../utils/storage';
 import { randomDelay } from '../utils/delay';
 
 import { authApi } from '../../api/authApi';
-import { handleApiError } from '../utils/fallback';
+import { handleApiError, shouldFallback } from '../utils/fallback';
 
 const SESSION_KEY = 'current_user';
 const USERS_KEY = 'users_db';
@@ -116,11 +116,16 @@ export const authService = {
       }
     } catch (e) {
       handleApiError(e, 'Register Donor');
+      if (!shouldFallback()) throw e;
     }
 
     await randomDelay(800, 1200);
     authService.initDB();
     const users = storage.get<User[]>(USERS_KEY, mockUsers);
+
+    if (data.email && users.some((u) => u.email === data.email)) {
+      throw new Error('Este e-mail já está cadastrado.');
+    }
     
     const newUser: User = {
       id: `u-donor-${Date.now()}`,
@@ -158,12 +163,17 @@ export const authService = {
       }
     } catch (e) {
       handleApiError(e, 'Register Entity');
+      if (!shouldFallback()) throw e;
     }
 
     await randomDelay(800, 1200);
     authService.initDB();
     const users = storage.get<User[]>(USERS_KEY, mockUsers);
     const entities = storage.get<AuthorizingEntity[]>(ENTITIES_KEY, mockEntities);
+
+    if (data.email && users.some((u) => u.email === data.email)) {
+      throw new Error('Este e-mail já está cadastrado.');
+    }
     
     const newEntity: AuthorizingEntity = {
       id: `e-${Date.now()}`,

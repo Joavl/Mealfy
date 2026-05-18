@@ -61,7 +61,8 @@ const Register: React.FC = () => {
       showToast('Conta criada com sucesso!', 'success');
       navigate('/dashboard-redirect', { replace: true });
     } catch (err) {
-      showToast('Erro ao criar conta.', 'error');
+      const msg = err instanceof Error ? err.message : 'Erro ao criar conta.';
+      showToast(msg, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +85,8 @@ const Register: React.FC = () => {
       showToast('Cadastro de entidade enviado para análise.', 'success');
       navigate('/entity/dashboard', { replace: true });
     } catch (err) {
-      showToast('Erro ao cadastrar entidade.', 'error');
+      const msg = err instanceof Error ? err.message : 'Erro ao cadastrar entidade.';
+      showToast(msg, 'error');
     } finally {
       setIsLoading(false);
     }

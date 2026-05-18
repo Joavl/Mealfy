@@ -31,7 +31,12 @@ export async function apiRequest<T = any>(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `API Error: ${response.status}`);
+      const issueMsg = Array.isArray(errorData.issues)
+        ? errorData.issues.map((i: { message?: string }) => i.message).filter(Boolean).join('. ')
+        : '';
+      throw new Error(
+        issueMsg || errorData.message || `Erro na API (${response.status})`,
+      );
     }
 
     // Handle 204 No Content or empty bodies

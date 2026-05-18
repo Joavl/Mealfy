@@ -63,10 +63,11 @@ export class AuthService {
 
     const newUser: User = {
       id: userId,
-      name: data.name,
+      name: data.responsibleName || data.name,
       email: data.email,
       role: 'entity',
       entityId: entityId,
+      phone: data.phone,
       totalDonated: 0,
       status: 'pending'
     };
