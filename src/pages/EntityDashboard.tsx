@@ -51,7 +51,7 @@ const EntityDashboard: React.FC = () => {
   const handleValidateIndication = async (indId: string) => {
     try {
       const label = `Validado por ${entityData?.name || user?.name}`;
-      await familyService.convertIndicationToFamily(indId, user, label, user?.entityId);
+      await familyService.convertIndicationToFamily(indId, user, label);
       fetchData(); // Recarrega listas
     } catch (err) {
       console.error(err);

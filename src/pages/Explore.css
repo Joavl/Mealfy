@@ -23,8 +23,8 @@
   padding-left: 48px;
   padding-right: 16px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--color-surface-highest);
-  background-color: #ffffff;
+  border: 1px solid rgba(128, 111, 93, 0.16);
+  background-color: rgba(255, 253, 248, 0.92);
   font-family: var(--font-family-body);
   font-size: 0.95rem;
   color: var(--color-text-main);
@@ -35,7 +35,7 @@
 
 .search-input:focus {
   border-color: var(--color-primary-container);
-  box-shadow: 0 0 0 2px rgba(10, 79, 134, 0.2);
+  box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.1);
 }
 
 .explore-header {
@@ -44,11 +44,12 @@
 }
 
 .community-card {
-  background-color: #ffffff;
-  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 253, 248, 0.96));
+  border-radius: 18px;
   padding: var(--spacing-4);
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-surface-highest);
+  border: 1px solid rgba(128, 111, 93, 0.14);
   transition: transform 0.2s ease;
 }
 

@@ -5,9 +5,11 @@
   gap: 8px;
   font-family: var(--font-family-body);
   font-weight: 700;
-  border-radius: var(--radius-xl);
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s, box-shadow 0.2s;
+  border-radius: 18px;
+  letter-spacing: 0;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
   user-select: none;
+  min-height: 44px;
 }
 
 .btn:active {
@@ -22,8 +24,9 @@
 
 /* Sizes */
 .btn-small {
-  padding: 8px 16px;
+  padding: 8px 14px;
   font-size: 0.875rem;
+  border-radius: 14px;
 }
 
 .btn-medium {
@@ -32,8 +35,8 @@
 }
 
 .btn-large {
-  padding: 16px 32px;
-  font-size: 1.125rem;
+  padding: 16px 28px;
+  font-size: 1.05rem;
 }
 
 .btn-full {
@@ -43,9 +46,9 @@
 /* Variants */
 .btn-primary {
   background-color: var(--color-primary);
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 100%);
   color: var(--color-text-inverted);
-  box-shadow: 0 4px 12px rgba(0, 54, 95, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 24px rgba(var(--color-primary-rgb), 0.23), inset 0 1px 1px rgba(255, 255, 255, 0.24);
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
@@ -55,9 +58,9 @@
 }
 
 .btn-secondary {
-  background-color: var(--color-secondary);
+  background: linear-gradient(180deg, #f2cc5a, var(--color-secondary));
   color: var(--color-text-main);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 12px 24px rgba(212, 167, 44, 0.22);
 }
 
 .btn-secondary:active:not(:disabled) {
@@ -65,10 +68,10 @@
 }
 
 .btn-outline {
-  background-color: var(--color-background);
+  background-color: rgba(255, 253, 248, 0.78);
   color: var(--color-text-main);
-  border: 1.5px solid var(--color-outline-variant);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  border: 1.5px solid rgba(128, 111, 93, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-outline:active:not(:disabled) {

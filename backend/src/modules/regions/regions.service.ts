@@ -1,5 +1,5 @@
 import { MockDatabase } from '../../database/mock-db';
-import { Family } from '../../../../src/backend/types';
+import { Family } from '../../shared/types';
 
 export class RegionsService {
   static async getRegions() {

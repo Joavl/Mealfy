@@ -13,6 +13,7 @@ interface AppContextType {
   login: (method: 'google'|'apple'|'phone'|'facebook', role?: UserRole) => Promise<void>;
   loginAsRole: (role: UserRole, identifier: string) => Promise<void>;
   logout: () => Promise<void>;
+  fetchSession: () => Promise<void>;
   communities: Community[];
   selectedCommunity: Community | null;
   setSelectedCommunity: (community: Community) => void;
@@ -60,6 +61,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     initApp();
   }, []);
+
+  const fetchSession = async () => {
+    const sessionUser = await authService.getCurrentSession();
+    setUser(sessionUser);
+    setIsAuthenticated(Boolean(sessionUser));
+    if (sessionUser?.role === 'donor' && sessionUser.impactPreferences?.preferredRegion) {
+      setSelectedRegionState(sessionUser.impactPreferences.preferredRegion);
+    }
+  };
 
   const setSelectedRegion = async (region: string | null) => {
     setSelectedRegionState(region);
@@ -159,6 +169,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         login,
         loginAsRole,
         logout,
+        fetchSession,
         communities,
         selectedCommunity,
         setSelectedCommunity,

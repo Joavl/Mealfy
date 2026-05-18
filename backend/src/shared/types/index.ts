@@ -1,5 +1,5 @@
 export type UserRole = 'donor' | 'entity' | 'beneficiary' | 'admin';
-export type SupportStatus = 'needs_help' | 'fed' | 'rejected' | 'suspended';
+export type SupportStatus = 'needs_help' | 'supported' | 'fed' | 'pending' | 'rejected' | 'suspended';
 export type FamilyStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
 export type EntityStatus = 'pending' | 'approved' | 'rejected';
 
@@ -20,12 +20,21 @@ export interface User {
     showInstagram: boolean;
     anonymousMode: boolean;
   };
+  impactPreferences?: {
+    preferredRegion?: string;
+    preferredCommunityId?: string;
+    preferredRadiusKm?: number;
+  };
 }
 
 export interface Family {
   id: string;
   representativeName: string;
   region: string;
+  communityId?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
   childrenCount: number;
   status: FamilyStatus;
   supportStatus: SupportStatus;

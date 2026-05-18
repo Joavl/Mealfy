@@ -47,13 +47,28 @@ export const familyService = {
     return families;
   },
 
+  getFamilyById: async (familyId: string): Promise<Family | null> => {
+    try {
+      const apiFamilies = await familiesApi.getPublicFamilies();
+      const apiFamily = apiFamilies?.find((family: Family) => family.id === familyId);
+      if (apiFamily) return apiFamily;
+    } catch (e) {
+      handleApiError(e, 'Get Family by ID');
+    }
+
+    await randomDelay();
+    familyService.initDB();
+    const families = storage.get<Family[]>(FAMILIES_KEY, mockFamilies);
+    return families.find((family: Family) => family.id === familyId) || null;
+  },
+
   getFamiliesByCommunity: async (communityId: string): Promise<Family[]> => {
     try {
       // O backend /families/public já retorna famílias. 
       // Em uma API real teríamos /families/public?communityId=...
       const apiFamilies = await familiesApi.getPublicFamilies();
       if (apiFamilies) {
-        return apiFamilies.filter(f => f.communityId === communityId);
+        return apiFamilies.filter((f: Family) => f.communityId === communityId);
       }
     } catch (e) {
       handleApiError(e, 'Get Families by Community');
@@ -67,7 +82,7 @@ export const familyService = {
   updateFamilyStatus: async (familyId: string, newStatus: 'needs_help' | 'supported'): Promise<Family> => {
     await randomDelay(200, 400); 
     const families = storage.get<Family[]>(FAMILIES_KEY, mockFamilies);
-    const idx = families.findIndex(f => f.id === familyId);
+    const idx = families.findIndex((f: Family) => f.id === familyId);
     if (idx !== -1) {
       families[idx].supportStatus = newStatus;
       storage.set(FAMILIES_KEY, families);

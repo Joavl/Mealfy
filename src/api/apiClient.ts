@@ -12,7 +12,7 @@ export async function apiRequest<T = any>(
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
   body?: any
 ): Promise<T> {
-  const user = storage.get<{ id: string }>('current_user', null);
+  const user = storage.get<{ id: string } | null>('current_user', null);
   
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
