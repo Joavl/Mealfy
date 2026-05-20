@@ -10,6 +10,7 @@ import { donationService } from '../backend/services/donationService';
 import { rankingService } from '../backend/services/rankingService';
 import ImpactRegionSelector from '../components/modals/ImpactRegionSelector';
 import type { Donation, GiftCard } from '../backend/types';
+import { getGiftStatusLabel } from '../lib/ifoodGift';
 import './Profile.css';
 
 const Profile: React.FC = () => {
@@ -93,7 +94,7 @@ const Profile: React.FC = () => {
                 <span className="impact-value">
                   {loading ? '...' : history.length}
                 </span>
-                <span className="impact-label">Gift Cards</span>
+                <span className="impact-label">Créditos iFood</span>
               </div>
               <div className="impact-divider"></div>
               <div className="impact-item">
@@ -129,7 +130,7 @@ const Profile: React.FC = () => {
                <div className="text-center p-10 bg-surface-highest rounded-2xl border border-outline/5">
                   <Heart size={32} className="text-outline/20 mx-auto mb-3" />
                   <p className="text-sm text-outline mb-4">Você ainda não realizou doações.</p>
-                  <Button variant="outline" size="small" onClick={() => navigate('/donate')}>Fazer minha primeira doação</Button>
+                  <Button variant="outline" size="small" onClick={() => navigate('/donate')}>Enviar meu primeiro crédito iFood</Button>
                </div>
             ) : (
               <div className="history-list flex-col gap-3">
@@ -141,7 +142,7 @@ const Profile: React.FC = () => {
                     <div className="history-info">
                       <span className="history-impact">{item.giftCard.label}</span>
                       <span className="history-date text-outline">
-                        {new Date(item.donation.createdAt).toLocaleDateString('pt-BR')} • {item.giftCard.status === 'redeemed' ? 'Resgatado' : 'Enviado'}
+                        {new Date(item.donation.createdAt).toLocaleDateString('pt-BR')} • {getGiftStatusLabel(item.giftCard.status)}
                       </span>
                     </div>
                     <div className="history-amount">

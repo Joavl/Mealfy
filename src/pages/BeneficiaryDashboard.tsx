@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import AppHeader from '../components/layout/AppHeader';
 import { useAppContext } from '../context/AppContext';
 import { familyService } from '../backend/services/familyService';
 import { donationService } from '../backend/services/donationService';
-import { Gift, Calendar, MessageSquare, Heart, Clock } from 'lucide-react';
-import type { Family, GiftCard, Donation } from '../backend/types';
+import { getGiftStatusLabel } from '../lib/ifoodGift';
+import { Gift, Calendar, Heart, Clock, Smartphone } from 'lucide-react';
+import type { Family, GiftCard } from '../backend/types';
 import './BeneficiaryDashboard.css';
 
 const BeneficiaryDashboard: React.FC = () => {
   const { user } = useAppContext();
   const [family, setFamily] = useState<Family | null>(null);
-  const [history, setHistory] = useState<{donation: Donation, giftCard: GiftCard}[]>([]);
+  const [giftHistory, setGiftHistory] = useState<GiftCard[]>([]);
+  const [activeGift, setActiveGift] = useState<GiftCard | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,13 +22,15 @@ const BeneficiaryDashboard: React.FC = () => {
          return;
       }
       
-      const [fam, hist] = await Promise.all([
-         familyService.getFamilyById(user.beneficiaryId),
-         donationService.getDonationHistoryByUser(user.id)
+      const fam = await familyService.getFamilyById(user.beneficiaryId);
+      const [history, active] = await Promise.all([
+         donationService.getGiftCardsByFamily(user.beneficiaryId),
+         donationService.getActiveGiftForFamily(user.beneficiaryId),
       ]);
 
       setFamily(fam || null);
-      setHistory(hist || []);
+      setGiftHistory(history);
+      setActiveGift(active);
       setLoading(false);
     };
     fetchData();
@@ -41,6 +44,8 @@ const BeneficiaryDashboard: React.FC = () => {
     );
   }
 
+  const hasActiveGift = activeGift && (activeGift.status === 'sent' || activeGift.status === 'generated' || activeGift.status === 'delivered');
+
   return (
     <div className="beneficiary-dashboard-page">
       <AppHeader title="Meu Benefício" />
@@ -48,7 +53,7 @@ const BeneficiaryDashboard: React.FC = () => {
       <main className="content p-4">
         <section className="welcome-header mb-6">
            <h2 className="text-2xl font-bold text-primary mb-1">Olá, {family?.representativeName || user?.name}</h2>
-           <p className="text-sm text-outline">Acompanhe seu status e benefícios disponíveis.</p>
+           <p className="text-sm text-outline">Créditos iFood enviados por doadores da sua região.</p>
         </section>
 
         <section className="status-card mb-6 p-6 bg-primary text-inverted rounded-2xl shadow-glow-soft">
@@ -57,52 +62,61 @@ const BeneficiaryDashboard: React.FC = () => {
                  <Heart size={24} fill={family?.supportStatus === 'fed' ? 'white' : 'transparent'} />
               </div>
               <div className="flex flex-col">
-                 <span className="text-xs opacity-80 uppercase font-bold tracking-wider">Status Atual</span>
+                 <span className="text-xs opacity-80 uppercase font-bold tracking-wider">Status</span>
                  <span className="text-xl font-bold">
-                    {family?.supportStatus === 'fed' ? 'Alimentado hoje' : 'Aguardando apoio'}
+                    {hasActiveGift ? 'Crédito iFood disponível' : family?.supportStatus === 'fed' ? 'Apoiado recentemente' : 'Aguardando apoio'}
                  </span>
               </div>
            </div>
            <p className="text-xs opacity-90 leading-relaxed">
-             {family?.supportStatus === 'fed' 
-               ? 'Sua família foi contemplada com uma doação hoje. O gift card já está disponível abaixo.' 
-               : 'Estamos conectando doadores à sua família. Assim que houver uma doação, você será notificado.'}
+             {hasActiveGift
+               ? 'Use o código abaixo no app iFood para pedir refeições para sua família.'
+               : 'Quando um doador enviar apoio, o gift card aparecerá aqui automaticamente.'}
            </p>
         </section>
 
         <section className="gift-cards-section mb-6">
            <h3 className="section-title mb-4 flex items-center gap-2">
               <Gift size={18} className="text-secondary" />
-              <span>Gift Cards Disponíveis</span>
+              <span>Crédito iFood</span>
            </h3>
            
-           {family?.supportStatus === 'fed' ? (
-             <div className="gift-card-display p-4 bg-surface-highest border-2 border-dashed border-secondary rounded-xl text-center">
-                <span className="text-xs text-outline block mb-1">CÓDIGO DE RESGATE</span>
-                <span className="text-2xl font-mono font-black text-secondary tracking-widest">GC-ALIM-2026</span>
-                <p className="text-[10px] text-outline mt-2">Válido em qualquer mercado parceiro ou iFood.</p>
+           {hasActiveGift && activeGift ? (
+             <div className="gift-card-display p-4 bg-surface-highest border-2 border-dashed border-[#ea1d2c]/40 rounded-xl text-center">
+                <span className="ifood-beneficiary-badge">Parceiro iFood</span>
+                <p className="text-sm font-semibold text-primary mt-2 mb-1">{activeGift.label}</p>
+                <span className="text-xs text-outline block mb-1">CÓDIGO NO APP IFOOD</span>
+                <span className="text-2xl font-mono font-black text-secondary tracking-widest">{activeGift.code}</span>
+                <p className="text-[10px] text-outline mt-2 flex items-center justify-center gap-1">
+                  <Smartphone size={12} />
+                  Abra o iFood → Carteira / Gift Card → cole o código
+                </p>
+                <p className="text-[10px] text-success font-bold mt-2">{getGiftStatusLabel(activeGift.status)}</p>
              </div>
            ) : (
              <div className="empty-state p-8 text-center bg-surface-highest rounded-xl border border-outline/5">
-                <p className="text-sm text-outline italic">Nenhum gift card ativo no momento.</p>
-                <p className="text-[10px] text-outline mt-1">Volte amanhã após as 08:00 AM para conferir novamente.</p>
+                <p className="text-sm text-outline italic">Nenhum crédito iFood ativo no momento.</p>
+                <p className="text-[10px] text-outline mt-1">Novos gifts aparecem assim que doadores da região confirmarem o apoio.</p>
              </div>
            )}
         </section>
 
         <section className="history-preview">
-           <h3 className="section-title mb-4">Últimos Recebimentos</h3>
-           {history.length === 0 ? (
-             <p className="text-xs text-outline text-center py-4 bg-surface rounded-xl italic">Ainda não há registros de recebimento.</p>
+           <h3 className="section-title mb-4">Histórico de recebimentos</h3>
+           {giftHistory.length === 0 ? (
+             <p className="text-xs text-outline text-center py-4 bg-surface rounded-xl italic">Ainda não há créditos iFood registrados.</p>
            ) : (
              <div className="flex-col gap-3">
-                {history.map((item, i) => (
-                  <div key={i} className="history-item p-3 bg-surface rounded-lg border border-outline/5 flex justify-between items-center">
+                {giftHistory.slice(0, 8).map((gift) => (
+                  <div key={gift.id} className="history-item p-3 bg-surface rounded-lg border border-outline/5 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <Calendar size={16} className="text-outline" />
-                        <span className="text-sm">{new Date(item.donation.createdAt).toLocaleDateString('pt-BR')}</span>
+                        <div className="flex flex-col items-start">
+                          <span className="text-sm">{new Date(gift.createdAt).toLocaleDateString('pt-BR')}</span>
+                          <span className="text-[10px] text-outline">{getGiftStatusLabel(gift.status)}</span>
+                        </div>
                     </div>
-                    <span className="text-sm font-bold text-success">R$ {item.donation.amount}</span>
+                    <span className="text-sm font-bold text-success">R$ {gift.amount}</span>
                   </div>
                 ))}
              </div>

@@ -3,6 +3,12 @@ import { mockDonations, mockGiftCards } from '../mockData/donations';
 import { familyService } from './familyService';
 import { storage } from '../utils/storage';
 import { randomDelay } from '../utils/delay';
+import {
+  buildIfoodGiftLabel,
+  generateIfoodGiftCode,
+  IFOOD_PROVIDER,
+  normalizeGiftCard,
+} from '../../lib/ifoodGift';
 
 import { donationsApi } from '../../api/donationsApi';
 import { handleApiError } from '../utils/fallback';
@@ -23,10 +29,6 @@ export const donationService = {
   generateGiftCard: async (payload: { amount: number, familyId: string, donorId: string, donationId: string }): Promise<GiftCard> => {
     await randomDelay(200, 500);
     donationService.initDB();
-    
-    const providers = ['ifood', 'other'];
-    const randomProvider = providers[Math.floor(Math.random() * providers.length)];
-    const randomCode = Math.random().toString(36).substring(2, 10).toUpperCase();
 
     const newGiftCard: GiftCard = {
       id: `gc-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -35,10 +37,10 @@ export const donationService = {
       donationId: payload.donationId,
       amount: payload.amount,
       createdAt: new Date().toISOString(),
-      status: 'generated',
-      label: `Gift Card Mealfy — R$${payload.amount}`,
-      provider: randomProvider,
-      code: randomCode
+      status: 'sent',
+      label: buildIfoodGiftLabel(payload.amount),
+      provider: IFOOD_PROVIDER,
+      code: generateIfoodGiftCode(),
     };
 
     const cards = storage.get<GiftCard[]>(GIFTCARDS_KEY, mockGiftCards);
@@ -59,11 +61,18 @@ export const donationService = {
       try {
         const response = await donationsApi.createDonation({ familyId: payload.familyId, amount: payload.amount });
         if (response && response.donation) {
-          // Sync local state if necessary
-          return { 
-            donation: response.donation, 
-            giftCard: response.giftCard, 
-            familyAssigned: { id: payload.familyId } as any // Simplified for callback
+          const giftCard = normalizeGiftCard({
+            ...response.giftCard,
+            donationId: response.donation.id,
+            amount: response.giftCard?.amount ?? response.donation.amount,
+            familyId: payload.familyId,
+            donorId: payload.donorId,
+          });
+          const familyAssigned = await familyService.getFamilyById(payload.familyId);
+          return {
+            donation: response.donation,
+            giftCard,
+            familyAssigned: familyAssigned ?? ({ id: payload.familyId } as Family),
           };
         }
       } catch (e) {
@@ -237,6 +246,22 @@ export const donationService = {
       giftCard: gc!
     }
     }).reverse(); // Latest first
+  },
+
+  getGiftCardsByFamily: async (familyId: string): Promise<GiftCard[]> => {
+    await randomDelay(200, 400);
+    donationService.initDB();
+    const giftCards = storage.get<GiftCard[]>(GIFTCARDS_KEY, mockGiftCards);
+    return giftCards
+      .filter((g) => g.familyId === familyId)
+      .map((g) => normalizeGiftCard(g))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  getActiveGiftForFamily: async (familyId: string): Promise<GiftCard | null> => {
+    const cards = await donationService.getGiftCardsByFamily(familyId);
+    const active = cards.find((c) => c.status === 'sent' || c.status === 'generated' || c.status === 'delivered');
+    return active ?? cards[0] ?? null;
   },
 
   createBigDonation: async (payload: {

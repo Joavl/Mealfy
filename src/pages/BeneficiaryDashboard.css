@@ -2,3 +2,15 @@
 .beneficiary-dashboard-page .content {
   padding-bottom: 100px;
 }
+
+.ifood-beneficiary-badge {
+  display: inline-block;
+  background-color: #ea1d2c;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 10px;
+  border-radius: 999px;
+}

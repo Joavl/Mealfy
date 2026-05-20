@@ -91,16 +91,105 @@ export const familyService = {
     throw new Error('Family not found');
   },
 
-  addFamily: async (familyData: Omit<Family, 'id'>): Promise<Family> => {
-    await randomDelay(300, 600);
+  buildCreateFamilyPayload: (familyData: Omit<Family, 'id'>) => ({
+    representativeName: familyData.representativeName,
+    communityId: familyData.communityId,
+    neighborhood: familyData.neighborhood || 'Não informado',
+    city: familyData.city || 'São Paulo',
+    state: familyData.state || 'SP',
+    shortAddress: familyData.shortAddress,
+    description: familyData.description || 'Cadastro realizado por entidade parceira.',
+    childrenCount: Math.max(1, familyData.childrenCount || 1),
+    mainNeed: familyData.mainNeed || 'Alimentação Básica',
+    latitude: familyData.latitude,
+    longitude: familyData.longitude,
+    authorizingEntityId: familyData.authorizingEntityId,
+    createdByEntityId: familyData.createdByEntityId,
+    sourceType: familyData.sourceType,
+    sourceLabel: familyData.sourceLabel,
+    sourceEntityName: familyData.sourceEntityName,
+    status: familyData.status,
+    supportStatus: familyData.supportStatus,
+  }),
+
+  persistFamilyLocally: (family: Family): void => {
+    familyService.initDB();
     const families = storage.get<Family[]>(FAMILIES_KEY, mockFamilies);
-    
+    const idx = families.findIndex((f) => f.id === family.id);
+    if (idx >= 0) {
+      families[idx] = family;
+    } else {
+      families.unshift(family);
+    }
+    storage.set(FAMILIES_KEY, families);
+  },
+
+  familyBelongsToEntity: (family: Family, entityId?: string): boolean => {
+    if (!entityId) return false;
+    return (
+      family.authorizingEntityId === entityId ||
+      family.createdByEntityId === entityId
+    );
+  },
+
+  getFamiliesForEntity: async (entityId: string): Promise<Family[]> => {
+    familyService.initDB();
+    const local = storage
+      .get<Family[]>(FAMILIES_KEY, mockFamilies)
+      .filter((f) => familyService.familyBelongsToEntity(f, entityId));
+
+    try {
+      const apiFamilies = await familiesApi.getPublicFamilies();
+      const fromApi = (apiFamilies || []).filter((f: Family) =>
+        familyService.familyBelongsToEntity(f, entityId),
+      );
+      const byId = new Map<string, Family>();
+      [...fromApi, ...local].forEach((f) => byId.set(f.id, f));
+      return Array.from(byId.values());
+    } catch (e) {
+      handleApiError(e, 'Get Entity Families');
+    }
+
+    return local;
+  },
+
+  addFamily: async (familyData: Omit<Family, 'id'>): Promise<Family> => {
+    const payload = familyService.buildCreateFamilyPayload(familyData);
+
+    try {
+      const created = await familiesApi.createFamily(payload);
+      if (created?.id) {
+        const normalized: Family = {
+          ...familyData,
+          ...created,
+          id: created.id,
+          authorizingEntityId:
+            created.authorizingEntityId ?? familyData.authorizingEntityId,
+          createdByEntityId:
+            created.createdByEntityId ?? familyData.createdByEntityId,
+          communityId: created.communityId ?? familyData.communityId,
+          children: familyData.children,
+          childrenCount: created.childrenCount ?? familyData.childrenCount,
+        };
+        familyService.persistFamilyLocally(normalized);
+        return normalized;
+      }
+    } catch (e) {
+      handleApiError(e, 'Add Family');
+    }
+
+    await randomDelay(300, 600);
+    familyService.initDB();
+    const families = storage.get<Family[]>(FAMILIES_KEY, mockFamilies);
+
     const newFamily: Family = {
       ...familyData,
-      id: `f-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+      id: `f-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      authorizingEntityId: familyData.authorizingEntityId ?? familyData.createdByEntityId,
+      createdByEntityId: familyData.createdByEntityId ?? familyData.authorizingEntityId,
     };
-    
-    families.unshift(newFamily); // Add to the beginning
+
+    families.unshift(newFamily);
     storage.set(FAMILIES_KEY, families);
     return newFamily;
   },
@@ -181,20 +270,15 @@ export const familyService = {
       throw new Error('Esta indicação já foi convertida em beneficiário oficial.');
     }
 
-    // 2. Validar permissões da entidade (status approved)
-    if (user.role === 'entity' && user.status !== 'approved') {
-      throw new Error('Sua entidade ainda está pendente de aprovação. Somente entidades aprovadas podem validar famílias.');
-    }
-
-    // 3. Validar região compatível (se for entidade)
-    if (user.role === 'entity') {
+    // 2. Validar região compatível (se for entidade aprovada)
+    if (user.role === 'entity' && user.status === 'approved') {
       const entities = storage.get<any[]>('entities_db', []);
       const entityData = entities.find(e => e.id === user.entityId);
       
       const indRegion = normalizeString(indications[indicationIdx].region);
       const entityRegion = normalizeString(entityData?.region?.split('-')[0]);
 
-      if (!indRegion.includes(entityRegion) && !entityRegion.includes(indRegion)) {
+      if (entityRegion && !indRegion.includes(entityRegion) && !entityRegion.includes(indRegion)) {
         throw new Error(`Esta indicação está fora da sua região de atuação (${entityData?.region}).`);
       }
     }
@@ -219,6 +303,7 @@ export const familyService = {
       priorityLevel: 3,
       latitude: -23.612 + (Math.random() * 0.05),
       longitude: -46.593 + (Math.random() * 0.05),
+      authorizingEntityId: user.entityId,
       createdByEntityId: user.entityId,
       sourceType: 'donor_indication',
       sourceLabel: sourceLabel,

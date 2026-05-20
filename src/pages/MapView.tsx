@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -46,11 +46,36 @@ import { isPubliclyVisibleFamily } from '../backend/utils/familyUtils';
 const MapView: React.FC = () => {
   const navigate = useNavigate();
   const { selectedRegion } = useAppContext();
+  const mapWrapperRef = useRef<HTMLDivElement>(null);
   const [families, setFamilies] = useState<Family[]>([]);
   const [showOnlyNeedsHelp, setShowOnlyNeedsHelp] = useState(true);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [mapCenter, setMapCenter] = useState<[number, number]>([-23.5505, -46.6333]);
   const [isRegionSelectorOpen, setIsRegionSelectorOpen] = useState(false);
+
+  /* Impede zoom da página inteira no pinch (mobile); só o mapa faz zoom */
+  useEffect(() => {
+    const el = mapWrapperRef.current;
+    if (!el) return;
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 1) e.preventDefault();
+    };
+
+    const onGesture = (e: Event) => e.preventDefault();
+
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('gesturestart', onGesture);
+    el.addEventListener('gesturechange', onGesture);
+    el.addEventListener('gestureend', onGesture);
+
+    return () => {
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('gesturestart', onGesture);
+      el.removeEventListener('gesturechange', onGesture);
+      el.removeEventListener('gestureend', onGesture);
+    };
+  }, []);
 
   useEffect(() => {
     const filters = selectedRegion ? { region: selectedRegion } : undefined;
@@ -97,11 +122,16 @@ const MapView: React.FC = () => {
 
   return (
     <div className="map-view-page">
-      <div className="map-container-wrapper">
+      <div className="map-container-wrapper" ref={mapWrapperRef}>
         <MapContainer
           center={mapCenter}
           zoom={11}
           scrollWheelZoom={false}
+          touchZoom
+          dragging
+          doubleClickZoom
+          zoomSnap={0.5}
+          zoomDelta={0.5}
           zoomControl={false}
         >
           <RecenterControls center={mapCenter} />

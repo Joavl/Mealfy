@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AppHeader from '../components/layout/AppHeader';
 import Button from '../components/ui/Button';
 import { useAppContext } from '../context/AppContext';
+import { useToast } from '../context/ToastContext';
 import { familyService } from '../backend/services/familyService';
 import { entityService } from '../backend/services/entityService';
 import { normalizeString } from '../backend/utils/normalizeUtils';
@@ -12,6 +13,7 @@ import './EntityDashboard.css';
 
 const EntityDashboard: React.FC = () => {
   const { user } = useAppContext();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const [families, setFamilies] = useState<Family[]>([]);
   const [indications, setIndications] = useState<DonorIndication[]>([]);
@@ -20,14 +22,15 @@ const EntityDashboard: React.FC = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    const allFam = await familyService.getFamilies();
     const allInd = await familyService.getIndications();
     
-    // Pegar dados reais da Entidade
     const currentEntity = user?.entityId ? await entityService.getEntityById(user.entityId) : null;
     setEntityData(currentEntity);
 
-    setFamilies(allFam.filter(f => f.authorizingEntityId === user?.entityId || !f.authorizingEntityId));
+    const entityFamilies = user?.entityId
+      ? await familyService.getFamiliesForEntity(user.entityId)
+      : [];
+    setFamilies(entityFamilies);
     
     // Filtrar indicações pendentes pela região de forma segura
     const pendingInd = allInd.filter(i => {
@@ -52,9 +55,10 @@ const EntityDashboard: React.FC = () => {
     try {
       const label = `Validado por ${entityData?.name || user?.name}`;
       await familyService.convertIndicationToFamily(indId, user, label);
-      fetchData(); // Recarrega listas
-    } catch (err) {
-      console.error(err);
+      showToast('Família validada e cadastrada.', 'success');
+      fetchData();
+    } catch (err: any) {
+      showToast(err?.message || 'Não foi possível validar a indicação.', 'error');
     }
   };
 
@@ -67,23 +71,25 @@ const EntityDashboard: React.FC = () => {
     }
   };
 
-  if (user?.status === 'pending') {
-    return (
-      <div className="entity-dashboard pending-status p-6 flex-col items-center justify-center text-center" style={{ height: '80vh' }}>
-        <Clock size={80} className="text-secondary mb-6" />
-        <h1 className="text-2xl font-bold mb-2">Cadastro em análise</h1>
-        <p className="text-outline">
-          Sua entidade está sendo validada por nossa equipe. Em breve você terá acesso ao painel completo.
-        </p>
-      </div>
-    );
-  }
+  const isPendingEntity = user?.status === 'pending';
 
   return (
     <div className="entity-dashboard-page">
       <AppHeader title="Painel da Entidade" />
       
       <main className="content p-4">
+        {isPendingEntity && (
+          <section className="mb-4 p-4 bg-warning/10 border border-warning/30 rounded-xl flex gap-3 items-start">
+            <AlertCircle size={22} className="text-warning shrink-0 mt-0.5" />
+            <div className="text-left">
+              <p className="text-sm font-bold text-primary mb-1">Entidade em análise</p>
+              <p className="text-xs text-outline leading-relaxed">
+                Você já pode cadastrar famílias; elas ficam com status pendente até a aprovação da entidade.
+              </p>
+            </div>
+          </section>
+        )}
+
         <section className="entity-summary mb-6">
            <h2 className="text-xl font-bold text-primary mb-1">Olá, {user?.name}</h2>
            <p className="text-sm text-outline">Gerencie as famílias assistidas pela sua instituição.</p>

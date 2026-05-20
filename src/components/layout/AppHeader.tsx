@@ -1,7 +1,9 @@
 import React from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { MealfyLogo } from '../ui/MealfyLogo';
 import './AppHeader.css';
+import '../ui/MealfyLogo.css';
 
 interface AppHeaderProps {
   title?: string;
@@ -41,7 +43,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
         {title ? (
           <h1 className="header-title">{title}</h1>
         ) : (
-          <div className="logo-placeholder">Mealfy</div>
+          <MealfyLogo size="sm" />
         )}
       </div>
       <div className="header-right">

@@ -5,7 +5,15 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="light" />
-      <Stack screenOptions={{ headerStyle: { backgroundColor: '#0b5a78' }, headerTintColor: '#fff' }} />
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: '#0b5a78' },
+          headerTintColor: '#fff',
+        }}
+      >
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="map" options={{ headerShown: false }} />
+      </Stack>
     </>
   );
 }

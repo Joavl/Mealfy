@@ -3,9 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import AppHeader from '../components/layout/AppHeader';
 import Button from '../components/ui/Button';
 import CommunitySelectorModal from '../components/modals/CommunitySelectorModal';
+import IfoodGiftFlowCard from '../components/donation/IfoodGiftFlowCard';
 import { useAppContext } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
 import { donationService } from '../backend/services/donationService';
+import { IFOOD_AMOUNT_TIERS } from '../lib/ifoodGift';
 import { MapPin, Info, Loader2 } from 'lucide-react';
 import './DonationChoice.css';
 
@@ -28,14 +30,12 @@ const DonationChoice: React.FC = () => {
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // If no community is selected yet (e.g., accessed direct by URL before initialization finishes), fallback safely
   if (!selectedCommunity) return null;
 
-  const amounts = [
-    { value: 30, impact: 'Garante alimento para 1 criança por 24h', min: 1 },
-    { value: 40, impact: 'Garante alimento para 2 crianças por 24h', min: 2 },
-    { value: 50, impact: 'Garante alimento para 3 ou mais crianças por 24h', min: 3 },
-  ];
+  const amounts = IFOOD_AMOUNT_TIERS.map((tier) => ({
+    value: tier.value,
+    impact: tier.impact,
+  }));
 
   const handleContinue = async () => {
     if (!selectedAmount) return; 
@@ -50,11 +50,10 @@ const DonationChoice: React.FC = () => {
           donorId: user?.id || `anon-${Date.now()}`,
           communityId: selectedCommunity.id
         });
-        // For success screen, we adapt the result format
         result = { 
           donation: batchResult.donations[0], 
           giftCard: batchResult.giftCards[0], 
-          familyAssigned: { representativeName: `${count} Famílias` } 
+          familyAssigned: { representativeName: `${count} famílias` } 
         };
       } else {
         result = await donationService.createDonation({
@@ -68,19 +67,29 @@ const DonationChoice: React.FC = () => {
       navigate('/success', { state: { donationResult: result, isBatch, count } });
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || 'Erro ao processar doação.', 'error');
+      showToast(err.message || 'Erro ao enviar crédito iFood.', 'error');
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const headerTitle = isBatch ? `Crédito iFood (${count} famílias)` : 'Crédito iFood';
+
   return (
     <div className="donation-choice-page">
-      <AppHeader title="Doação" showBack onBack={() => navigate(-1)} />
+      <AppHeader title={headerTitle} showBack onBack={() => navigate(-1)} />
       
       <main className="content p-4">
-        <h1 className="page-title text-primary mb-2">Escolha como deseja ajudar</h1>
-        <p className="page-subtitle mb-6">Sua generosidade se transforma em esperança na mesa de quem precisa.</p>
+        <h1 className="page-title text-primary mb-2">
+          {targetFamily ? `Apoiar ${targetFamily.representativeName}` : 'Enviar refeição via iFood'}
+        </h1>
+        <p className="page-subtitle mb-4">
+          {isBatch
+            ? `Cada família selecionada receberá um gift card iFood proporcional ao valor total (R$ ${selectedAmount ?? '—'}).`
+            : 'Sua contribuição vira crédito no app iFood da família — ela escolhe o pedido, você acompanha o impacto.'}
+        </p>
+
+        <IfoodGiftFlowCard />
         
         <section className="region-selector mb-6">
           <div className="region-card">
@@ -88,8 +97,12 @@ const DonationChoice: React.FC = () => {
               <MapPin size={20} className="text-secondary" />
             </div>
             <div className="region-info">
-              <span className="region-label">Comunidade selecionada</span>
-              <span className="region-value">{targetFamily ? `${selectedCommunity.name} (Destino Travado)` : selectedCommunity.name}</span>
+              <span className="region-label">Comunidade</span>
+              <span className="region-value">
+                {targetFamily
+                  ? `${selectedCommunity.name} · família definida`
+                  : selectedCommunity.name}
+              </span>
             </div>
             {!targetFamily && (
               <button 
@@ -104,6 +117,7 @@ const DonationChoice: React.FC = () => {
         </section>
 
         <section className="amounts-section mb-6">
+          <h3 className="section-subtitle">Valor do crédito iFood</h3>
           <div className="amount-cards-grid">
             {amounts.map((item) => (
               <div 
@@ -115,12 +129,11 @@ const DonationChoice: React.FC = () => {
                 <div className="amount-impact">{item.impact}</div>
               </div>
             ))}
-            
           </div>
         </section>
 
         <section className="recurrence-section mb-6">
-          <h3 className="section-subtitle">Tipo de doação</h3>
+          <h3 className="section-subtitle">Frequência</h3>
           <div className="recurrence-toggle">
             <button 
               className={`toggle-btn ${!isRecurrent ? 'active' : ''}`}
@@ -138,7 +151,9 @@ const DonationChoice: React.FC = () => {
           {isRecurrent && (
             <div className="recurrence-info mt-4 flex items-center gap-2 text-outline">
               <Info size={16} />
-              <span style={{ fontSize: '0.8rem' }}>A doação mensal ajuda a manter o apoio constante às famílias.</span>
+              <span style={{ fontSize: '0.8rem' }}>
+                Todo mês geramos novos créditos iFood para manter as famílias da região alimentadas.
+              </span>
             </div>
           )}
         </section>
@@ -153,7 +168,11 @@ const DonationChoice: React.FC = () => {
           disabled={!selectedAmount || isProcessing}
           icon={isProcessing ? <Loader2 className="animate-spin" size={20} /> : undefined}
         >
-          {isProcessing ? 'Processando doação...' : (selectedAmount ? `Continuar com R$ ${selectedAmount}` : 'Continuar')}
+          {isProcessing
+            ? 'Gerando gift iFood...'
+            : selectedAmount
+              ? `Enviar R$ ${selectedAmount} via iFood`
+              : 'Escolha um valor'}
         </Button>
       </div>
 

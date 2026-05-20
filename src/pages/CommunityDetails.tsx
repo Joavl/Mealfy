@@ -66,7 +66,7 @@ const CommunityDetails: React.FC = () => {
               disabled={families.length === 0}
               onClick={() => navigate(`/big-donation`, { state: { community } })}
             >
-              Fazer uma grande doação à região
+              Apoio regional via iFood
             </Button>
             {families.length === 0 && (
               <p className="text-center text-xs text-error mt-2">

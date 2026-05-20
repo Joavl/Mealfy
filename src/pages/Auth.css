@@ -48,6 +48,11 @@
   animation: rise-in 0.55s ease both;
 }
 
+.auth-hero-logo {
+  margin: 0 auto var(--spacing-3);
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.35));
+}
+
 .auth-hero-content .logo-text,
 .auth-hero-content h1,
 .auth-hero-content p {

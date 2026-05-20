@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:api": "dotnet run --project server/src/Mealfy.Api",
-    "dev:mobile": "npm run start --prefix mobile",
+    "dev:mobile": "npm run start --prefix mobile -- --lan --port 8083",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

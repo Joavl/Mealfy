@@ -214,6 +214,120 @@
   box-shadow: var(--shadow-sm);
 }
 
+.pix-support-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.pix-support-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(128, 111, 93, 0.14);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 253, 248, 0.95), rgba(243, 223, 154, 0.18));
+}
+
+.pix-support-intro strong {
+  display: block;
+  color: var(--color-primary);
+  font-size: 0.95rem;
+}
+
+.pix-support-icon {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 14px;
+  color: var(--color-primary);
+  background-color: rgba(var(--color-primary-rgb), 0.09);
+}
+
+.pix-qr-frame {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, #ffffff, var(--color-surface));
+  border: 1px solid rgba(128, 111, 93, 0.14);
+  box-shadow: var(--shadow-sm);
+}
+
+.pix-qr-image {
+  width: min(100%, 260px);
+  aspect-ratio: 1;
+  object-fit: contain;
+  padding: 10px;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.pix-meta-card,
+.pix-copy-card {
+  border: 1px solid rgba(128, 111, 93, 0.14);
+  border-radius: 18px;
+  background-color: rgba(255, 253, 248, 0.78);
+  box-shadow: var(--shadow-sm);
+}
+
+.pix-meta-card {
+  display: grid;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.pix-meta-card div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 14px;
+  background-color: rgba(255, 255, 255, 0.42);
+}
+
+.pix-meta-card span,
+.pix-copy-card span {
+  color: var(--color-outline);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pix-meta-card strong {
+  color: var(--color-text-main);
+  font-size: 0.86rem;
+  text-align: right;
+}
+
+.pix-copy-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+}
+
+.pix-copy-card code {
+  max-height: 76px;
+  overflow: auto;
+  padding: 12px;
+  border-radius: 14px;
+  color: var(--color-primary);
+  background-color: rgba(var(--color-primary-rgb), 0.06);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
 @keyframes hero-rise {
   from {
     opacity: 0;

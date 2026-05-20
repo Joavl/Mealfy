@@ -77,6 +77,48 @@
   color: var(--color-text-main);
 }
 
+.ifood-delivery-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  max-width: 320px;
+  width: 100%;
+  padding: var(--spacing-3);
+  background-color: rgba(234, 29, 44, 0.08);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(234, 29, 44, 0.2);
+  text-align: left;
+  color: var(--color-text-main);
+}
+
+.ifood-delivery-text strong {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.ifood-delivery-text p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-outline);
+  line-height: 1.35;
+}
+
+.ifood-inline-badge {
+  display: inline-block;
+  background-color: #ea1d2c;
+  color: #fff !important;
+  font-size: 0.75rem !important;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.receipt-row-muted .receipt-value {
+  font-weight: 500 !important;
+}
+
 .receipt-value.text-secondary {
   font-size: 1.25rem;
   font-weight: 800;

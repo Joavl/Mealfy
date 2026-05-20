@@ -1,6 +1,6 @@
 export type UrgencyColor = 'error' | 'warning' | 'success';
 export type SupportStatus = 'needs_help' | 'supported' | 'fed' | 'pending' | 'rejected' | 'suspended' | 'approved';
-export type GiftCardStatus = 'generated' | 'delivered' | 'used' | 'redeemed';
+export type GiftCardStatus = 'generated' | 'sent' | 'delivered' | 'used' | 'redeemed';
 export type EntityType = 'ONG' | 'igreja' | 'escola' | 'instituto';
 export type EntityStatus = 'pending' | 'approved' | 'rejected';
 

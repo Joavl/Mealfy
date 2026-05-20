@@ -30,10 +30,12 @@ export class DonationsService {
     const giftCard: GiftCard = {
       id: `gc-${uuidv4()}`,
       donationId: donation.id,
+      familyId: family.id,
       provider: 'ifood',
       code: `MEALFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
       amount,
-      status: 'generated',
+      status: 'sent',
+      label: `Crédito iFood — R$ ${amount}`,
       createdAt: new Date().toISOString()
     };
 

@@ -1,0 +1,76 @@
+.ifood-flow-card {
+  background: linear-gradient(135deg, rgba(234, 29, 44, 0.06) 0%, rgba(0, 54, 95, 0.04) 100%);
+  border: 1px solid rgba(234, 29, 44, 0.15);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
+}
+
+.ifood-flow-header {
+  margin-bottom: var(--spacing-3);
+}
+
+.ifood-flow-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ea1d2c;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: var(--spacing-2);
+}
+
+.ifood-flow-lead {
+  font-size: 0.85rem;
+  color: var(--color-outline);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.ifood-flow-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.ifood-flow-step {
+  display: flex;
+  gap: var(--spacing-3);
+  align-items: flex-start;
+}
+
+.ifood-flow-step-num {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ifood-flow-step strong {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--color-text-main);
+  margin-bottom: 2px;
+}
+
+.ifood-flow-step p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-outline);
+  line-height: 1.35;
+}

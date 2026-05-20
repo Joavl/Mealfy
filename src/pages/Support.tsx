@@ -22,8 +22,8 @@ const Support: React.FC = () => {
           <h2 className="section-subtitle mb-4 flex items-center gap-2"><BookOpen size={20} className="text-secondary" /> Dúvidas Frequentes</h2>
           
           <div className="faq-item">
-            <h4 className="faq-question">Como funciona a doação via Gift Card?</h4>
-            <p className="faq-answer">Seu valor é imediatamente cunhado em um Voucher exclusivo (ex: Itaú Alimentar). Nossa plataforma procura automaticamente uma família necessitada (Coração Partido 💔) em sua região e transfere o ticket fechado, protegendo o destinatário.</p>
+            <h4 className="faq-question">Como funciona o crédito iFood?</h4>
+            <p className="faq-answer">Ao confirmar o valor, o Mealfy gera um gift card parceiro iFood e designa à família elegível (coração partido 💔 na região). O código aparece no painel do beneficiário — o doador não precisa repassar o voucher manualmente.</p>
           </div>
           
           <div className="faq-item">
@@ -33,7 +33,7 @@ const Support: React.FC = () => {
 
           <div className="faq-item">
             <h4 className="faq-question">O que significam os corações?</h4>
-            <p className="faq-answer">Um coração partido (💔) demonstra famílias que precisam de doações hoje. Um coração preenchido (❤️) sinaliza famílias que já foram abençoadas pelo ecossistema Mealfy. Quando sua comunidade zerar os corações partidos, use a Doação Ampliada.</p>
+            <p className="faq-answer">Um coração partido (💔) demonstra famílias que precisam de apoio hoje. Um coração preenchido (❤️) sinaliza famílias que já receberam crédito iFood. Quando zerar os corações partidos, use o Apoio Regional.</p>
           </div>
         </section>
 

@@ -27,8 +27,8 @@ const Help: React.FC = () => {
           <div className="faq-item flex gap-3 items-start">
             <ShieldAlert size={24} className="text-primary shrink-0 mt-1" />
             <div>
-              <h4 className="faq-question">2. O Poder da Doação Ampliada</h4>
-              <p className="faq-answer">Para agir mais rápido, use a <strong>Big Donation (Apoio Regional)</strong>. O sistema fracionará e mirará as famílias necessitadas emitindo múltiplos Gift Cards ao mesmo tempo com o seu Nome na etiqueta.</p>
+              <h4 className="faq-question">2. Apoio regional iFood</h4>
+              <p className="faq-answer">Para agir mais rápido, use o <strong>Apoio Regional</strong>. O sistema fraciona o valor e gera vários créditos iFood para famílias necessitadas da região ao mesmo tempo.</p>
             </div>
           </div>
 

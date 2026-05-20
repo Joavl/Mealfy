@@ -110,7 +110,7 @@ const FamilyDetails: React.FC = () => {
           onClick={handleDonateToFamily}
           icon={<Heart size={20} />}
         >
-          Ajudar esta família
+          Enviar crédito iFood
         </Button>
       </div>
     </div>

@@ -34,19 +34,20 @@ export class FamiliesService {
   static async createFamily(data: any, user: any): Promise<Family> {
     const families = await MockDatabase.read<Family>('families');
     
-    // Check if user is approved entity
-    if (user.role === 'entity' && user.status !== 'approved') {
-      throw new AppError('Pending entities cannot register official families', 403);
-    }
+    const isApprovedEntity = user.role === 'entity' && user.status === 'approved';
+    const familyStatus = user.role === 'admin' || isApprovedEntity ? 'approved' : 'pending';
 
     const newFamily: Family = {
       ...data,
       id: `f-${uuidv4()}`,
-      status: user.role === 'admin' ? 'approved' : (user.status === 'approved' ? 'approved' : 'pending'),
-      supportStatus: 'needs_help',
+      region: data.neighborhood || data.region || 'Região não informada',
+      status: data.status ?? familyStatus,
+      supportStatus: data.supportStatus ?? 'needs_help',
       createdByEntityId: user.entityId,
-      sourceType: 'entity',
-      sourceLabel: `Cadastrado por ${user.name}`,
+      authorizingEntityId: data.authorizingEntityId ?? user.entityId,
+      sourceType: data.sourceType ?? 'entity',
+      sourceLabel: data.sourceLabel ?? `Cadastrado por ${user.name}`,
+      communityId: data.communityId,
     };
 
     families.unshift(newFamily);

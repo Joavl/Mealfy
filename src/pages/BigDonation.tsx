@@ -6,8 +6,9 @@ import { useAppContext } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
 import { donationService } from '../backend/services/donationService';
 import type { Community } from '../backend/types';
+import IfoodGiftFlowCard from '../components/donation/IfoodGiftFlowCard';
 import { ShieldAlert, Loader2, Info } from 'lucide-react';
-import './DonationChoice.css'; // Reuse amounts grid
+import './DonationChoice.css';
 
 const BigDonation: React.FC = () => {
   const navigate = useNavigate();
@@ -47,7 +48,7 @@ const BigDonation: React.FC = () => {
       navigate('/success', { state: { bigDonationResult: result } });
     } catch (err: any) {
       console.error(err);
-      showToast(err.message || 'Erro ao processar doação coletiva.', 'error');
+      showToast(err.message || 'Erro ao distribuir créditos iFood.', 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -60,9 +61,11 @@ const BigDonation: React.FC = () => {
       <main className="content p-4">
         <div className="flex items-center gap-3 mb-2">
           <ShieldAlert size={28} className="text-secondary" />
-          <h1 className="page-title text-primary m-0">Doação Ampliada</h1>
+          <h1 className="page-title text-primary m-0">Apoio regional iFood</h1>
         </div>
-        <p className="page-subtitle mb-6">Seu apoio será distribuído automaticamente entre as famílias que mais precisam em <strong>{regionName}</strong>.</p>
+        <p className="page-subtitle mb-4">Distribuímos vários <strong>créditos iFood</strong> entre as famílias que mais precisam em <strong>{regionName}</strong>.</p>
+
+        <IfoodGiftFlowCard />
         
         <section className="amounts-section mb-6">
           <div className="amount-cards-grid">
@@ -83,7 +86,7 @@ const BigDonation: React.FC = () => {
         <section className="info-box p-4 bg-surface-highest rounded-md flex gap-3">
           <Info size={24} className="text-primary shrink-0" />
           <p className="text-sm">
-            Nós mapeamos as famílias elegíveis nesta região e distribuiremos o valor de forma inteligente criando múltiplos Gift Cards. O recibo final detalhará o impacto real distribuído.
+            Mapeamos famílias elegíveis e geramos um gift iFood por família, com o valor fracionado do total. O recibo mostra quantos créditos foram enviados.
           </p>
         </section>
       </main>
@@ -98,7 +101,7 @@ const BigDonation: React.FC = () => {
           icon={isProcessing ? <Loader2 className="animate-spin" size={20} /> : undefined}
           variant="secondary"
         >
-          {isProcessing ? 'Processando doação...' : (selectedAmount ? `Distribuir R$ ${selectedAmount}` : 'Continuar')}
+          {isProcessing ? 'Gerando gifts iFood...' : (selectedAmount ? `Distribuir R$ ${selectedAmount} via iFood` : 'Continuar')}
         </Button>
       </div>
     </div>

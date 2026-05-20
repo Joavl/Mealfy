@@ -6,6 +6,7 @@ import { authService } from '../backend/services/authService';
 import { useToast } from '../context/ToastContext';
 import { useAppContext } from '../context/AppContext';
 import { Heart, Building2, ArrowRight } from 'lucide-react';
+import { MealfyLogo } from '../components/ui/MealfyLogo';
 import './Auth.css'; // Reusing some auth styles for consistency
 
 const Register: React.FC = () => {
@@ -232,7 +233,7 @@ const Register: React.FC = () => {
           className="auth-hero-image"
         />
         <div className="auth-hero-content">
-          <div className="logo-text font-serif text-3xl font-black text-white/90 italic mb-1 drop-shadow-md tracking-wider">Mealfy</div>
+          <MealfyLogo size="lg" className="auth-hero-logo" />
           <h1 className="text-3xl font-bold text-white leading-tight mb-2">Como você quer participar?</h1>
         </div>
       </div>

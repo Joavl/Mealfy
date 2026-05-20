@@ -6,12 +6,16 @@ import { useAppContext } from '../context/AppContext';
 import { familyService } from '../backend/services/familyService';
 import { rankingService } from '../backend/services/rankingService';
 import type { Family } from '../backend/types';
-import { Trophy, Loader2, Heart, UserCircle } from 'lucide-react';
+import { Trophy, Loader2, Copy, CheckCircle, QrCode } from 'lucide-react';
 import StoriesRanking from '../components/ui/StoriesRanking';
 import BottomSheet from '../components/ui/BottomSheet';
 import ImpactRegionSelector from '../components/modals/ImpactRegionSelector';
 import { useToast } from '../context/ToastContext';
 import './Home.css';
+
+const PIX_COPY_CODE = '00020126360014br.gov.bcb.pix0114664183870001095204000053039865802BR5925OWL4TECH INTELLIGENCE LTD6013FLORIANOPOLIS62070503***6304372E';
+const PIX_KEY = '66418387000109';
+const PIX_RECEIVER = 'OWL4TECH INTELLIGENCE LTDA';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -23,8 +27,7 @@ const Home: React.FC = () => {
   
   const [isRegionSelectorOpen, setIsRegionSelectorOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
-  const [supportAmount, setSupportAmount] = useState<number | null>(null);
-  const [isSupporting, setIsSupporting] = useState(false);
+  const [hasCopiedPix, setHasCopiedPix] = useState(false);
 
   useEffect(() => {
     rankingService.getTopDonors().then(setTopDonors);
@@ -39,6 +42,26 @@ const Home: React.FC = () => {
 
   const familiesHelped = families.filter(f => f.supportStatus === 'supported').length;
   const familiesNeedsHelp = families.filter(f => f.supportStatus === 'needs_help').length;
+
+  const handleCopyPixCode = async () => {
+    try {
+      await navigator.clipboard.writeText(PIX_COPY_CODE);
+    } catch {
+      const textArea = document.createElement('textarea');
+      textArea.value = PIX_COPY_CODE;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+
+    setHasCopiedPix(true);
+    showToast('Código Pix copiado com sucesso!', 'success');
+    window.setTimeout(() => setHasCopiedPix(false), 2200);
+  };
 
   return (
     <div className="home-page">
@@ -76,9 +99,9 @@ const Home: React.FC = () => {
           className="hero-image"
         />
         <div className="hero-content">
-          <h1 className="hero-headline">Doe hoje.<br/>Alimente uma criança.</h1>
+          <h1 className="hero-headline">Apoie hoje.<br/>Alimente uma criança.</h1>
           <p className="hero-subtext">
-            Sua doação para {selectedRegion || 'famílias necessitadas'} se transforma rapidamente em refeições quentes.
+            Sua contribuição em {selectedRegion || 'famílias da região'} vira <strong>crédito iFood</strong> — a família escolhe a refeição no app.
           </p>
           
           <div className="hero-actions">
@@ -88,7 +111,7 @@ const Home: React.FC = () => {
               onClick={() => navigate('/donate')}
               className="cta-donate shadow-glow"
             >
-              Fazer uma doação
+              Enviar crédito iFood
             </Button>
             <Button 
               variant="outline" 
@@ -179,41 +202,46 @@ const Home: React.FC = () => {
       <div className="bottom-spacing"></div>
 
       <BottomSheet isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} title="Apoiar Plataforma">
-        <p className="text-sm text-outline mb-4">Seu apoio ajuda a manter o servidor online e a levar a plataforma para mais comunidades pelo Brasil.</p>
-        <div className="flex gap-3 mb-6">
-           <Button 
-             variant={supportAmount === 10 ? 'primary' : 'outline'} 
-             fullWidth 
-             onClick={() => setSupportAmount(10)}
-           >
-             R$ 10
-           </Button>
-           <Button 
-             variant={supportAmount === 20 ? 'primary' : 'outline'} 
-             fullWidth 
-             onClick={() => setSupportAmount(20)}
-           >
-             R$ 20
-           </Button>
+        <div className="pix-support-sheet">
+          <div className="pix-support-intro">
+            <span className="pix-support-icon">
+              <QrCode size={20} />
+            </span>
+            <div>
+              <p className="text-sm text-outline mb-1">Seu apoio ajuda a manter o servidor online e a levar a plataforma para mais comunidades pelo Brasil.</p>
+              <strong>Pix para {PIX_RECEIVER}</strong>
+            </div>
+          </div>
+
+          <div className="pix-qr-frame">
+            <img src="/pix-qr-code.png" alt="QR Code Pix para apoiar a plataforma Mealfy" className="pix-qr-image" />
+          </div>
+
+          <div className="pix-meta-card">
+            <div>
+              <span>Recebedor</span>
+              <strong>{PIX_RECEIVER}</strong>
+            </div>
+            <div>
+              <span>Chave Pix</span>
+              <strong>{PIX_KEY}</strong>
+            </div>
+          </div>
+
+          <div className="pix-copy-card">
+            <span>Código Pix copia e cola</span>
+            <code>{PIX_COPY_CODE}</code>
+          </div>
         </div>
+
         <Button 
           variant="primary" 
           fullWidth 
           size="large"
-          disabled={!supportAmount || isSupporting}
-          loading={isSupporting}
-          icon={!isSupporting ? <Heart size={18} /> : undefined}
-          onClick={() => {
-             setIsSupporting(true);
-             setTimeout(() => {
-                setIsSupporting(false);
-                setIsSupportOpen(false);
-                showToast(`Obrigado pelo apoio de R$ ${supportAmount}!`, 'success');
-                setSupportAmount(null);
-             }, 1500);
-          }}
+          icon={hasCopiedPix ? <CheckCircle size={18} /> : <Copy size={18} />}
+          onClick={handleCopyPixCode}
         >
-          {isSupporting ? 'Processando...' : 'Confirmar Apoio'}
+          {hasCopiedPix ? 'Código copiado' : 'Copiar código Pix'}
         </Button>
       </BottomSheet>
 

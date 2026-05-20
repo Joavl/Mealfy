@@ -69,9 +69,11 @@ export interface Donation {
 export interface GiftCard {
   id: string;
   donationId: string;
+  familyId?: string;
   provider: 'ifood' | 'other';
   code: string;
   amount: number;
-  status: 'generated' | 'delivered' | 'used';
+  status: 'generated' | 'sent' | 'delivered' | 'used' | 'redeemed';
+  label?: string;
   createdAt: string;
 }

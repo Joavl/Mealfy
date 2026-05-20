@@ -22,7 +22,7 @@ const RegisterFamily: React.FC = () => {
     state: 'SP',
     shortAddress: '',
     description: '',
-    childrenCount: 0,
+    childrenCount: 1,
     mainNeed: 'Alimentação Básica',
   });
 
@@ -37,12 +37,17 @@ const RegisterFamily: React.FC = () => {
     }));
   };
 
-  // Redirect donor gracefully
   React.useEffect(() => {
     if (user?.role === 'donor') {
        navigate('/indicate-family', { replace: true });
     }
   }, [user, navigate]);
+
+  React.useEffect(() => {
+    if (communities.length > 0 && !formData.communityId) {
+      setFormData((prev) => ({ ...prev, communityId: communities[0].id }));
+    }
+  }, [communities, formData.communityId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,17 +55,25 @@ const RegisterFamily: React.FC = () => {
     setError(null);
 
     try {
+      if (!user?.entityId && user?.role === 'entity') {
+        throw new Error('Sessão da entidade inválida. Faça login novamente.');
+      }
+
       if (!formData.representativeName || !formData.communityId || !formData.shortAddress) {
         throw new Error('Por favor, preencha os campos obrigatórios.');
       }
 
-      if (formData.childrenCount === 0) {
-        throw new Error('A família deve ter pelo menos uma criança para ser elegível.');
+      const childrenCount = Math.max(1, formData.childrenCount || 1);
+
+      if (!formData.neighborhood?.trim()) {
+        throw new Error('Informe o bairro da família.');
       }
 
       const newFamilyData: Omit<Family, 'id'> = {
         ...formData,
-        children: Array.from({ length: formData.childrenCount }).map((_, i) => ({
+        childrenCount,
+        description: formData.description?.trim() || 'Família cadastrada por entidade parceira Mealfy.',
+        children: Array.from({ length: childrenCount }).map((_, i) => ({
           id: `c-${i}`,
           name: `Criança ${i+1}`,
           age: 5,
@@ -80,7 +93,11 @@ const RegisterFamily: React.FC = () => {
       };
 
       await familyService.addFamily(newFamilyData);
-      showToast("Cadastro enviado para análise. Obrigado por ajudar!", "success");
+      const msg =
+        user?.status === 'approved'
+          ? 'Família cadastrada com sucesso!'
+          : 'Família cadastrada e aguardando aprovação da entidade.';
+      showToast(msg, 'success');
       
       if (user?.role === 'entity') {
         navigate('/entity/dashboard', { replace: true });

@@ -31,9 +31,9 @@ export const mockGiftCards: GiftCard[] = [
     amount: 40,
     createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     status: 'redeemed',
-    label: 'Gift Card Apoio Familiar - R$40',
-    provider: 'Mercado Parceiro Local',
-    code: 'GC-ALIM-40'
+    label: 'Crédito iFood — R$ 40',
+    provider: 'ifood',
+    code: 'MEALFY-A1B2C3'
   },
   {
     id: 'gc-2',
@@ -43,8 +43,8 @@ export const mockGiftCards: GiftCard[] = [
     amount: 90,
     createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
     status: 'redeemed',
-    label: 'Gift Card Apoio Alimentar - R$90',
-    provider: 'Itau Alimentacao',
-    code: 'GC-ALIM-90'
+    label: 'Crédito iFood — R$ 90',
+    provider: 'ifood',
+    code: 'MEALFY-X9Y8Z7'
   }
 ];
