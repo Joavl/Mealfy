@@ -22,6 +22,7 @@ import RegisterFamily from './pages/RegisterFamily';
 import EntityDashboard from './pages/EntityDashboard';
 import BeneficiaryDashboard from './pages/BeneficiaryDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminFeaturedDonors from './pages/AdminFeaturedDonors';
 import Unauthorized from './pages/Unauthorized';
 import Register from './pages/Register';
 import IndicateFamily from './pages/IndicateFamily';
@@ -104,6 +105,7 @@ function App() {
             
             {/* Admin Routes */}
             <Route path="/admin/dashboard" element={<PrivateRoute allowedRoles={['admin']}><AdminDashboard /></PrivateRoute>} />
+            <Route path="/admin/featured-donors" element={<PrivateRoute allowedRoles={['admin']}><AdminFeaturedDonors /></PrivateRoute>} />
 
             {/* Automatic Redirect based on Role */}
             <Route path="/dashboard-redirect" element={<DashboardRedirect />} />

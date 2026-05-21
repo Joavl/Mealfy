@@ -22,6 +22,7 @@ export interface User {
   documentNumber?: string;
   avatar?: string;
   instagram?: string;
+  facebook?: string;
   totalDonated: number;
   rankingPosition: number;
   rankingPercentile: string;

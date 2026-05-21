@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Heart, Map, User, MapPin, LayoutDashboard, Users, ShieldCheck } from 'lucide-react';
+import { Home, Heart, Map, User, MapPin, LayoutDashboard, Users, ShieldCheck, Star } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import './BottomTabBar.css';
 

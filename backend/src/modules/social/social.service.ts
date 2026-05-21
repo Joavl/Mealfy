@@ -1,0 +1,56 @@
+import { MockDatabase } from '../../database/mock-db';
+import { AppError } from '../../shared/errors/AppError';
+import { User } from '../../shared/types';
+import { getMealfyFacebookUrl, toFacebookProfileUrl } from './social.utils';
+
+export type SocialResolveResult = {
+  platform: 'facebook';
+  url: string;
+  userId?: string;
+  userName?: string;
+  source: 'donor_profile' | 'mealfy_default';
+};
+
+export class SocialService {
+  static getMealfyFacebookRedirect(): string {
+    return getMealfyFacebookUrl();
+  }
+
+  static async resolveDonorFacebook(userId: string): Promise<SocialResolveResult> {
+    const users = await MockDatabase.read<User & { facebook?: string }>('users');
+    const user = users.find((u) => u.id === userId);
+
+    if (!user) {
+      throw new AppError('Doador não encontrado', 404);
+    }
+
+    if (user.privacySettings?.anonymousMode) {
+      return {
+        platform: 'facebook',
+        url: getMealfyFacebookUrl(),
+        userId,
+        userName: 'Anônimo',
+        source: 'mealfy_default',
+      };
+    }
+
+    const fb = toFacebookProfileUrl((user as any).facebook);
+    if (fb) {
+      return {
+        platform: 'facebook',
+        url: fb,
+        userId: user.id,
+        userName: user.name,
+        source: 'donor_profile',
+      };
+    }
+
+    return {
+      platform: 'facebook',
+      url: getMealfyFacebookUrl(),
+      userId: user.id,
+      userName: user.name,
+      source: 'mealfy_default',
+    };
+  }
+}

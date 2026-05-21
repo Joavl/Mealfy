@@ -1,7 +1,8 @@
 import React from 'react';
 import AppHeader from '../components/layout/AppHeader';
 import Button from '../components/ui/Button';
-import { ShieldCheck, UserCheck, Building2, FileText, RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ShieldCheck, UserCheck, Building2, FileText, RefreshCw, Star } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { familyService } from '../backend/services/familyService';
 import { adminService } from '../backend/services/adminService';
@@ -9,6 +10,7 @@ import type { DonorIndication } from '../backend/types';
 import './AdminDashboard.css';
 
 const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [pendingEntitiesCount, setPendingEntitiesCount] = React.useState(0);
   const [pendingFamiliesCount, setPendingFamiliesCount] = React.useState(0);
@@ -101,6 +103,23 @@ const AdminDashboard: React.FC = () => {
               ) : (
                 <span className="text-[10px] text-outline">Nenhuma</span>
               )}
+           </div>
+
+           <div
+             className="admin-menu-item p-4 bg-surface-highest rounded-xl border border-outline/10 flex items-center justify-between cursor-pointer"
+             onClick={() => navigate('/admin/featured-donors')}
+             onKeyDown={(e) => e.key === 'Enter' && navigate('/admin/featured-donors')}
+             role="button"
+             tabIndex={0}
+           >
+              <div className="flex items-center gap-3">
+                 <Star size={20} className="text-secondary" />
+                 <div>
+                   <span className="font-bold text-sm block">Carrossel de doadores</span>
+                   <span className="text-[10px] text-outline">Ordenar os 20 primeiros da home</span>
+                 </div>
+              </div>
+              <span className="text-[10px] font-bold text-primary">Editar →</span>
            </div>
 
            <div className="admin-menu-item p-4 bg-surface-highest rounded-xl border border-outline/10 flex items-center justify-between cursor-pointer opacity-50">

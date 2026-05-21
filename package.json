@@ -4,9 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "dev:api": "dotnet run --project server/src/Mealfy.Api",
-    "dev:mobile": "npm run start --prefix mobile -- --lan --port 8083",
+    "dev:check": "powershell -ExecutionPolicy Bypass -File scripts/check-dev.ps1",
+    "firewall": "powershell -ExecutionPolicy Bypass -File scripts/open-firewall.ps1",
+    "dev:mobile": "npm run dev:check && npm run start:clear --prefix mobile -- --port 8083",
+    "dev:mobile:tunnel": "npm run start:tunnel --prefix mobile -- --port 8083",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

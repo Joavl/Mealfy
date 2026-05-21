@@ -14,6 +14,8 @@ export interface User {
   phone?: string;
   documentType?: 'cpf' | 'cnpj';
   documentNumber?: string;
+  facebook?: string;
+  instagram?: string;
   totalDonated: number;
   privacySettings?: {
     showOnRanking: boolean;

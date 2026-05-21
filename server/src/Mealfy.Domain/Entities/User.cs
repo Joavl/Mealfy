@@ -15,6 +15,7 @@ public class User
     public string? DocumentType { get; set; }
     public string? DocumentNumber { get; set; }
     public string? Instagram { get; set; }
+    public string? Facebook { get; set; }
     public string? FirebaseUid { get; set; }
     public decimal TotalDonated { get; set; }
     public bool ShowOnRanking { get; set; } = true;

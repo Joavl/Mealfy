@@ -36,6 +36,10 @@ public static class DbSeeder
                 Role = UserRole.Donor,
                 Status = AccountStatus.Active,
                 TotalDonated = 150,
+                Instagram = "@doadordemo",
+                Facebook = "mealfy.doadores",
+                ShowInstagram = true,
+                ShowOnRanking = true,
             },
             new User
             {

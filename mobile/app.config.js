@@ -1,9 +1,32 @@
+import os from 'os';
+
+function getLanIp() {
+  const nets = os.networkInterfaces();
+  for (const ifaces of Object.values(nets)) {
+    for (const net of ifaces ?? []) {
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return 'localhost';
+}
+
+const lanIp = getLanIp();
+const webPort = process.env.EXPO_PUBLIC_WEB_PORT || '5173';
+const apiPort = process.env.EXPO_PUBLIC_API_PORT || '3000';
+const webAppUrl =
+  process.env.EXPO_PUBLIC_WEB_APP_URL || `http://${lanIp}:${webPort}`;
+const apiUrl =
+  process.env.EXPO_PUBLIC_API_URL || `http://${lanIp}:${apiPort}`;
+
 /** @type {import('expo/config').ExpoConfig} */
 export default {
   expo: {
     name: 'Mealfy',
     slug: 'mealfy',
     version: '1.0.0',
+    sdkVersion: '54.0.0',
     orientation: 'portrait',
     scheme: 'mealfy',
     userInterfaceStyle: 'light',
@@ -16,19 +39,28 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.mealfy.app',
-      config: {
-        googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY || '',
+      infoPlist: {
+        NSAppTransportSecurity: {
+          NSAllowsLocalNetworking: true,
+        },
       },
     },
     android: {
       adaptiveIcon: {
+        foregroundImage: './assets/icon.png',
         backgroundColor: '#0b5a78',
       },
       package: 'com.mealfy.app',
+      usesCleartextTraffic: true,
     },
-    plugins: ['expo-asset', 'expo-font'],
+    plugins: ['expo-router', 'expo-asset', 'expo-font'],
     extra: {
-      apiUrl: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000',
+      webAppUrl,
+      apiUrl,
+      lanIp,
+      router: {
+        origin: false,
+      },
     },
   },
 };

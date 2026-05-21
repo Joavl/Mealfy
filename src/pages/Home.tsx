@@ -11,6 +11,7 @@ import StoriesRanking from '../components/ui/StoriesRanking';
 import BottomSheet from '../components/ui/BottomSheet';
 import ImpactRegionSelector from '../components/modals/ImpactRegionSelector';
 import { useToast } from '../context/ToastContext';
+import { socialService } from '../backend/services/socialService';
 import './Home.css';
 
 const PIX_COPY_CODE = '00020126360014br.gov.bcb.pix0114664183870001095204000053039865802BR5925OWL4TECH INTELLIGENCE LTD6013FLORIANOPOLIS62070503***6304372E';
@@ -84,9 +85,7 @@ const Home: React.FC = () => {
         <StoriesRanking 
           donors={topDonors} 
           onSelectDonor={(d) => {
-            const isAnon = d.isAnonymous || d.privacySettings?.anonymousMode;
-            const msg = `Doador: ${isAnon ? 'Anônimo' : d.name} • Total: R$ ${d.totalDonated}${(!isAnon && d.instagram && d.privacySettings?.showInstagram !== false) ? ` • IG: ${d.instagram}` : ''}`;
-            showToast(msg, 'info');
+            void socialService.openDonorFacebook(d);
           }} 
         />
       </div>

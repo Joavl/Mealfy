@@ -19,6 +19,8 @@ const seed = async () => {
       role: 'donor',
       status: 'active',
       totalDonated: 150,
+      facebook: 'mealfy.doadores',
+      instagram: '@doadordemo',
       privacySettings: {
         showOnRanking: true,
         showInstagram: true,
@@ -74,6 +76,7 @@ const seed = async () => {
   await MockDatabase.write('donations', []);
   await MockDatabase.write('giftcards', []);
   await MockDatabase.write('entities', []);
+  await MockDatabase.write('featured-donors', { donorIds: [] });
   await MockDatabase.write('audit-logs', []);
 
   console.log('✅ Seed completed!');

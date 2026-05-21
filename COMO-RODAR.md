@@ -1,0 +1,98 @@
+# Mealfy — como rodar (localhost NÃO abre sozinho)
+
+`localhost` só funciona **depois** de iniciar os servidores. Se o navegador der erro, é porque falta um destes comandos.
+
+## Seu IP na rede (celular / Expo)
+
+No PowerShell:
+
+```powershell
+ipconfig
+```
+
+Use o **IPv4 da Wi‑Fi** (ex.: `192.168.0.101`). **Não use `localhost` no celular.**
+
+---
+
+## Passo a passo (PC)
+
+### 1. API (porta 3000)
+
+```powershell
+cd Mealfy
+npm run dev:api
+```
+
+Deixe esse terminal aberto. Teste: http://localhost:3000/health → deve responder.
+
+Se der *“porta em uso”*, algo já está na 3000 (pode ser a API antiga). Feche o outro terminal ou mate o processo na porta 3000.
+
+### 2. Site completo (porta 5173) — carrossel, mapa, doação
+
+**Novo terminal:**
+
+```powershell
+cd Mealfy
+npm run dev
+```
+
+Deixe aberto. Abra no navegador:
+
+- http://localhost:5173  
+- ou http://192.168.0.101:5173  
+
+Tem que aparecer o Mealfy com **carrossel de doadores** no topo.
+
+### 3. Firewall (se o celular não abrir o site)
+
+PowerShell **como Administrador**:
+
+```powershell
+cd Mealfy
+npm run firewall
+```
+
+### 4. Expo Go
+
+**Outro terminal:**
+
+```powershell
+cd Mealfy
+npm run dev:mobile
+```
+
+Escaneie o QR (`exp://192.168.0.101:8083`). O app carrega o site da etapa 2 — **etapa 2 tem que estar rodando**.
+
+Se ficar em branco: no app toque **↻** (recarregar) no topo.
+
+---
+
+## Arquivo `.env` (raiz Mealfy)
+
+Para login/API no celular funcionar:
+
+```
+VITE_API_URL=http://192.168.0.101:3000
+VITE_DISABLE_LOCAL_FALLBACK=false
+```
+
+Troque `192.168.0.101` pelo seu IPv4.
+
+## `mobile/.env`
+
+```
+EXPO_PUBLIC_WEB_APP_URL=http://192.168.0.101:5173
+EXPO_PUBLIC_API_URL=http://192.168.0.101:3000
+```
+
+---
+
+## Contas de teste
+
+| Perfil | E-mail |
+|--------|--------|
+| Doador | doador@mealfy.com |
+| Entidade | entidade@mealfy.com |
+| Admin | admin@mealfy.com |
+
+Senha mock: qualquer (ex. `mock`).

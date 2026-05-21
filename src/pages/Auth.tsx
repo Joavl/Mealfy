@@ -6,6 +6,7 @@ import { useAppContext } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
 import type { UserRole } from '../backend/types';
 import { MealfyLogo } from '../components/ui/MealfyLogo';
+import { socialService } from '../backend/services/socialService';
 import './Auth.css';
 
 const Auth: React.FC = () => {
@@ -174,7 +175,7 @@ const Auth: React.FC = () => {
 
         <button
           className="social-btn facebook active:scale-95 transition-transform"
-          onClick={() => showToast('Essa opção estará disponível em breve.', 'info')}
+          onClick={() => socialService.openMealfyFacebook()}
         >
           <span className="facebook-icon">f</span>
           Entrar com Facebook

@@ -26,6 +26,7 @@ public static class DependencyInjection
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IFamilyService, FamilyService>();
+        services.AddScoped<ISocialRedirectService, SocialRedirectService>();
         services.AddSingleton<IFirebaseTokenVerifier, FirebaseTokenVerifier>();
 
         return services;

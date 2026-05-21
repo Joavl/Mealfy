@@ -67,13 +67,13 @@ npm run dev
 
 `.env`: `VITE_API_URL=http://localhost:3000`
 
-## Mobile
+## Mobile (Expo Go)
 
-```bash
-cd Mealfy/mobile
-npm install
-npm start
-```
+App **nativo**: login, início, mapa (`npm run dev:api` + `npm run dev:mobile`).
+
+Versão web no celular (opcional): também `npm run dev` e abrir *Versão web* no app.
+
+`mobile/.env`: `EXPO_PUBLIC_API_URL=http://IP_DO_PC:3000`
 
 ## Contas demo (seed)
 

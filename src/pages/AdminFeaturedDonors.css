@@ -1,0 +1,115 @@
+.admin-featured-page .content {
+  padding-bottom: 100px;
+}
+
+.featured-intro {
+  background: var(--color-surface-highest, #fff);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--spacing-4, 16px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-outline, #64748b);
+  margin-bottom: var(--spacing-3, 12px);
+}
+
+.featured-slots {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.featured-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.slot-pos {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-primary, #0b5a78);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.slot-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.slot-info strong {
+  font-size: 0.9rem;
+  color: var(--color-text-main, #0c1222);
+}
+
+.slot-meta {
+  font-size: 0.7rem;
+  color: var(--color-outline, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slot-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--color-surface-highest, #f1f5f9);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary, #0b5a78);
+  cursor: pointer;
+}
+
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.icon-btn.danger {
+  color: #c64b38;
+}
+
+.search-input,
+.pick-select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.pick-select {
+  margin-bottom: 12px;
+}
