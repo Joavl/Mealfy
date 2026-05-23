@@ -162,6 +162,27 @@
   box-shadow: 0 12px 24px rgba(28, 110, 216, 0.22);
 }
 
+.social-btn.google {
+  background: white;
+  color: #1f2420;
+  border: 1px solid rgba(31, 36, 32, 0.12);
+  box-shadow: 0 8px 20px rgba(31, 36, 32, 0.06);
+}
+
+.google-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  background: linear-gradient(135deg, #ea4335, #fbbc05, #34a853);
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
 .login-view .login-hero {
   background:
     linear-gradient(145deg, rgba(var(--color-primary-rgb), 0.1), transparent 45%),

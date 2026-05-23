@@ -25,6 +25,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminFeaturedDonors from './pages/AdminFeaturedDonors';
 import Unauthorized from './pages/Unauthorized';
 import Register from './pages/Register';
+import RegisterBeneficiary from './pages/RegisterBeneficiary';
 import IndicateFamily from './pages/IndicateFamily';
 
 import './App.css';
@@ -51,7 +52,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAppContext();
   
   // We hide the bottom tab bar on certain screens
-  const hideTabBarRoutes = ['/auth', '/register', '/donate', '/success', '/unauthorized'];
+  const hideTabBarRoutes = ['/auth', '/register', '/register-beneficiary', '/donate', '/success', '/unauthorized'];
   const isHiddenRoute = hideTabBarRoutes.some(route => location.pathname.startsWith(route));
   
   // Hide if beneficiary or admin (they have their own navigation or are simple)
@@ -77,6 +78,9 @@ function App() {
               <Routes>
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/register-donor" element={<Register initialStep="donor" />} />
+                <Route path="/register-entity" element={<Register initialStep="entity" />} />
+                <Route path="/register-beneficiary" element={<RegisterBeneficiary />} />
                 <Route path="/unauthorized" element={<Unauthorized />} />
             
             {/* Common Public/Semi-Public Routes (Restricted for Beneficiaries) */}

@@ -11,6 +11,7 @@ import {
 } from '../../lib/ifoodGift';
 
 import { donationsApi } from '../../api/donationsApi';
+import { giftcardsApi } from '../../api/giftcardsApi';
 import { handleApiError } from '../utils/fallback';
 
 const DONATIONS_KEY = 'donations_db';
@@ -59,7 +60,12 @@ export const donationService = {
   }): Promise<{ donation: Donation, giftCard: GiftCard, familyAssigned: Family }> => {
     if (payload.familyId) {
       try {
-        const response = await donationsApi.createDonation({ familyId: payload.familyId, amount: payload.amount });
+        const response = await donationsApi.createDonation({
+          familyId: payload.familyId,
+          amount: payload.amount,
+          communityId: payload.communityId,
+          message: payload.message,
+        });
         if (response && response.donation) {
           const giftCard = normalizeGiftCard({
             ...response.giftCard,
@@ -161,7 +167,10 @@ export const donationService = {
     communityId: string;
   }): Promise<{ donations: Donation[], giftCards: GiftCard[] }> => {
     try {
-      const results = await donationsApi.createBatchDonation(payload.familyIds);
+      const results = await donationsApi.createBatchDonation(
+        payload.familyIds,
+        payload.amountPerFamily,
+      );
       if (results && results.length > 0) {
         return {
           donations: results.map((r: any) => r.donation),
@@ -249,6 +258,15 @@ export const donationService = {
   },
 
   getGiftCardsByFamily: async (familyId: string): Promise<GiftCard[]> => {
+    try {
+      const remote = await giftcardsApi.listByFamily(familyId);
+      if (remote?.length) {
+        return remote.map((g) => normalizeGiftCard({ ...g, donationId: g.donationId, amount: g.amount }));
+      }
+    } catch (e) {
+      handleApiError(e, 'List Gift Cards By Family');
+    }
+
     await randomDelay(200, 400);
     donationService.initDB();
     const giftCards = storage.get<GiftCard[]>(GIFTCARDS_KEY, mockGiftCards);
@@ -259,9 +277,43 @@ export const donationService = {
   },
 
   getActiveGiftForFamily: async (familyId: string): Promise<GiftCard | null> => {
+    try {
+      const remote = await giftcardsApi.getActiveForFamily(familyId);
+      if (remote) return normalizeGiftCard({ ...remote, donationId: remote.donationId, amount: remote.amount });
+    } catch (e) {
+      handleApiError(e, 'Get Active Gift');
+    }
+
     const cards = await donationService.getGiftCardsByFamily(familyId);
     const active = cards.find((c) => c.status === 'sent' || c.status === 'generated' || c.status === 'delivered');
     return active ?? cards[0] ?? null;
+  },
+
+  redeemGiftCard: async (giftCardId: string): Promise<{ giftCard: GiftCard; ifood?: { redeemDeepLink: string } }> => {
+    try {
+      const res = await giftcardsApi.redeem(giftCardId);
+      if (res?.giftCard) {
+        return {
+          giftCard: normalizeGiftCard({
+            ...res.giftCard,
+            donationId: res.giftCard.donationId,
+            amount: res.giftCard.amount,
+          }),
+          ifood: res.ifood,
+        };
+      }
+    } catch (e) {
+      handleApiError(e, 'Redeem Gift Card');
+    }
+
+    await randomDelay(300, 600);
+    donationService.initDB();
+    const cards = storage.get<GiftCard[]>(GIFTCARDS_KEY, mockGiftCards);
+    const idx = cards.findIndex((c) => c.id === giftCardId);
+    if (idx === -1) throw new Error('Gift card não encontrado');
+    cards[idx] = { ...cards[idx], status: 'redeemed' };
+    storage.set(GIFTCARDS_KEY, cards);
+    return { giftCard: normalizeGiftCard(cards[idx]) };
   },
 
   createBigDonation: async (payload: {

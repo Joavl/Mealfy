@@ -3,6 +3,12 @@ import { FamiliesService } from './families.service';
 import { createFamilySchema, updateFamilyStatusSchema } from './families.validator';
 
 export class FamiliesController {
+  static async getAwaitingEntity(req: Request, res: Response) {
+    const region = req.query.region as string | undefined;
+    const list = await FamiliesService.getFamiliesAwaitingEntity(region);
+    return res.json(list);
+  }
+
   static async getPublic(req: Request, res: Response) {
     const families = await FamiliesService.getPublicFamilies({
       region: req.query.region as string,
@@ -25,6 +31,14 @@ export class FamiliesController {
   static async updateStatus(req: Request, res: Response) {
     const data = updateFamilyStatusSchema.parse(req.body);
     const family = await FamiliesService.updateStatus(req.params.id as string, data);
+    return res.json(family);
+  }
+
+  static async assignEntity(req: Request, res: Response) {
+    const family = await FamiliesService.assignEntity(
+      req.params.id as string,
+      req.user,
+    );
     return res.json(family);
   }
 }

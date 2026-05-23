@@ -95,9 +95,14 @@ export interface Family {
   latitude: number;
   longitude: number;
   photoUrl?: string;
+  familyName?: string;
+  responsibleName?: string;
+  responsibleCpf?: string;
+  needsEntitySupport?: boolean;
+  region?: string;
   authorizingEntityId?: string; // If registered by an entity
   createdByEntityId?: string;
-  sourceType?: 'entity' | 'donor_indication';
+  sourceType?: 'entity' | 'donor_indication' | 'beneficiary_self';
   sourceEntityName?: string;
   sourceLabel?: string;
   originalIndicationId?: string;

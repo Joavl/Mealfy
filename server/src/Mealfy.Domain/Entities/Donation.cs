@@ -6,8 +6,11 @@ public class Donation
     public Guid DonorId { get; set; }
     public Guid FamilyId { get; set; }
     public decimal Amount { get; set; }
+    public string? CommunityId { get; set; }
+    public string? Message { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public User Donor { get; set; } = null!;
     public Family Family { get; set; } = null!;
+    public GiftCard? GiftCard { get; set; }
 }

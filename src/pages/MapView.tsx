@@ -43,6 +43,13 @@ const RecenterControls = ({ center }: { center: [number, number] }) => {
 import { isBeneficiaryEligible } from '../backend/utils/timeUtils';
 import { isPubliclyVisibleFamily } from '../backend/utils/familyUtils';
 
+/** Evita que cliques no popup sejam engolidos pelo Leaflet */
+const stopMapEvent = (e: React.SyntheticEvent) => {
+  e.stopPropagation();
+  L.DomEvent.stopPropagation(e.nativeEvent as Event);
+  L.DomEvent.preventDefault(e.nativeEvent as Event);
+};
+
 const MapView: React.FC = () => {
   const navigate = useNavigate();
   const { selectedRegion } = useAppContext();
@@ -115,6 +122,14 @@ const MapView: React.FC = () => {
     );
   };
 
+  const goToFamilyDetails = (familyId: string) => {
+    navigate(`/family/${familyId}`);
+  };
+
+  const goToDonateFamily = (family: Family) => {
+    navigate('/donate', { state: { targetFamily: family } });
+  };
+
   const handleRecenter = () => {
     // In a real app we'd get device coordinates. Here we recenter to SP Base.
     setMapCenter([-23.5505, -46.6333]);
@@ -157,19 +172,32 @@ const MapView: React.FC = () => {
                 position={[fam.latitude, fam.longitude]}
                 icon={isSelected ? fullHeartIcon : (isEligible ? brokenHeartIcon : fullHeartIcon)}
               >
-                <Popup>
+                <Popup closeOnClick={false} autoClose={false}>
+                  <div
+                    className="map-popup-content"
+                    onClick={stopMapEvent}
+                    onMouseDown={stopMapEvent}
+                    onTouchStart={stopMapEvent}
+                  >
                   <div className="popup-header">
                     <h4 style={{ margin: 0, fontSize: '1rem' }}>{fam.representativeName}</h4>
                     <span style={{ fontSize: '0.75rem', opacity: 0.9 }}>{fam.childrenCount} filhos</span>
                   </div>
                   <div className="popup-body">
+                    {fam.photoUrl && (
+                      <img
+                        src={fam.photoUrl}
+                        alt={fam.representativeName}
+                        className="map-popup-photo"
+                      />
+                    )}
                     <p style={{ margin: '0 0 10px 0', fontSize: '0.85rem', color: '#666' }}>
                       <strong>{fam.neighborhood}</strong><br/>
-                      {fam.description}
+                      {fam.description || 'Família cadastrada na rede Mealfy.'}
                     </p>
                     {isEligible ? (
                       <div style={{ color: 'var(--color-error)', fontWeight: 600, fontSize: '0.8rem', display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        💔 Precisa de apoio Nível {fam.priorityLevel}
+                        💔 Precisa de apoio Nível {fam.priorityLevel || 3}
                       </div>
                     ) : (
                       <div style={{ color: 'var(--color-success)', fontWeight: 600, fontSize: '0.8rem', display: 'flex', gap: '4px', alignItems: 'center' }}>
@@ -177,37 +205,58 @@ const MapView: React.FC = () => {
                       </div>
                     )}
                     <div style={{ marginTop: '6px', paddingTop: '6px', borderTop: '1px solid #eee', fontSize: '0.75rem', color: '#888' }}>
-                      Fonte: {fam.sourceEntityName || 'Parceiro Oficial'}
+                      Fonte: {fam.sourceEntityName || fam.sourceLabel || 'Cadastro Mealfy'}
                     </div>
                   </div>
                   
-                  <div className="popup-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <Button 
-                      variant="outline" 
-                      size="small" 
-                      fullWidth 
+                  <div className="popup-actions map-popup-actions">
+                    <button
+                      type="button"
+                      className="map-popup-btn map-popup-btn-outline"
                       onClick={(e) => {
-                         e.stopPropagation();
-                         navigate(`/family/${fam.id}`);
+                        stopMapEvent(e);
+                        goToFamilyDetails(fam.id);
                       }}
                     >
                       Detalhes
-                    </Button>
+                    </button>
                     
-                    {isEligible && (
-                      <Button 
-                        size="small" 
-                        fullWidth 
-                        variant={isSelected ? 'outline' : 'primary'}
-                        className={isSelected ? 'border-primary text-primary' : 'bg-error border-error text-inverted'}
+                    {isEligible ? (
+                      <>
+                        <button
+                          type="button"
+                          className="map-popup-btn map-popup-btn-primary"
+                          onClick={(e) => {
+                            stopMapEvent(e);
+                            goToDonateFamily(fam);
+                          }}
+                        >
+                          Doar
+                        </button>
+                        <button
+                          type="button"
+                          className={`map-popup-btn ${isSelected ? 'map-popup-btn-outline' : 'map-popup-btn-secondary'}`}
+                          onClick={(e) => {
+                            stopMapEvent(e);
+                            toggleSelection(fam.id);
+                          }}
+                        >
+                          {isSelected ? 'Remover da seleção' : 'Selecionar'}
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        className="map-popup-btn map-popup-btn-outline"
                         onClick={(e) => {
-                           e.stopPropagation();
-                           toggleSelection(fam.id);
+                          stopMapEvent(e);
+                          goToFamilyDetails(fam.id);
                         }}
                       >
-                        {isSelected ? 'Remover' : 'Selecionar'}
-                      </Button>
+                        Ver histórico
+                      </button>
                     )}
+                  </div>
                   </div>
                 </Popup>
               </Marker>

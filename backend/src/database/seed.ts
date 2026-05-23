@@ -55,6 +55,7 @@ const seed = async () => {
 
   const families = [
     // Heliópolis
+    { id: 'family-1', representativeName: 'Ana Costa', region: 'Recife · PE', neighborhood: 'Boa Viagem', childrenCount: 2, status: 'approved', supportStatus: 'needs_help', sourceType: 'entity', sourceLabel: 'Instituto Esperança', latitude: -8.05, longitude: -34.88 },
     { id: 'f-helio-1', representativeName: 'Família Silva (Helio)', region: 'Heliópolis', childrenCount: 2, status: 'approved', supportStatus: 'needs_help', sourceType: 'entity', sourceLabel: 'Cadastrado por Admin', latitude: -23.612, longitude: -46.593 },
     { id: 'f-helio-2', representativeName: 'Família Souza (Helio Fed)', region: 'Heliópolis', childrenCount: 1, status: 'approved', supportStatus: 'fed', sourceType: 'entity', sourceLabel: 'Cadastrado por Admin', latitude: -23.613, longitude: -46.594 },
     { id: 'f-helio-3', representativeName: 'Família Lima (Helio Pend)', region: 'Heliópolis', childrenCount: 3, status: 'pending', supportStatus: 'needs_help', sourceType: 'donor_indication', sourceLabel: 'Indicado', latitude: -23.614, longitude: -46.595 },

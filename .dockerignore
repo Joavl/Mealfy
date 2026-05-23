@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+**/.vs/
+**/node_modules/
+**/dist/
+**/.git/
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/firebase-service-account.json
+**/.env
+**/.env.*

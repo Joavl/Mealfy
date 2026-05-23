@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import './BottomSheet.css';
 
@@ -22,7 +23,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title, child
 
   if (!render) return null;
 
-  return (
+  return createPortal(
     <div className={`bottom-sheet-overlay ${isOpen ? 'open' : 'closed'}`} onClick={onClose} onAnimationEnd={handleAnimationEnd}>
       <div className={`bottom-sheet-content ${isOpen ? 'open' : 'closed'}`} onClick={e => e.stopPropagation()}>
         <div className="bottom-sheet-drag-handle">
@@ -38,7 +39,8 @@ const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title, child
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 

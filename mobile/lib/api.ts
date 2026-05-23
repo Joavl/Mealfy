@@ -22,11 +22,11 @@ export type SessionUser = {
   role: string;
 };
 
-export async function loginMock(email: string): Promise<SessionUser> {
+export async function loginMock(email: string, password: string): Promise<SessionUser> {
   const res = await fetch(`${API_URL}/auth/login/mock`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password: 'mock' }),
+    body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
   if (!res.ok) {

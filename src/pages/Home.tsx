@@ -8,11 +8,13 @@ import { rankingService } from '../backend/services/rankingService';
 import type { Family } from '../backend/types';
 import { Trophy, Loader2, Copy, CheckCircle, QrCode } from 'lucide-react';
 import StoriesRanking from '../components/ui/StoriesRanking';
+import DonorBriefCard, { type CarouselDonorView } from '../components/modals/DonorBriefCard';
 import BottomSheet from '../components/ui/BottomSheet';
 import ImpactRegionSelector from '../components/modals/ImpactRegionSelector';
 import { useToast } from '../context/ToastContext';
-import { socialService } from '../backend/services/socialService';
 import './Home.css';
+
+const FEATURED_UPDATED_EVENT = 'mealfy:featured-donors-updated';
 
 const PIX_COPY_CODE = '00020126360014br.gov.bcb.pix0114664183870001095204000053039865802BR5925OWL4TECH INTELLIGENCE LTD6013FLORIANOPOLIS62070503***6304372E';
 const PIX_KEY = '66418387000109';
@@ -24,15 +26,26 @@ const Home: React.FC = () => {
   const { showToast } = useToast();
   const [families, setFamilies] = useState<Family[]>([]);
   const [topDonors, setTopDonors] = useState<any[]>([]);
+  const [selectedDonor, setSelectedDonor] = useState<CarouselDonorView | null>(null);
   const [loadingFamilies, setLoadingFamilies] = useState(true);
   
   const [isRegionSelectorOpen, setIsRegionSelectorOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [hasCopiedPix, setHasCopiedPix] = useState(false);
 
-  useEffect(() => {
+  const refreshCarousel = () => {
     rankingService.getTopDonors().then(setTopDonors);
-    
+  };
+
+  useEffect(() => {
+    refreshCarousel();
+
+    const onFeaturedUpdated = () => refreshCarousel();
+    window.addEventListener(FEATURED_UPDATED_EVENT, onFeaturedUpdated);
+    return () => window.removeEventListener(FEATURED_UPDATED_EVENT, onFeaturedUpdated);
+  }, []);
+
+  useEffect(() => {
     setLoadingFamilies(true);
     const filters = selectedRegion ? { region: selectedRegion } : undefined;
     familyService.getFamilies(filters).then(res => {
@@ -84,9 +97,7 @@ const Home: React.FC = () => {
 
         <StoriesRanking 
           donors={topDonors} 
-          onSelectDonor={(d) => {
-            void socialService.openDonorFacebook(d);
-          }} 
+          onSelectDonor={(d) => setSelectedDonor(d)} 
         />
       </div>
 
@@ -243,6 +254,8 @@ const Home: React.FC = () => {
           {hasCopiedPix ? 'Código copiado' : 'Copiar código Pix'}
         </Button>
       </BottomSheet>
+
+      <DonorBriefCard donor={selectedDonor} onClose={() => setSelectedDonor(null)} />
 
       <ImpactRegionSelector 
         isOpen={isRegionSelectorOpen} 

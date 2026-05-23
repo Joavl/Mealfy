@@ -1,12 +1,18 @@
-# Expo Go = site Mealfy completo
+# Mealfy no celular (Expo Go + APK)
 
-No celular você vê **o mesmo site** do PC:
+O app mobile é um **WebView** do site Mealfy (carrossel, mapa, cadastros, doação).
 
-- Carrossel de doadores (Stories)
-- Mapa e localizações
-- Doação iFood, entidade, perfil, etc.
+## Pré-requisitos
 
-## Obrigatório: 2 terminais no PC
+- PC e celular na **mesma Wi‑Fi**
+- [Expo Go](https://expo.dev/go) instalado no Android/iPhone
+- Conta Expo (gratuita) só para **gerar APK** → [expo.dev/signup](https://expo.dev/signup)
+
+---
+
+## Expo Go (desenvolvimento)
+
+### 1. Três terminais no PC
 
 ```powershell
 cd Mealfy
@@ -14,32 +20,84 @@ cd Mealfy
 # Terminal 1 — API
 npm run dev:api
 
-# Terminal 2 — SITE (sem isso = tela de erro no Expo)
+# Terminal 2 — Site
 npm run dev
+
+# Terminal 3 — Expo (sincroniza IP + QR Code)
+npm run expo:go
 ```
 
-Abra no PC para conferir: **http://localhost:5173** — deve ter carrossel e mapa.
+Atalho equivalente: `npm run dev:mobile`
 
-## Terminal 3 — Expo
+### 2. No celular
+
+1. Abra **Expo Go**
+2. Escaneie o **QR Code** do terminal 3
+3. Aguarde o site carregar
+
+### Se não conectar
 
 ```powershell
-npm run dev:mobile
+npm run sync:lan      # atualiza IP no .env
+npm run firewall      # PowerShell como Administrador
+npm run dev:check     # testa site + API
 ```
 
-Escaneie o QR (mesma Wi‑Fi).
+Teste no navegador do celular: `http://SEU_IP:5173` (o IP aparece no `sync:lan`).
 
-## `.env`
+### Rede difícil (4G / Wi‑Fi bloqueada)
 
-Raiz `Mealfy/.env` (API no celular):
-
-```
-VITE_API_URL=http://SEU_IP:3000
+```powershell
+npm run dev:mobile:tunnel
 ```
 
-`mobile/.env` (URL do site no WebView):
+Mais lento, mas passa pela internet da Expo.
 
-```
-EXPO_PUBLIC_WEB_APP_URL=http://SEU_IP:5173
+---
+
+## Baixar APK (instalar no Android)
+
+O APK embute a URL do site (`http://SEU_IP:5173`). **PC e celular na mesma Wi‑Fi** com `npm run dev` e `npm run dev:api` rodando.
+
+### Build na nuvem (recomendado)
+
+```powershell
+cd Mealfy
+npm install -g eas-cli   # se ainda não tiver
+eas login
+npm run build:apk
 ```
 
-`ipconfig` → IPv4 da Wi‑Fi.
+No fim, abra o **link** no terminal e baixe o `.apk`.
+
+Instale no Android → permitir **fontes desconhecidas**.
+
+### Build local (Android Studio instalado)
+
+```powershell
+npm run build:apk:local
+```
+
+Gera `Mealfy-release.apk` na pasta do projeto.
+
+---
+
+## Variáveis (`mobile/.env`)
+
+Atualizadas automaticamente por `npm run sync:lan`:
+
+| Variável | Uso |
+|----------|-----|
+| `EXPO_PUBLIC_WEB_APP_URL` | Site no WebView |
+| `EXPO_PUBLIC_API_URL` | API (referência) |
+
+---
+
+## Produção (futuro)
+
+Quando o site estiver publicado (ex.: Firebase Hosting), altere no `eas.json` perfil `production` as URLs para `https://...` e rode:
+
+```powershell
+cd mobile
+eas build --platform android --profile production
+```

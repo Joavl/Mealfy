@@ -6,6 +6,8 @@ import { useAppContext } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
 import { familyService } from '../backend/services/familyService';
 import type { Family } from '../backend/types';
+import MaskedInput from '../components/ui/MaskedInput';
+import { applyMask } from '../utils/inputMasks';
 import './RegisterFamily.css';
 
 const RegisterFamily: React.FC = () => {
@@ -31,9 +33,15 @@ const RegisterFamily: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    let nextValue: string | number = value;
+    if (name === 'childrenCount') {
+      nextValue = parseInt(value) || 0;
+    } else if (name === 'state') {
+      nextValue = applyMask('uf', value);
+    }
+    setFormData((prev) => ({
       ...prev,
-      [name]: name === 'childrenCount' ? parseInt(value) || 0 : value
+      [name]: nextValue,
     }));
   };
 
@@ -200,12 +208,15 @@ const RegisterFamily: React.FC = () => {
               </div>
               <div className="form-group w-1/3">
                 <label className="form-label">UF</label>
-                <input
-                  type="text"
+                <MaskedInput
+                  mask="uf"
                   name="state"
                   value={formData.state}
-                  onChange={handleChange}
+                  onValueChange={(state) => setFormData((prev) => ({ ...prev, state }))}
                   className="form-input"
+                  placeholder="SP"
+                  maxLength={2}
+                  inputMode="text"
                 />
               </div>
             </div>

@@ -10,20 +10,30 @@ export class DonationsService {
     return 50; // 3+ children
   }
 
-  static async create(familyId: string, donor: User): Promise<{ donation: Donation, giftCard: GiftCard }> {
+  static async create(
+    familyId: string,
+    donor: User,
+    amountOverride?: number,
+    message?: string,
+    communityId?: string,
+  ): Promise<{ donation: Donation, giftCard: GiftCard }> {
     const families = await MockDatabase.read<Family>('families');
     const fIdx = families.findIndex(f => f.id === familyId);
 
     if (fIdx === -1) throw new AppError('Family not found', 404);
     
     const family = families[fIdx];
-    const amount = this.calculateAmount(family.childrenCount);
+    const amount = amountOverride && amountOverride > 0
+      ? amountOverride
+      : this.calculateAmount(family.childrenCount);
 
     const donation: Donation = {
       id: `don-${uuidv4()}`,
       donorId: donor.id,
       familyId: family.id,
       amount,
+      communityId,
+      message,
       createdAt: new Date().toISOString()
     };
 
@@ -31,11 +41,13 @@ export class DonationsService {
       id: `gc-${uuidv4()}`,
       donationId: donation.id,
       familyId: family.id,
+      donorId: donor.id,
       provider: 'ifood',
       code: `MEALFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
       amount,
       status: 'sent',
       label: `Crédito iFood — R$ ${amount}`,
+      message,
       createdAt: new Date().toISOString()
     };
 
@@ -66,11 +78,11 @@ export class DonationsService {
     return { donation, giftCard };
   }
 
-  static async createBatch(familyIds: string[], donor: User): Promise<any[]> {
+  static async createBatch(familyIds: string[], donor: User, amountPerFamily?: number): Promise<any[]> {
     const results = [];
     for (const id of familyIds) {
       try {
-        const res = await this.create(id, donor);
+        const res = await this.create(id, donor, amountPerFamily);
         results.push(res);
       } catch (e) {
         console.error(`Failed to donate to ${id}`, e);

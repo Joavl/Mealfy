@@ -20,7 +20,7 @@
       "anonymousMode": false
     },
     "impactPreferences": {
-      "preferredRegion": "Paraisópolis"
+      "preferredRegion": "Heliópolis"
     }
   },
   {
@@ -46,5 +46,15 @@
     "role": "beneficiary",
     "status": "active",
     "beneficiaryId": "family-1"
+  },
+  {
+    "id": "u-9a18b183-1bc7-4d67-a96e-ebc203f0811c",
+    "name": "alisson vercel",
+    "email": "vercel@email.com",
+    "role": "entity",
+    "entityId": "e-fa3a4976-efdc-45cf-bb32-99b3850e809f",
+    "phone": "(11) 92222-3133",
+    "totalDonated": 0,
+    "status": "pending"
   }
 ]

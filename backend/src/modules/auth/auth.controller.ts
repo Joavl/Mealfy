@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import { registerDonorSchema, registerEntitySchema, loginSchema } from './auth.validator';
+import { registerDonorSchema, registerEntitySchema, registerBeneficiarySchema, loginSchema } from './auth.validator';
 
 export class AuthController {
   static async registerDonor(req: Request, res: Response) {
@@ -15,9 +15,15 @@ export class AuthController {
     return res.status(201).json(user);
   }
 
+  static async registerBeneficiary(req: Request, res: Response) {
+    const data = registerBeneficiarySchema.parse(req.body);
+    const result = await AuthService.registerBeneficiary(data);
+    return res.status(201).json(result);
+  }
+
   static async login(req: Request, res: Response) {
-    const { email } = loginSchema.parse(req.body);
-    const user = await AuthService.login(email);
+    const { email, password } = loginSchema.parse(req.body);
+    const user = await AuthService.login(email, password);
     return res.json({
       token: user.id, // Emitting user ID as mock token
       user

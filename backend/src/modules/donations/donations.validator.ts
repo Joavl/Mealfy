@@ -7,6 +7,7 @@ export const createDonationSchema = z.object({
 
 export const batchDonationSchema = z.object({
   familyIds: z.array(z.string()),
+  amountPerFamily: z.number().positive().optional(),
 });
 
 export const regionalDonationSchema = z.object({

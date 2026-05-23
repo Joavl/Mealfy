@@ -6,18 +6,21 @@ import { useAppContext } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
 import type { UserRole } from '../backend/types';
 import { MealfyLogo } from '../components/ui/MealfyLogo';
+import MaskedInput from '../components/ui/MaskedInput';
 import { socialService } from '../backend/services/socialService';
+import { maskCpf } from '../utils/inputMasks';
 import './Auth.css';
 
 const Auth: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loginAsRole, isAuthenticated, user } = useAppContext();
+  const { loginAsRole, login, isAuthenticated, user } = useAppContext();
   const { showToast } = useToast();
 
   const [view, setView] = useState<'picker' | 'login'>('picker');
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -34,18 +37,25 @@ const Auth: React.FC = () => {
     if (role === 'donor') setIdentifier('doador@mealfy.com');
     if (role === 'admin') setIdentifier('admin@mealfy.com');
     if (role === 'entity') setIdentifier('entidade@mealfy.com');
-    if (role === 'beneficiary') setIdentifier('123.456.789-00');
+    if (role === 'beneficiary') setIdentifier(maskCpf('12345678900'));
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRole || !identifier) return;
+
+    if (selectedRole !== 'beneficiary' && password.length < 6) {
+      showToast('Informe sua senha (mínimo 6 caracteres).', 'error');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await loginAsRole(selectedRole, identifier);
+      await loginAsRole(selectedRole, identifier, password || undefined);
       showToast('Login realizado com sucesso', 'success');
     } catch (err) {
-      showToast("Erro ao entrar. Verifique seus dados e tente novamente.", 'error');
+      const msg = err instanceof Error ? err.message : 'Erro ao entrar. Verifique seus dados e tente novamente.';
+      showToast(msg, 'error');
       setIsLoading(false);
     }
   };
@@ -75,17 +85,48 @@ const Auth: React.FC = () => {
           <form onSubmit={handleLogin} className="flex-col gap-5 mt-4">
             <div className="form-group">
               <label className="form-label">
-                {selectedRole === 'beneficiary' ? 'CPF ou Telefone' : 'E-mail ou CNPJ'}
+                {selectedRole === 'beneficiary' ? 'CPF ou Telefone' : 'E-mail'}
               </label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder={selectedRole === 'beneficiary' ? '000.000.000-00' : 'nome@exemplo.com'}
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                required
-              />
+              {selectedRole === 'beneficiary' ? (
+                <MaskedInput
+                  mask="cpfOrPhone"
+                  className="form-input"
+                  placeholder="000.000.000-00 ou (00) 00000-0000"
+                  value={identifier}
+                  onValueChange={setIdentifier}
+                  required
+                />
+              ) : (
+                <input
+                  type="email"
+                  className="form-input"
+                  placeholder="nome@exemplo.com"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  required
+                />
+              )}
             </div>
+
+            {selectedRole !== 'beneficiary' && (
+              <div className="form-group">
+                <label className="form-label">Senha</label>
+                <input
+                  type="password"
+                  className="form-input"
+                  placeholder="Mínimo 6 caracteres"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                  minLength={6}
+                />
+                <p className="text-[10px] text-outline mt-1">
+                  Contas demo: e-mail do sistema (ex: doador@mealfy.com) e senha <strong>mealfy123</strong>.
+                  Contas criadas por você usam a senha definida no cadastro.
+                </p>
+              </div>
+            )}
 
             <Button
               type="submit"
@@ -96,9 +137,77 @@ const Auth: React.FC = () => {
             >
               Continuar
             </Button>
+
+            {selectedRole === 'donor' && (
+              <Button
+                type="button"
+                variant="outline"
+                size="large"
+                fullWidth
+                className="mt-2"
+                onClick={() => navigate('/register-donor')}
+              >
+                Primeira vez? Criar conta de doador
+              </Button>
+            )}
+
+            {selectedRole === 'entity' && (
+              <Button
+                type="button"
+                variant="outline"
+                size="large"
+                fullWidth
+                className="mt-2"
+                onClick={() => navigate('/register-entity')}
+              >
+                Primeira vez? Cadastrar minha entidade
+              </Button>
+            )}
+
+            {selectedRole === 'beneficiary' && (
+              <Button
+                type="button"
+                variant="outline"
+                size="large"
+                fullWidth
+                className="mt-2"
+                onClick={() => navigate('/register-beneficiary')}
+              >
+                Primeira vez? Cadastrar minha família
+              </Button>
+            )}
           </form>
 
-          <div className="text-center mt-auto pb-4 pt-10">
+          <div className="separator my-6 flex items-center justify-center gap-3">
+            <div className="h-px bg-outline/20 flex-1" />
+            <span className="text-xs font-bold text-outline uppercase tracking-widest">ou</span>
+            <div className="h-px bg-outline/20 flex-1" />
+          </div>
+
+          <button
+            type="button"
+            className="social-btn google active:scale-95 transition-transform w-full"
+            disabled={isLoading}
+            onClick={async () => {
+              if (!selectedRole || selectedRole === 'beneficiary') {
+                showToast('Use e-mail e senha para beneficiário, ou escolha Doador/Entidade para Google.', 'info');
+                return;
+              }
+              setIsLoading(true);
+              try {
+                await login('google', selectedRole);
+                showToast('Login com Google realizado!', 'success');
+              } catch {
+                showToast('Erro ao entrar com Google.', 'error');
+                setIsLoading(false);
+              }
+            }}
+          >
+            <span className="google-icon">G</span>
+            Entrar com Google
+          </button>
+
+          <div className="text-center mt-auto pb-4 pt-6">
             <p className="text-xs text-outline opacity-60">Acesso restrito.</p>
           </div>
         </main>
@@ -161,7 +270,7 @@ const Auth: React.FC = () => {
             </div>
             <div className="role-card-text">
               <h3>Sou Beneficiário</h3>
-              <p>Acesse seu painel de recebimentos</p>
+              <p>Cadastre sua família ou acesse o painel</p>
             </div>
             <ArrowRight size={20} className="text-outline/40" />
           </button>

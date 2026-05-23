@@ -1,0 +1,28 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_WEB_APP_URL": "http://192.168.0.16:5173",
+        "EXPO_PUBLIC_API_URL": "http://192.168.0.16:3000"
+      }
+    },
+    "production": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_WEB_APP_URL": "https://christiano-c5714.web.app",
+        "EXPO_PUBLIC_API_URL": "https://SEU-SERVICO.onrender.com"
+      }
+    }
+  }
+}

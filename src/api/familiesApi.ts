@@ -10,4 +10,7 @@ export const familiesApi = {
   getFamilyById: (id: string) => apiRequest(`/families/${id}`, 'GET'),
   createFamily: (data: any) => apiRequest('/families', 'POST', data),
   updateFamilyStatus: (id: string, data: any) => apiRequest(`/families/${id}/status`, 'PATCH', data),
+  getFamiliesAwaitingEntity: (region?: string) =>
+    apiRequest(`/families/awaiting-entity${region ? `?region=${encodeURIComponent(region)}` : ''}`, 'GET'),
+  assignEntityToFamily: (id: string) => apiRequest(`/families/${id}/assign-entity`, 'PATCH', {}),
 };

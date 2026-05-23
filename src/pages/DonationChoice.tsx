@@ -60,7 +60,8 @@ const DonationChoice: React.FC = () => {
           amount: selectedAmount,
           communityId: selectedCommunity.id,
           donorId: user?.id,
-          familyId: targetFamily?.id
+          familyId: targetFamily?.id,
+          message: isRecurrent ? 'Apoio mensal via Mealfy + iFood' : undefined,
         });
       }
 

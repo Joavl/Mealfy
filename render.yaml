@@ -1,0 +1,16 @@
+# Blueprint Render — https://render.com/docs/blueprint-spec
+# Conecte o repositório Git e use "New > Blueprint"
+services:
+  - type: web
+    name: mealfy-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Firebase__ProjectId
+        value: christiano-c5714
+      - key: Firebase__WebApiKey
+        sync: false

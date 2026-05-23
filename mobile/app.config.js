@@ -19,6 +19,7 @@ const webAppUrl =
   process.env.EXPO_PUBLIC_WEB_APP_URL || `http://${lanIp}:${webPort}`;
 const apiUrl =
   process.env.EXPO_PUBLIC_API_URL || `http://${lanIp}:${apiPort}`;
+const usesHttps = webAppUrl.startsWith('https://');
 
 /** @type {import('expo/config').ExpoConfig} */
 export default {
@@ -51,9 +52,25 @@ export default {
         backgroundColor: '#0b5a78',
       },
       package: 'com.mealfy.app',
-      usesCleartextTraffic: true,
+      versionCode: 1,
+      permissions: ['INTERNET', 'ACCESS_NETWORK_STATE'],
     },
-    plugins: ['expo-router', 'expo-asset', 'expo-font'],
+    plugins: [
+      'expo-router',
+      'expo-asset',
+      'expo-font',
+      [
+        'expo-build-properties',
+        {
+          android: {
+            usesCleartextTraffic: !usesHttps,
+          },
+          ios: {
+            flipper: false,
+          },
+        },
+      ],
+    ],
     extra: {
       webAppUrl,
       apiUrl,

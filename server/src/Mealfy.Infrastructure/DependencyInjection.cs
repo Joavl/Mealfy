@@ -27,7 +27,11 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IFamilyService, FamilyService>();
         services.AddScoped<ISocialRedirectService, SocialRedirectService>();
+        services.AddScoped<IIfoodGiftService, IfoodGiftService>();
+        services.AddScoped<IDonationService, DonationService>();
+        services.AddScoped<IGiftCardService, GiftCardService>();
         services.AddSingleton<IFirebaseTokenVerifier, FirebaseTokenVerifier>();
+        services.AddSingleton<IFirestoreCadastroService, FirestoreCadastroService>();
 
         return services;
     }

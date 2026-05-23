@@ -13,6 +13,7 @@ public class MealfyDbContext : DbContext
     public DbSet<FamilyValidation> FamilyValidations => Set<FamilyValidation>();
     public DbSet<DonorIndication> Indications => Set<DonorIndication>();
     public DbSet<Donation> Donations => Set<Donation>();
+    public DbSet<GiftCard> GiftCards => Set<GiftCard>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -65,6 +66,17 @@ public class MealfyDbContext : DbContext
             e.Property(x => x.Amount).HasPrecision(18, 2);
             e.HasOne(x => x.Donor).WithMany().HasForeignKey(x => x.DonorId);
             e.HasOne(x => x.Family).WithMany(x => x.Donations).HasForeignKey(x => x.FamilyId);
+            e.HasOne(x => x.GiftCard).WithOne(x => x.Donation).HasForeignKey<GiftCard>(x => x.DonationId);
+        });
+
+        modelBuilder.Entity<GiftCard>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Amount).HasPrecision(18, 2);
+            e.HasIndex(x => x.FamilyId);
+            e.HasIndex(x => x.DonorId);
+            e.HasOne(x => x.Family).WithMany().HasForeignKey(x => x.FamilyId);
+            e.HasOne(x => x.Donor).WithMany().HasForeignKey(x => x.DonorId);
         });
     }
 }

@@ -12,4 +12,15 @@ public record FamilyDto(
     double Latitude,
     double Longitude,
     string? City,
-    string? State);
+    string? State,
+    string? Neighborhood = null,
+    string? ShortAddress = null,
+    string? Description = null,
+    string? MainNeed = null,
+    string? PhotoUrl = null,
+    string? FamilyName = null,
+    string? ResponsibleName = null,
+    string? ResponsibleCpf = null,
+    object[]? Children = null,
+    bool NeedsEntitySupport = false,
+    int PriorityLevel = 3);

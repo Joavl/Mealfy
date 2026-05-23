@@ -11,6 +11,7 @@ import { rankingRoutes } from './modules/ranking/ranking.routes';
 import { adminRoutes } from './modules/admin/admin.routes';
 import { regionsRoutes } from './modules/regions/regions.routes';
 import { socialRoutes } from './modules/social/social.routes';
+import { giftcardsRoutes } from './modules/giftcards/giftcards.routes';
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use('/ranking', rankingRoutes);
 app.use('/admin', adminRoutes);
 app.use('/regions', regionsRoutes);
 app.use('/social', socialRoutes);
+app.use('/giftcards', giftcardsRoutes);
 
 app.use(errorHandler);
 

@@ -6,6 +6,7 @@ import { storage } from '../utils/storage';
 import { randomDelay } from '../utils/delay';
 import { adminApi } from '../../api/adminApi';
 import { handleApiError } from '../utils/fallback';
+import { saveFeaturedDonorsToFirestore } from '../../lib/firestoreCadastros';
 import { mockUsers } from '../mockData/users';
 
 const FEATURED_KEY = 'featured_donors_carousel_v1';
@@ -59,6 +60,11 @@ export const featuredDonorsService = {
       const saved = await adminApi.saveFeaturedDonors(trimmed);
       if (saved) {
         storage.set(FEATURED_KEY, saved);
+        try {
+          await saveFeaturedDonorsToFirestore(saved);
+        } catch (err) {
+          console.warn('[Firestore] Destaque carrossel (API):', err);
+        }
         return saved;
       }
     } catch (e) {
@@ -67,6 +73,11 @@ export const featuredDonorsService = {
 
     await randomDelay(200, 400);
     storage.set(FEATURED_KEY, config);
+    try {
+      await saveFeaturedDonorsToFirestore(config);
+    } catch (err) {
+      console.warn('[Firestore] Destaque carrossel:', err);
+    }
     return config;
   },
 

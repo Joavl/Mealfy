@@ -6,6 +6,15 @@ public class Family
 {
     public Guid Id { get; set; }
     public string RepresentativeName { get; set; } = string.Empty;
+    public string? FamilyName { get; set; }
+    public string? ResponsibleCpf { get; set; }
+    public string? ChildrenNamesJson { get; set; }
+    public string? PhotoUrl { get; set; }
+    public string? Description { get; set; }
+    public string? ShortAddress { get; set; }
+    public string? MainNeed { get; set; }
+    public int PriorityLevel { get; set; } = 3;
+    public bool NeedsEntitySupport { get; set; }
     public string Region { get; set; } = string.Empty;
     public string? Neighborhood { get; set; }
     public string? City { get; set; }

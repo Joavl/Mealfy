@@ -5,6 +5,7 @@ import Button from '../components/ui/Button';
 import { useAppContext } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
 import { familyService } from '../backend/services/familyService';
+import MaskedInput from '../components/ui/MaskedInput';
 import './RegisterFamily.css'; // Reusing some styles
 
 const IndicateFamily: React.FC = () => {
@@ -129,13 +130,13 @@ const IndicateFamily: React.FC = () => {
 
           <div className="form-group">
             <label className="form-label">Contato (opcional)</label>
-            <input
-              type="text"
+            <MaskedInput
+              mask="contact"
               name="contact"
               value={formData.contact}
-              onChange={handleChange}
+              onValueChange={(contact) => setFormData((prev) => ({ ...prev, contact }))}
               className="form-input"
-              placeholder="Telefone ou forma de encontrar"
+              placeholder="(00) 00000-0000 ou referência"
             />
           </div>
 

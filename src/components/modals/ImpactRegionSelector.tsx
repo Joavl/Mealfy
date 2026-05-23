@@ -3,8 +3,39 @@ import BottomSheet from '../ui/BottomSheet';
 import { useAppContext } from '../../context/AppContext';
 import { regionsApi } from '../../api/regionsApi';
 import type { Region } from '../../api/regionsApi';
+import { familyService } from '../../backend/services/familyService';
+import { isPubliclyVisibleFamily } from '../../backend/utils/familyUtils';
+import type { Family } from '../../backend/types';
 import { MapPin, Users, AlertCircle, Check, Loader2, Globe } from 'lucide-react';
 import './CommunitySelectorModal.css';
+
+function buildRegionsFromFamilies(families: Family[]): Region[] {
+  const regionsMap = new Map<string, Region>();
+
+  families.forEach((family) => {
+    const regionName = family.region || family.neighborhood;
+    if (!regionName) return;
+
+    if (!regionsMap.has(regionName)) {
+      regionsMap.set(regionName, {
+        id: regionName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-'),
+        name: regionName,
+        city: family.city || 'São Paulo',
+        state: family.state || 'SP',
+        familiesCount: 0,
+        urgentCount: 0,
+      });
+    }
+
+    const region = regionsMap.get(regionName)!;
+    region.familiesCount += 1;
+    if (family.supportStatus === 'needs_help') {
+      region.urgentCount += 1;
+    }
+  });
+
+  return Array.from(regionsMap.values()).sort((a, b) => b.familiesCount - a.familiesCount);
+}
 
 interface ImpactRegionSelectorProps {
   isOpen: boolean;
@@ -17,13 +48,26 @@ const ImpactRegionSelector: React.FC<ImpactRegionSelectorProps> = ({ isOpen, onC
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isOpen) {
-      setLoading(true);
-      regionsApi.getRegions()
-        .then(res => setRegions(res || []))
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    }
+    if (!isOpen) return;
+
+    let cancelled = false;
+    setLoading(true);
+
+    const loadRegions = async () => {
+      try {
+        const apiRegions = await regionsApi.getRegions();
+        if (!cancelled) setRegions(apiRegions || []);
+      } catch {
+        const families = await familyService.getFamilies();
+        const visibleFamilies = families.filter(isPubliclyVisibleFamily);
+        if (!cancelled) setRegions(buildRegionsFromFamilies(visibleFamilies));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadRegions();
+    return () => { cancelled = true; };
   }, [isOpen]);
 
   const handleSelect = (region: string | null) => {
@@ -43,7 +87,7 @@ const ImpactRegionSelector: React.FC<ImpactRegionSelectorProps> = ({ isOpen, onC
           <Loader2 className="animate-spin text-primary" size={32} />
         </div>
       ) : (
-        <div className="community-options flex-col gap-3">
+        <div className="community-options">
           <div 
             className={`community-option-card ${!selectedRegion ? 'active' : ''}`}
             onClick={() => handleSelect(null)}

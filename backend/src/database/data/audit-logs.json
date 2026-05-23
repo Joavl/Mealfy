@@ -1,1 +1,27 @@
-[]
+[
+  {
+    "id": "1779556580610",
+    "timestamp": "2026-05-23T17:16:20.610Z",
+    "type": "UPDATE_FEATURED_DONORS",
+    "donorIds": [
+      "donor-1"
+    ],
+    "adminUserId": "admin-1"
+  },
+  {
+    "id": "1779556581087",
+    "timestamp": "2026-05-23T17:16:21.087Z",
+    "type": "UPDATE_FEATURED_DONORS",
+    "donorIds": [
+      "donor-1"
+    ],
+    "adminUserId": "admin-1"
+  },
+  {
+    "id": "1779563723478",
+    "timestamp": "2026-05-23T19:15:23.478Z",
+    "type": "REGISTER_ENTITY",
+    "userId": "u-9a18b183-1bc7-4d67-a96e-ebc203f0811c",
+    "entityId": "e-fa3a4976-efdc-45cf-bb32-99b3850e809f"
+  }
+]

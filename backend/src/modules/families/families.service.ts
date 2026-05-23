@@ -37,17 +37,19 @@ export class FamiliesService {
     const isApprovedEntity = user.role === 'entity' && user.status === 'approved';
     const familyStatus = user.role === 'admin' || isApprovedEntity ? 'approved' : 'pending';
 
-    const newFamily: Family = {
+    const isSelfRegister = data.sourceType === 'beneficiary_self';
+    const newFamily: any = {
       ...data,
       id: `f-${uuidv4()}`,
-      region: data.neighborhood || data.region || 'Região não informada',
-      status: data.status ?? familyStatus,
+      region: data.region || data.neighborhood || 'Região não informada',
+      status: data.status ?? (isSelfRegister ? 'approved' : familyStatus),
       supportStatus: data.supportStatus ?? 'needs_help',
-      createdByEntityId: user.entityId,
-      authorizingEntityId: data.authorizingEntityId ?? user.entityId,
+      createdByEntityId: isSelfRegister ? undefined : user.entityId,
+      authorizingEntityId: isSelfRegister ? undefined : (data.authorizingEntityId ?? user.entityId),
       sourceType: data.sourceType ?? 'entity',
-      sourceLabel: data.sourceLabel ?? `Cadastrado por ${user.name}`,
-      communityId: data.communityId,
+      sourceLabel: data.sourceLabel ?? (isSelfRegister ? 'Cadastro direto da família' : `Cadastrado por ${user.name}`),
+      communityId: data.communityId ?? 'c1',
+      needsEntitySupport: data.needsEntitySupport ?? isSelfRegister,
     };
 
     families.unshift(newFamily);
@@ -55,6 +57,40 @@ export class FamiliesService {
     await MockDatabase.appendAuditLog({ type: 'CREATE_FAMILY', familyId: newFamily.id, userId: user.id });
     
     return newFamily;
+  }
+
+  static async getFamiliesAwaitingEntity(region?: string): Promise<any[]> {
+    const families = await MockDatabase.read<any>('families');
+    return families.filter((f) => {
+      if (!f.needsEntitySupport || f.createdByEntityId) return false;
+      if (f.status !== 'approved') return false;
+      if (!region) return true;
+      const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return norm(f.region || f.neighborhood || '') === norm(region);
+    });
+  }
+
+  static async assignEntity(familyId: string, user: any): Promise<Family> {
+    const families = await MockDatabase.read<Family>('families');
+    const idx = families.findIndex((f) => f.id === familyId);
+    if (idx === -1) throw new AppError('Family not found', 404);
+
+    const fam: any = families[idx];
+    if (!fam.needsEntitySupport) {
+      throw new AppError('Esta família já possui entidade vinculada', 400);
+    }
+
+    fam.createdByEntityId = user.entityId;
+    fam.authorizingEntityId = user.entityId;
+    fam.needsEntitySupport = false;
+    fam.sourceType = 'entity';
+    fam.sourceLabel = `Acolhida por ${user.name}`;
+    fam.sourceEntityName = user.name;
+
+    families[idx] = fam;
+    await MockDatabase.write('families', families);
+    await MockDatabase.appendAuditLog({ type: 'ASSIGN_ENTITY', familyId, userId: user.id });
+    return families[idx];
   }
 
   static async updateStatus(id: string, data: any): Promise<Family> {

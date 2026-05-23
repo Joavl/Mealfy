@@ -11,7 +11,7 @@ interface AppContextType {
   isAuthenticated: boolean;
   user: User | null;
   login: (method: 'google'|'apple'|'phone'|'facebook', role?: UserRole) => Promise<void>;
-  loginAsRole: (role: UserRole, identifier: string) => Promise<void>;
+  loginAsRole: (role: UserRole, identifier: string, password?: string) => Promise<void>;
   logout: () => Promise<void>;
   fetchSession: () => Promise<void>;
   communities: Community[];
@@ -116,8 +116,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const loginAsRole = async (role: UserRole, identifier: string) => {
-    const loggedUser = await authService.loginAsRole(role, identifier);
+  const loginAsRole = async (role: UserRole, identifier: string, password?: string) => {
+    const loggedUser = await authService.loginAsRole(role, identifier, password);
     
     if (!loggedUser.privacySettings) {
       loggedUser.privacySettings = { showOnRanking: true, showInstagram: true, anonymousMode: false };

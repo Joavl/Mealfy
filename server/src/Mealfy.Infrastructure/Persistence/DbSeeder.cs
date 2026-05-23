@@ -6,17 +6,20 @@ namespace Mealfy.Infrastructure.Persistence;
 
 public static class DbSeeder
 {
+    public static readonly Guid DonorId = Guid.Parse("11111111-1111-1111-1111-111111111101");
+    public static readonly Guid EntityUserId = Guid.Parse("11111111-1111-1111-1111-111111111102");
+    public static readonly Guid BeneficiaryUserId = Guid.Parse("11111111-1111-1111-1111-111111111103");
+    public static readonly Guid AdminUserId = Guid.Parse("11111111-1111-1111-1111-111111111104");
+    public static readonly Guid EntityId = Guid.Parse("22222222-2222-2222-2222-222222222201");
+    public static readonly Guid FamilyId = Guid.Parse("33333333-3333-3333-3333-333333333301");
+
     public static async Task SeedAsync(MealfyDbContext db)
     {
         if (await db.Users.AnyAsync()) return;
 
-        var donorId = Guid.Parse("11111111-1111-1111-1111-111111111101");
-        var entityUserId = Guid.Parse("11111111-1111-1111-1111-111111111102");
-        var entityId = Guid.Parse("22222222-2222-2222-2222-222222222201");
-
         db.Entities.Add(new AuthorizingEntity
         {
-            Id = entityId,
+            Id = EntityId,
             Name = "Instituto Esperança",
             Cnpj = "12345678000199",
             Type = EntityType.ONG,
@@ -30,7 +33,7 @@ public static class DbSeeder
         db.Users.AddRange(
             new User
             {
-                Id = donorId,
+                Id = DonorId,
                 Name = "Doador Demo",
                 Email = "doador@mealfy.com",
                 Role = UserRole.Donor,
@@ -43,26 +46,46 @@ public static class DbSeeder
             },
             new User
             {
-                Id = entityUserId,
+                Id = EntityUserId,
                 Name = "Maria Silva",
                 Email = "entidade@mealfy.com",
                 Role = UserRole.Entity,
                 Status = AccountStatus.Approved,
-                EntityId = entityId,
+                EntityId = EntityId,
+            },
+            new User
+            {
+                Id = BeneficiaryUserId,
+                Name = "Ana Costa",
+                Email = "beneficiario@mealfy.com",
+                Role = UserRole.Beneficiary,
+                Status = AccountStatus.Active,
+                BeneficiaryId = FamilyId,
+                Phone = "81988887777",
+                DocumentType = "cpf",
+                DocumentNumber = "12345678900",
+            },
+            new User
+            {
+                Id = AdminUserId,
+                Name = "Admin Mealfy",
+                Email = "admin@mealfy.com",
+                Role = UserRole.Admin,
+                Status = AccountStatus.Active,
             });
 
-        var familyId = Guid.NewGuid();
         db.Families.Add(new Family
         {
-            Id = familyId,
+            Id = FamilyId,
             RepresentativeName = "Ana Costa",
             Region = "Recife · PE",
+            Neighborhood = "Boa Viagem",
             City = "Recife",
             State = "PE",
             ChildrenCount = 2,
             Status = FamilyStatus.Approved,
             SupportStatus = SupportStatus.NeedsHelp,
-            CreatedByEntityId = entityId,
+            CreatedByEntityId = EntityId,
             SourceType = "entity",
             SourceLabel = "Instituto Esperança",
             Latitude = -8.05,
@@ -75,7 +98,7 @@ public static class DbSeeder
             db.FamilyValidations.Add(new FamilyValidation
             {
                 Id = Guid.NewGuid(),
-                FamilyId = familyId,
+                FamilyId = FamilyId,
                 Source = source,
                 Verified = false,
             });

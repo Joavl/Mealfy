@@ -9,6 +9,10 @@ lerna-debug.log*
 
 node_modules
 .env
+.env.production
+scripts/expo-qr.html
+firebase-service-account.json
+**/firebase-service-account.json
 dist
 dist-ssr
 *.local

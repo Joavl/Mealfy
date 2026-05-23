@@ -14,6 +14,24 @@ Use o **IPv4 da Wi‑Fi** (ex.: `192.168.0.101`). **Não use `localhost` no celu
 
 ---
 
+## Firebase (cadastro / login)
+
+```powershell
+cd Mealfy
+npm run setup:firebase
+```
+
+Isso configura o `.env` com o projeto `christiano-c5714`. A API valida tokens pelo **WebApiKey** (dev) ou pelo JSON de service account (produção).
+
+**No Console Firebase** (login Google — uma vez):
+1. Authentication → ativar **E-mail/senha** e **Google**
+2. Firestore → criar banco
+3. Authentication → Settings → **localhost** nos domínios autorizados
+
+Detalhes: `FIREBASE-SETUP.md`
+
+---
+
 ## Passo a passo (PC)
 
 ### 1. API (porta 3000)
@@ -52,18 +70,41 @@ cd Mealfy
 npm run firewall
 ```
 
-### 4. Expo Go
+### 4. Expo Go (celular)
+
+**Antes:** atualize o IP da rede (troca quando muda de Wi-Fi):
+
+```powershell
+npm run sync:lan
+```
 
 **Outro terminal:**
 
 ```powershell
-cd Mealfy
 npm run dev:mobile
 ```
 
-Escaneie o QR (`exp://192.168.0.101:8083`). O app carrega o site da etapa 2 — **etapa 2 tem que estar rodando**.
+Escaneie o QR no **Expo Go** (mesma Wi-Fi). O app abre o site da etapa 2 — **etapa 2 tem que estar rodando**.
 
-Se ficar em branco: no app toque **↻** (recarregar) no topo.
+Se ficar em branco: toque **↻** no topo do app.
+
+**Wi-Fi difícil?** Use túnel:
+
+```powershell
+npm run dev:mobile:tunnel
+```
+
+---
+
+## Banco SQLite (API .NET)
+
+Se a API falhar ao iniciar após atualização, apague o arquivo `server/src/Mealfy.Api/mealfy.dev.db` e rode `npm run dev:api` de novo (recria tabelas + usuários demo).
+
+**Contas demo:**
+- Doador: `doador@mealfy.com`
+- Beneficiário: `beneficiario@mealfy.com` (recebe gifts iFood)
+- Entidade: `entidade@mealfy.com`
+- Admin: `admin@mealfy.com`
 
 ---
 

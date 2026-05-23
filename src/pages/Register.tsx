@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AppHeader from '../components/layout/AppHeader';
 import Button from '../components/ui/Button';
 import { authService } from '../backend/services/authService';
@@ -7,20 +7,43 @@ import { useToast } from '../context/ToastContext';
 import { useAppContext } from '../context/AppContext';
 import { Heart, Building2, ArrowRight } from 'lucide-react';
 import { MealfyLogo } from '../components/ui/MealfyLogo';
+import MaskedInput from '../components/ui/MaskedInput';
+import { applyMask } from '../utils/inputMasks';
 import './Auth.css'; // Reusing some auth styles for consistency
 
-const Register: React.FC = () => {
+type RegisterStep = 'picker' | 'donor' | 'entity';
+
+function resolveInitialStep(pathname: string): RegisterStep {
+  if (pathname.endsWith('/register-donor')) return 'donor';
+  if (pathname.endsWith('/register-entity')) return 'entity';
+  return 'picker';
+}
+
+type RegisterProps = {
+  initialStep?: RegisterStep;
+};
+
+const Register: React.FC<RegisterProps> = ({ initialStep: initialStepProp }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useToast();
   const { fetchSession } = useAppContext();
 
-  const [step, setStep] = useState<'picker' | 'donor' | 'entity'>('picker');
+  const routeStep = resolveInitialStep(location.pathname);
+  const [step, setStep] = useState<RegisterStep>(initialStepProp ?? routeStep);
+
+  useEffect(() => {
+    const next = initialStepProp ?? routeStep;
+    if (next !== 'picker') setStep(next);
+  }, [initialStepProp, routeStep]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Formulário Doador
   const [donorData, setDonorData] = useState({
     name: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     documentType: 'cpf' as 'cpf' | 'cnpj',
     documentNumber: '',
     phone: '',
@@ -37,17 +60,28 @@ const Register: React.FC = () => {
     type: 'ONG' as any,
     responsibleName: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     phone: '',
     region: ''
   });
 
   const handleRegisterDonor = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (donorData.password.length < 6) {
+      showToast('A senha deve ter pelo menos 6 caracteres.', 'error');
+      return;
+    }
+    if (donorData.password !== donorData.confirmPassword) {
+      showToast('As senhas não coincidem.', 'error');
+      return;
+    }
     setIsLoading(true);
     try {
       await authService.registerDonor({
         name: donorData.name,
         email: donorData.email,
+        password: donorData.password,
         phone: donorData.phone,
         documentType: donorData.documentType,
         documentNumber: donorData.documentNumber,
@@ -71,6 +105,14 @@ const Register: React.FC = () => {
 
   const handleRegisterEntity = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (entityData.password.length < 6) {
+      showToast('A senha deve ter pelo menos 6 caracteres.', 'error');
+      return;
+    }
+    if (entityData.password !== entityData.confirmPassword) {
+      showToast('As senhas não coincidem.', 'error');
+      return;
+    }
     setIsLoading(true);
     try {
       await authService.registerEntity({
@@ -79,6 +121,7 @@ const Register: React.FC = () => {
         type: entityData.type,
         responsibleName: entityData.responsibleName,
         email: entityData.email,
+        password: entityData.password,
         phone: entityData.phone,
         region: entityData.region
       });
@@ -97,7 +140,10 @@ const Register: React.FC = () => {
     return (
       <div className="auth-page login-view">
         <div className="login-hero">
-          <button className="back-btn active:scale-95 transition-transform" onClick={() => setStep('picker')}>
+          <button
+            className="back-btn active:scale-95 transition-transform"
+            onClick={() => (routeStep === 'donor' ? navigate('/auth') : setStep('picker'))}
+          >
             <ArrowRight size={24} style={{ transform: 'rotate(180deg)' }} />
           </button>
           <h1 className="login-hero-title">Criar conta como Doador</h1>
@@ -113,29 +159,69 @@ const Register: React.FC = () => {
               <label className="form-label">E-mail</label>
               <input type="email" className="form-input" required value={donorData.email} onChange={e => setDonorData({...donorData, email: e.target.value})} />
             </div>
+
+            <div className="form-group">
+              <label className="form-label">Senha</label>
+              <input type="password" className="form-input" required minLength={6} autoComplete="new-password" value={donorData.password} onChange={e => setDonorData({...donorData, password: e.target.value})} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Confirmar senha</label>
+              <input type="password" className="form-input" required minLength={6} autoComplete="new-password" value={donorData.confirmPassword} onChange={e => setDonorData({...donorData, confirmPassword: e.target.value})} />
+            </div>
             
             <div className="flex gap-3">
               <div className="form-group w-1/3">
                 <label className="form-label">Tipo</label>
-                <select className="form-select" value={donorData.documentType} onChange={e => setDonorData({...donorData, documentType: e.target.value as any})}>
+                <select
+                  className="form-select"
+                  value={donorData.documentType}
+                  onChange={(e) => {
+                    const documentType = e.target.value as 'cpf' | 'cnpj';
+                    setDonorData({
+                      ...donorData,
+                      documentType,
+                      documentNumber: applyMask(documentType, donorData.documentNumber),
+                    });
+                  }}
+                >
                   <option value="cpf">CPF</option>
                   <option value="cnpj">CNPJ</option>
                 </select>
               </div>
               <div className="form-group flex-1">
                 <label className="form-label">{donorData.documentType === 'cpf' ? 'CPF' : 'CNPJ'}</label>
-                <input type="text" className="form-input" required value={donorData.documentNumber} onChange={e => setDonorData({...donorData, documentNumber: e.target.value})} />
+                <MaskedInput
+                  mask={donorData.documentType}
+                  className="form-input"
+                  required
+                  placeholder={donorData.documentType === 'cpf' ? '000.000.000-00' : '00.000.000/0001-00'}
+                  value={donorData.documentNumber}
+                  onValueChange={(documentNumber) => setDonorData({ ...donorData, documentNumber })}
+                />
               </div>
             </div>
 
             <div className="form-group">
               <label className="form-label">Telefone (opcional)</label>
-              <input type="text" className="form-input" value={donorData.phone} onChange={e => setDonorData({...donorData, phone: e.target.value})} />
+              <MaskedInput
+                mask="phone"
+                className="form-input"
+                placeholder="(00) 00000-0000"
+                value={donorData.phone}
+                onValueChange={(phone) => setDonorData({ ...donorData, phone })}
+              />
             </div>
 
             <div className="form-group">
               <label className="form-label">Instagram (opcional)</label>
-              <input type="text" className="form-input" placeholder="@seu_usuario" value={donorData.instagram} onChange={e => setDonorData({...donorData, instagram: e.target.value})} />
+              <MaskedInput
+                mask="instagram"
+                className="form-input"
+                placeholder="@seu_usuario"
+                inputMode="text"
+                value={donorData.instagram}
+                onValueChange={(instagram) => setDonorData({ ...donorData, instagram })}
+              />
             </div>
 
             <div className="bg-surface-highest p-4 rounded-xl flex-col gap-3 my-2">
@@ -154,6 +240,13 @@ const Register: React.FC = () => {
             </div>
 
             <Button type="submit" size="large" fullWidth loading={isLoading} className="mt-2">Criar Conta</Button>
+            <button
+              type="button"
+              className="text-primary font-bold text-sm text-center mt-4 mx-auto block"
+              onClick={() => navigate('/auth')}
+            >
+              Já tenho conta — entrar
+            </button>
           </form>
         </main>
       </div>
@@ -164,7 +257,10 @@ const Register: React.FC = () => {
     return (
       <div className="auth-page login-view">
         <div className="login-hero">
-          <button className="back-btn active:scale-95 transition-transform" onClick={() => setStep('picker')}>
+          <button
+            className="back-btn active:scale-95 transition-transform"
+            onClick={() => (routeStep === 'entity' ? navigate('/auth') : setStep('picker'))}
+          >
             <ArrowRight size={24} style={{ transform: 'rotate(180deg)' }} />
           </button>
           <h1 className="login-hero-title" style={{fontSize: '1.75rem'}}>Seja uma entidade autorizada</h1>
@@ -180,7 +276,14 @@ const Register: React.FC = () => {
             <div className="flex gap-3">
               <div className="form-group w-1/2">
                 <label className="form-label">CNPJ</label>
-                <input type="text" className="form-input" required placeholder="00.000.000/0001-00" value={entityData.cnpj} onChange={e => setEntityData({...entityData, cnpj: e.target.value})} />
+                <MaskedInput
+                  mask="cnpj"
+                  className="form-input"
+                  required
+                  placeholder="00.000.000/0001-00"
+                  value={entityData.cnpj}
+                  onValueChange={(cnpj) => setEntityData({ ...entityData, cnpj })}
+                />
               </div>
               <div className="form-group w-1/2">
                 <label className="form-label">Tipo</label>
@@ -203,10 +306,26 @@ const Register: React.FC = () => {
               <input type="email" className="form-input" required value={entityData.email} onChange={e => setEntityData({...entityData, email: e.target.value})} />
             </div>
 
+            <div className="form-group">
+              <label className="form-label">Senha</label>
+              <input type="password" className="form-input" required minLength={6} autoComplete="new-password" value={entityData.password} onChange={e => setEntityData({...entityData, password: e.target.value})} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Confirmar senha</label>
+              <input type="password" className="form-input" required minLength={6} autoComplete="new-password" value={entityData.confirmPassword} onChange={e => setEntityData({...entityData, confirmPassword: e.target.value})} />
+            </div>
+
             <div className="flex gap-3">
                <div className="form-group w-1/2">
                  <label className="form-label">Telefone</label>
-                 <input type="text" className="form-input" required value={entityData.phone} onChange={e => setEntityData({...entityData, phone: e.target.value})} />
+                 <MaskedInput
+                   mask="phone"
+                   className="form-input"
+                   required
+                   placeholder="(00) 00000-0000"
+                   value={entityData.phone}
+                   onValueChange={(phone) => setEntityData({ ...entityData, phone })}
+                 />
                </div>
                <div className="form-group w-1/2">
                  <label className="form-label">Região/Comunidade</label>
@@ -216,6 +335,13 @@ const Register: React.FC = () => {
 
             <Button type="submit" size="large" fullWidth loading={isLoading} className="mt-4">Cadastrar Organização</Button>
             <p className="text-xs text-center text-outline mt-2">Sua solicitação entrará em análise pela nossa equipe.</p>
+            <button
+              type="button"
+              className="text-primary font-bold text-sm text-center mt-4 mx-auto block"
+              onClick={() => navigate('/auth')}
+            >
+              Já tenho conta — entrar
+            </button>
           </form>
         </main>
       </div>
@@ -263,13 +389,20 @@ const Register: React.FC = () => {
           </button>
         </div>
 
-        <div className="auth-footer mt-auto text-center flex-col gap-6">
-           <button 
-             className="text-primary font-bold flex items-center justify-center gap-2 mx-auto active:scale-95 transition-transform text-sm" 
-             onClick={() => navigate('/auth')}
-           >
-              Já tenho uma conta
-           </button>
+        <div className="auth-footer mt-auto text-center flex-col gap-4">
+          <button
+            type="button"
+            className="text-success font-bold text-sm active:scale-95 transition-transform"
+            onClick={() => navigate('/register-beneficiary')}
+          >
+            Sou beneficiário — cadastrar minha família
+          </button>
+          <button
+            className="text-primary font-bold flex items-center justify-center gap-2 mx-auto active:scale-95 transition-transform text-sm"
+            onClick={() => navigate('/auth')}
+          >
+            Já tenho uma conta
+          </button>
         </div>
       </main>
     </div>

@@ -15,15 +15,11 @@ const FamilyDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      familyService.getFamilies().then(fams => {
-        const found = fams.find(f => f.id === id);
-        if (found) {
-          setFamily(found);
-        }
-        setLoading(false);
-      });
-    }
+    if (!id) return;
+    familyService.getFamilyById(id).then((found) => {
+      setFamily(found);
+      setLoading(false);
+    });
   }, [id]);
 
   if (loading) return <div className="p-4 text-center mt-10">Carregando família...</div>;
@@ -40,7 +36,11 @@ const FamilyDetails: React.FC = () => {
       
       <main className="content p-4">
         <div className="family-header-card mb-4">
-          <div className="fh-avatar">{family.representativeName.charAt(0)}</div>
+          {family.photoUrl ? (
+            <img src={family.photoUrl} alt="" className="fh-photo" />
+          ) : (
+            <div className="fh-avatar">{family.representativeName.charAt(0)}</div>
+          )}
           <h2 className="fh-title text-primary">{family.representativeName}</h2>
           <div className="fh-location flex items-center justify-center gap-1 text-sm text-outline mt-1">
             <MapPin size={14} /> {family.shortAddress}, {family.city}

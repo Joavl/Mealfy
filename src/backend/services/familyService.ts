@@ -7,9 +7,48 @@ import { normalizeString } from '../utils/normalizeUtils';
 import { familiesApi } from '../../api/familiesApi';
 import { indicationsApi } from '../../api/indicationsApi';
 import { handleApiError } from '../utils/fallback';
+import {
+  saveFamilyCadastroToFirestore,
+  saveIndicationCadastroToFirestore,
+  saveFamilyEntityAssignmentToFirestore,
+} from '../../lib/firestoreCadastros';
 
 const FAMILIES_KEY = 'families_db';
 const INDICATIONS_KEY = 'donor_indications_db';
+
+function normalizeApiFamily(raw: Record<string, unknown>): Family {
+  const region = String(raw.region ?? raw.neighborhood ?? '');
+  return {
+    id: String(raw.id),
+    communityId: String(raw.communityId ?? 'c1'),
+    representativeName: String(raw.representativeName ?? raw.familyName ?? 'Família'),
+    neighborhood: String(raw.neighborhood ?? region),
+    city: String(raw.city ?? 'São Paulo'),
+    state: String(raw.state ?? 'SP'),
+    shortAddress: String(raw.shortAddress ?? raw.neighborhood ?? region),
+    description: String(raw.description ?? 'Família cadastrada na rede Mealfy.'),
+    childrenCount: Number(raw.childrenCount ?? 1),
+    children: Array.isArray(raw.children) ? (raw.children as Family['children']) : [],
+    mainNeed: String(raw.mainNeed ?? 'Alimentação básica'),
+    supportStatus: (raw.supportStatus as Family['supportStatus']) ?? 'needs_help',
+    distanceToUser: String(raw.distanceToUser ?? '—'),
+    priorityLevel: Number(raw.priorityLevel ?? 3),
+    latitude: Number(raw.latitude),
+    longitude: Number(raw.longitude),
+    photoUrl: raw.photoUrl as string | undefined,
+    familyName: raw.familyName as string | undefined,
+    responsibleName: raw.responsibleName as string | undefined,
+    responsibleCpf: raw.responsibleCpf as string | undefined,
+    needsEntitySupport: Boolean(raw.needsEntitySupport),
+    region,
+    authorizingEntityId: raw.authorizingEntityId as string | undefined,
+    createdByEntityId: raw.createdByEntityId as string | undefined,
+    sourceType: raw.sourceType as Family['sourceType'],
+    sourceEntityName: raw.sourceEntityName as string | undefined,
+    sourceLabel: raw.sourceLabel as string | undefined,
+    status: raw.status as Family['status'],
+  };
+}
 
 export const familyService = {
   initDB: () => {
@@ -23,7 +62,7 @@ export const familyService = {
   getFamilies: async (filters?: { region?: string; communityId?: string }): Promise<Family[]> => {
     try {
       const apiFamilies = await familiesApi.getPublicFamilies(filters);
-      if (apiFamilies) return apiFamilies;
+      if (apiFamilies) return (apiFamilies as Record<string, unknown>[]).map(normalizeApiFamily);
     } catch (e) {
       handleApiError(e, 'Get Families');
     }
@@ -49,9 +88,17 @@ export const familyService = {
 
   getFamilyById: async (familyId: string): Promise<Family | null> => {
     try {
+      const detail = await familiesApi.getFamilyById(familyId);
+      if (detail) return normalizeApiFamily(detail as Record<string, unknown>);
+    } catch {
+      /* try public list */
+    }
+    try {
       const apiFamilies = await familiesApi.getPublicFamilies();
-      const apiFamily = apiFamilies?.find((family: Family) => family.id === familyId);
-      if (apiFamily) return apiFamily;
+      const apiFamily = (apiFamilies as Record<string, unknown>[] | undefined)?.find(
+        (f) => String(f.id) === familyId,
+      );
+      if (apiFamily) return normalizeApiFamily(apiFamily);
     } catch (e) {
       handleApiError(e, 'Get Family by ID');
     }
@@ -60,6 +107,60 @@ export const familyService = {
     familyService.initDB();
     const families = storage.get<Family[]>(FAMILIES_KEY, mockFamilies);
     return families.find((family: Family) => family.id === familyId) || null;
+  },
+
+  getFamiliesAwaitingEntity: async (region?: string): Promise<Family[]> => {
+    try {
+      const list = await familiesApi.getFamiliesAwaitingEntity(region);
+      if (list) return (list as Record<string, unknown>[]).map(normalizeApiFamily);
+    } catch (e) {
+      handleApiError(e, 'Families awaiting entity');
+    }
+    await randomDelay();
+    familyService.initDB();
+    const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return storage.get<Family[]>(FAMILIES_KEY, mockFamilies).filter(
+      (f) => f.needsEntitySupport && !f.createdByEntityId && (!region || norm(f.region || f.neighborhood) === norm(region)),
+    );
+  },
+
+  assignEntityToFamily: async (familyId: string, entityId: string, entityName: string): Promise<Family> => {
+    try {
+      const updated = await familiesApi.assignEntityToFamily(familyId);
+      if (updated) {
+        const normalized = normalizeApiFamily(updated as Record<string, unknown>);
+        familyService.persistFamilyLocally(normalized);
+        try {
+          await saveFamilyEntityAssignmentToFirestore(familyId, entityId, entityName);
+        } catch (err) {
+          console.warn('[Firestore] Acolhimento entidade:', err);
+        }
+        return normalized;
+      }
+    } catch (e) {
+      handleApiError(e, 'Assign entity');
+    }
+    await randomDelay();
+    familyService.initDB();
+    const families = storage.get<Family[]>(FAMILIES_KEY, mockFamilies);
+    const idx = families.findIndex((f) => f.id === familyId);
+    if (idx === -1) throw new Error('Família não encontrada');
+    families[idx] = {
+      ...families[idx],
+      createdByEntityId: entityId,
+      authorizingEntityId: entityId,
+      needsEntitySupport: false,
+      sourceType: 'entity',
+      sourceLabel: `Acolhida por ${entityName}`,
+      sourceEntityName: entityName,
+    };
+    storage.set(FAMILIES_KEY, families);
+    try {
+      await saveFamilyEntityAssignmentToFirestore(familyId, entityId, entityName);
+    } catch (err) {
+      console.warn('[Firestore] Acolhimento (local):', err);
+    }
+    return families[idx];
   },
 
   getFamiliesByCommunity: async (communityId: string): Promise<Family[]> => {
@@ -172,6 +273,11 @@ export const familyService = {
           childrenCount: created.childrenCount ?? familyData.childrenCount,
         };
         familyService.persistFamilyLocally(normalized);
+        try {
+          await saveFamilyCadastroToFirestore(normalized);
+        } catch (err) {
+          console.warn('[Firestore] Família (API):', err);
+        }
         return normalized;
       }
     } catch (e) {
@@ -191,13 +297,25 @@ export const familyService = {
 
     families.unshift(newFamily);
     storage.set(FAMILIES_KEY, families);
+    try {
+      await saveFamilyCadastroToFirestore(newFamily);
+    } catch (err) {
+      console.warn('[Firestore] Família (local):', err);
+    }
     return newFamily;
   },
 
   addIndication: async (data: Omit<DonorIndication, 'id' | 'status' | 'createdAt'>): Promise<DonorIndication> => {
     try {
       const newIndication = await indicationsApi.createIndication(data);
-      if (newIndication) return newIndication;
+      if (newIndication) {
+        try {
+          await saveIndicationCadastroToFirestore(newIndication);
+        } catch (err) {
+          console.warn('[Firestore] Indicação:', err);
+        }
+        return newIndication;
+      }
     } catch (e) {
       handleApiError(e, 'Add Indication');
     }
@@ -214,6 +332,11 @@ export const familyService = {
 
     indications.unshift(newIndication);
     storage.set(INDICATIONS_KEY, indications);
+    try {
+      await saveIndicationCadastroToFirestore(newIndication);
+    } catch (err) {
+      console.warn('[Firestore] Indicação (local):', err);
+    }
     return newIndication;
   },
 
@@ -251,7 +374,14 @@ export const familyService = {
   convertIndicationToFamily: async (indicationId: string, user: any, sourceLabel: string): Promise<Family> => {
     try {
       const newFamily = await indicationsApi.convertIndication(indicationId);
-      if (newFamily) return newFamily;
+      if (newFamily) {
+        try {
+          await saveFamilyCadastroToFirestore(newFamily as Family);
+        } catch (err) {
+          console.warn('[Firestore] Conversão indicação:', err);
+        }
+        return newFamily;
+      }
     } catch (e) {
       handleApiError(e, 'Convert Indication');
     }
@@ -317,6 +447,13 @@ export const familyService = {
     // Marca a indicação como convertida no localStorage
     indications[indicationIdx].status = 'converted';
     storage.set(INDICATIONS_KEY, indications);
+
+    try {
+      await saveFamilyCadastroToFirestore(newFamily);
+      await saveIndicationCadastroToFirestore(indications[indicationIdx]);
+    } catch (err) {
+      console.warn('[Firestore] Conversão indicação (local):', err);
+    }
 
     return newFamily;
   }

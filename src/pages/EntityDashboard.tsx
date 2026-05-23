@@ -18,6 +18,7 @@ const EntityDashboard: React.FC = () => {
   const [families, setFamilies] = useState<Family[]>([]);
   const [indications, setIndications] = useState<DonorIndication[]>([]);
   const [entityData, setEntityData] = useState<AuthorizingEntity | null>(null);
+  const [awaitingFamilies, setAwaitingFamilies] = useState<Family[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
@@ -31,6 +32,10 @@ const EntityDashboard: React.FC = () => {
       ? await familyService.getFamiliesForEntity(user.entityId)
       : [];
     setFamilies(entityFamilies);
+
+    const regionKey = currentEntity?.region?.split('-')[0] || currentEntity?.region;
+    const awaiting = await familyService.getFamiliesAwaitingEntity(regionKey);
+    setAwaitingFamilies(awaiting);
     
     // Filtrar indicações pendentes pela região de forma segura
     const pendingInd = allInd.filter(i => {
@@ -59,6 +64,17 @@ const EntityDashboard: React.FC = () => {
       fetchData();
     } catch (err: any) {
       showToast(err?.message || 'Não foi possível validar a indicação.', 'error');
+    }
+  };
+
+  const handleAdoptFamily = async (familyId: string) => {
+    if (!user?.entityId) return;
+    try {
+      await familyService.assignEntityToFamily(familyId, user.entityId, entityData?.name || user.name);
+      showToast('Família acolhida pela sua entidade.', 'success');
+      fetchData();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : 'Não foi possível acolher a família.', 'error');
     }
   };
 
@@ -92,8 +108,43 @@ const EntityDashboard: React.FC = () => {
 
         <section className="entity-summary mb-6">
            <h2 className="text-xl font-bold text-primary mb-1">Olá, {user?.name}</h2>
-           <p className="text-sm text-outline">Gerencie as famílias assistidas pela sua instituição.</p>
+           <p className="text-sm text-outline leading-relaxed">
+             Sua entidade organiza famílias que ainda não têm estrutura de apoio — cadastro, validação e
+             acompanhamento na região.
+           </p>
         </section>
+
+        {awaitingFamilies.length > 0 && (
+          <section className="mb-8 p-4 bg-primary/5 rounded-xl border border-primary/15">
+            <h3 className="section-title mb-2 text-primary">Famílias sem estrutura na região</h3>
+            <p className="text-xs text-outline mb-4">
+              Cadastros feitos diretamente por beneficiários aguardam uma entidade para organizar o apoio.
+            </p>
+            <div className="flex-col gap-3">
+              {awaitingFamilies.map((fam) => (
+                <div key={fam.id} className="bg-surface p-3 rounded-xl border border-outline/10">
+                  <div className="flex gap-3 items-start">
+                    {fam.photoUrl && (
+                      <img src={fam.photoUrl} alt="" className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm text-primary">{fam.representativeName}</h4>
+                      <p className="text-xs text-outline">{fam.neighborhood} · {fam.childrenCount} criança(s)</p>
+                      {fam.children?.length > 0 && (
+                        <p className="text-xs text-outline mt-1">
+                          {fam.children.map((c) => c.name).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Button size="small" fullWidth className="mt-3" onClick={() => handleAdoptFamily(fam.id)}>
+                    Acolher e organizar esta família
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="stats-grid grid grid-cols-2 gap-4 mb-6">
            <div className="stat-card p-4 bg-surface-highest rounded-xl border border-outline/10">

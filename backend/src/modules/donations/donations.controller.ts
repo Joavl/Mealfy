@@ -4,14 +4,20 @@ import { createDonationSchema, batchDonationSchema, regionalDonationSchema } fro
 
 export class DonationsController {
   static async create(req: Request, res: Response) {
-    const { familyId } = createDonationSchema.parse(req.body);
-    const result = await DonationsService.create(familyId, req.user);
-    return res.status(201).json(result);
+    const { familyId, amount, message, communityId } = createDonationSchema.parse(req.body);
+    const result = await DonationsService.create(familyId, req.user, amount, message, communityId);
+    const families = await import('../../database/mock-db').then(m => m.MockDatabase.read<any>('families'));
+    const family = families.find((f: any) => f.id === familyId);
+    return res.status(201).json({
+      donation: { ...result.donation, giftCardId: result.giftCard.id, communityId },
+      giftCard: result.giftCard,
+      familyAssigned: family ?? { id: familyId, representativeName: 'Família' },
+    });
   }
 
   static async batch(req: Request, res: Response) {
-    const { familyIds } = batchDonationSchema.parse(req.body);
-    const results = await DonationsService.createBatch(familyIds, req.user);
+    const { familyIds, amountPerFamily } = batchDonationSchema.parse(req.body);
+    const results = await DonationsService.createBatch(familyIds, req.user, amountPerFamily);
     return res.status(201).json(results);
   }
 

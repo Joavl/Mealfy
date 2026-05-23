@@ -38,6 +38,17 @@ export function isIfoodGift(card: Pick<GiftCard, 'provider'>): boolean {
   return card.provider === IFOOD_PROVIDER || String(card.provider).toLowerCase().includes('ifood');
 }
 
+export function getIfoodRedeemDeepLink(code: string): string {
+  return `https://www.ifood.com.br/gift-card?code=${encodeURIComponent(code)}`;
+}
+
+export const IFOOD_REDEEM_STEPS = [
+  'Abra o app iFood no celular',
+  'Vá em Perfil → Carteira → Gift Card',
+  'Toque em "Adicionar código" e cole o código Mealfy',
+  'Use o saldo em restaurantes parceiros da sua região',
+] as const;
+
 export function normalizeGiftCard(card: Partial<GiftCard> & { amount: number; donationId: string }): GiftCard {
   const provider = card.provider === IFOOD_PROVIDER || !card.provider ? IFOOD_PROVIDER : card.provider;
   return {

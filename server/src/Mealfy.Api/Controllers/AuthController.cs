@@ -26,10 +26,17 @@ public class AuthController : ControllerBase
         return StatusCode(201, user);
     }
 
+    [HttpPost("register/beneficiary")]
+    public async Task<IActionResult> RegisterBeneficiary([FromBody] RegisterBeneficiaryRequest request, CancellationToken ct)
+    {
+        var result = await _auth.RegisterBeneficiaryAsync(request, ct);
+        return StatusCode(201, new { token = result.Token, user = result.User, family = result.Family });
+    }
+
     [HttpPost("login/mock")]
     public async Task<IActionResult> LoginMock([FromBody] LoginMockRequest request, CancellationToken ct)
     {
-        var result = await _auth.LoginMockAsync(request.Email, ct);
+        var result = await _auth.LoginMockAsync(request.Email, request.Password, ct);
         return Ok(new { token = result.Token, user = result.User });
     }
 

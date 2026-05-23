@@ -16,7 +16,7 @@ const WEB_URL =
   process.env.EXPO_PUBLIC_WEB_APP_URL ??
   'http://192.168.0.101:5173';
 
-const TIMEOUT_MS = 30000;
+const TIMEOUT_MS = 45000;
 
 export default function MealfyScreen() {
   const webRef = useRef<WebView>(null);
@@ -46,8 +46,26 @@ export default function MealfyScreen() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setStatus('Testando rede…');
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 8000);
+        await fetch(WEB_URL, { method: 'GET', signal: ctrl.signal });
+        clearTimeout(t);
+        if (!cancelled) setStatus('Rede OK — carregando site…');
+      } catch {
+        if (!cancelled) {
+          setStatus('PC inalcancavel — confira Wi-Fi e npm run dev');
+        }
+      }
+    })();
     armTimeout();
-    return () => clearTimer();
+    return () => {
+      cancelled = true;
+      clearTimer();
+    };
   }, [armTimeout]);
 
   const onSuccess = () => {
@@ -77,8 +95,9 @@ export default function MealfyScreen() {
             1. No PC: <Text style={styles.bold}>npm run dev</Text> (deixe aberto){'\n'}
             2. No PC: <Text style={styles.bold}>npm run dev:api</Text>{'\n'}
             3. Celular e PC na mesma Wi‑Fi{'\n'}
-            4. Firewall: rode{'\n'}
-            <Text style={styles.bold}>npm run firewall</Text> como Admin{'\n\n'}
+            4. No PC: <Text style={styles.bold}>npm run sync:lan</Text>{'\n'}
+            5. Firewall Admin: <Text style={styles.bold}>npm run firewall</Text>{'\n'}
+            6. Mesma Wi-Fi no celular{'\n\n'}
             URL: {WEB_URL}
           </Text>
           <Pressable style={styles.btn} onPress={reload}>

@@ -45,3 +45,21 @@ export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
 });
+
+export const registerBeneficiarySchema = z.object({
+  familyName: z.string().min(2),
+  responsibleName: z.string().min(3),
+  responsibleCpf: z
+    .string()
+    .min(1)
+    .transform(digitsOnly)
+    .refine((v) => v.length >= 11, 'CPF inválido'),
+  childrenCount: z.number().int().min(1).max(12),
+  childrenNames: z.array(z.string().min(1)).min(1),
+  photoUrl: z.string().min(10),
+  region: z.string().min(2),
+  neighborhood: z.string().optional(),
+  shortAddress: z.string().optional(),
+  city: z.string().default('São Paulo'),
+  state: z.string().length(2).default('SP'),
+});

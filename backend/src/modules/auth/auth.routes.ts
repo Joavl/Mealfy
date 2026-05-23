@@ -6,6 +6,7 @@ const authRoutes = Router();
 
 authRoutes.post('/register/donor', AuthController.registerDonor);
 authRoutes.post('/register/entity', AuthController.registerEntity);
+authRoutes.post('/register/beneficiary', AuthController.registerBeneficiary);
 authRoutes.post('/login/mock', AuthController.login);
 authRoutes.get('/me', authMiddleware, AuthController.me);
 authRoutes.patch('/me/preferences', authMiddleware, AuthController.updatePreferences);

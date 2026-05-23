@@ -1,0 +1,56 @@
+.donor-brief-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.donor-brief-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 0 4px;
+}
+
+.donor-brief-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--color-surface-highest, #f3f4f6);
+  border: 3px solid var(--color-primary, #e85d04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-primary, #e85d04);
+  margin-bottom: 10px;
+}
+
+.donor-brief-avatar.top-tier {
+  border-color: var(--color-secondary, #f48c06);
+  box-shadow: 0 0 0 4px rgba(244, 140, 6, 0.2);
+}
+
+.donor-brief-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-primary, #1b4332);
+  margin: 0;
+}
+
+.donor-brief-impact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--color-outline, #6b7280);
+  margin: 6px 0 0;
+}
+
+.donor-brief-desc {
+  margin: 0;
+  padding: 12px;
+  background: var(--color-surface-highest, #f9fafb);
+  border-radius: 12px;
+}

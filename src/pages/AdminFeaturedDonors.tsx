@@ -101,6 +101,7 @@ const AdminFeaturedDonors: React.FC = () => {
     setSaving(true);
     try {
       await featuredDonorsService.saveConfig(featuredIds, user?.id);
+      window.dispatchEvent(new CustomEvent('mealfy:featured-donors-updated'));
       showToast('Carrossel atualizado! A home já reflete a nova ordem.', 'success');
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Erro ao salvar.', 'error');
@@ -114,6 +115,7 @@ const AdminFeaturedDonors: React.FC = () => {
     setSaving(true);
     try {
       await featuredDonorsService.saveConfig([], user?.id);
+      window.dispatchEvent(new CustomEvent('mealfy:featured-donors-updated'));
       showToast('Destaque manual removido. Ordem automática por valor doado.', 'success');
     } finally {
       setSaving(false);
