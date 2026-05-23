@@ -202,7 +202,7 @@ public class AuthService : IAuthService
             throw new InvalidOperationException("Use o login com e-mail e senha (Firebase) para esta conta.");
         }
 
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail, ct)
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail, ct)
             ?? throw new InvalidOperationException("Invalid credentials");
 
         return new LoginResponse(user.Id.ToString(), UserMapper.ToDto(user));

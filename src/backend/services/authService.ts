@@ -216,12 +216,45 @@ export const authService = {
     assertPasswordForEmailLogin(role, trimmedId, password);
     const pwd = password!;
 
-    if (isFirebaseConfigured && trimmedId.includes('@')) {
-      return authService.loginWithEmailPassword(targetEmail, pwd, role);
-    }
-
     if (isDemoEmail(targetEmail) && pwd !== DEMO_PASSWORD) {
       throw new Error('Senha incorreta.');
+    }
+
+    // Contas demo @mealfy.com usam API local (nao Firebase)
+    if (isDemoEmail(targetEmail)) {
+      try {
+        const response = await authApi.loginMock(targetEmail, pwd);
+        if (response?.user) {
+          assertRoleMatch(response.user, role);
+          storage.set(SESSION_KEY, response.user);
+          return response.user;
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : '';
+        if (msg.includes('Invalid credentials') || msg.includes('401') || msg.includes('500')) {
+          // tenta fallback local abaixo
+        } else if (msg && !msg.includes('API-ONLY')) {
+          handleApiError(e, 'Auth Login Demo');
+          if (!shouldFallback()) throw e;
+        } else {
+          handleApiError(e, 'Auth Login Demo');
+        }
+      }
+
+      await randomDelay(400, 800);
+      authService.initDB();
+      const localUsers = storage.get<User[]>(USERS_KEY, mockUsers);
+      const localUser = localUsers.find((u) => u.role === role && u.email?.toLowerCase() === targetEmail);
+      if (localUser) {
+        assertRoleMatch(localUser, role);
+        storage.set(SESSION_KEY, localUser);
+        return localUser;
+      }
+      throw new Error('E-mail ou senha incorretos.');
+    }
+
+    if (isFirebaseConfigured && trimmedId.includes('@')) {
+      return authService.loginWithEmailPassword(targetEmail, pwd, role);
     }
 
     try {

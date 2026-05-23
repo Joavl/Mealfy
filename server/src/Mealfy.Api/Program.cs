@@ -41,6 +41,7 @@ using (var scope = app.Services.CreateScope())
     {
         await db.Database.EnsureCreatedAsync();
         await EnsureFamilyColumnsAsync(db);
+        await EnsureUserColumnsAsync(db);
     }
 
     await DbSeeder.SeedAsync(db);
@@ -73,6 +74,28 @@ static async Task EnsureFamilyColumnsAsync(MealfyDbContext db)
         "ALTER TABLE Families ADD COLUMN MainNeed TEXT",
         "ALTER TABLE Families ADD COLUMN PriorityLevel INTEGER NOT NULL DEFAULT 3",
         "ALTER TABLE Families ADD COLUMN NeedsEntitySupport INTEGER NOT NULL DEFAULT 0",
+    };
+    foreach (var sql in alters)
+    {
+        try { await db.Database.ExecuteSqlRawAsync(sql); } catch { /* coluna já existe */ }
+    }
+}
+
+static async Task EnsureUserColumnsAsync(MealfyDbContext db)
+{
+    var alters = new[]
+    {
+        "ALTER TABLE Users ADD COLUMN Facebook TEXT",
+        "ALTER TABLE Users ADD COLUMN FirebaseUid TEXT",
+        "ALTER TABLE Users ADD COLUMN PreferredRegion TEXT",
+        "ALTER TABLE Users ADD COLUMN DocumentType TEXT",
+        "ALTER TABLE Users ADD COLUMN DocumentNumber TEXT",
+        "ALTER TABLE Users ADD COLUMN Instagram TEXT",
+        "ALTER TABLE Users ADD COLUMN ShowOnRanking INTEGER NOT NULL DEFAULT 1",
+        "ALTER TABLE Users ADD COLUMN ShowInstagram INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE Users ADD COLUMN AnonymousMode INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE Users ADD COLUMN CreatedAt TEXT",
+        "ALTER TABLE Users ADD COLUMN UpdatedAt TEXT",
     };
     foreach (var sql in alters)
     {

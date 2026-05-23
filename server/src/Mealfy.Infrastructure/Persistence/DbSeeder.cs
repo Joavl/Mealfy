@@ -15,7 +15,11 @@ public static class DbSeeder
 
     public static async Task SeedAsync(MealfyDbContext db)
     {
-        if (await db.Users.AnyAsync()) return;
+        if (await db.Users.AnyAsync())
+        {
+            await EnsureDemoUsersAsync(db);
+            return;
+        }
 
         db.Entities.Add(new AuthorizingEntity
         {
@@ -101,6 +105,70 @@ public static class DbSeeder
                 FamilyId = FamilyId,
                 Source = source,
                 Verified = false,
+            });
+        }
+
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>Garante contas demo se o banco ja existia sem elas (ex.: admin).</summary>
+    private static async Task EnsureDemoUsersAsync(MealfyDbContext db)
+    {
+        if (!await db.Users.AnyAsync(u => u.Email == "admin@mealfy.com"))
+        {
+            db.Users.Add(new User
+            {
+                Id = AdminUserId,
+                Name = "Admin Mealfy",
+                Email = "admin@mealfy.com",
+                Role = UserRole.Admin,
+                Status = AccountStatus.Active,
+            });
+        }
+
+        if (!await db.Users.AnyAsync(u => u.Email == "doador@mealfy.com"))
+        {
+            db.Users.Add(new User
+            {
+                Id = DonorId,
+                Name = "Doador Demo",
+                Email = "doador@mealfy.com",
+                Role = UserRole.Donor,
+                Status = AccountStatus.Active,
+                TotalDonated = 150,
+                Instagram = "@doadordemo",
+                Facebook = "mealfy.doadores",
+                ShowInstagram = true,
+                ShowOnRanking = true,
+            });
+        }
+
+        if (!await db.Users.AnyAsync(u => u.Email == "entidade@mealfy.com"))
+        {
+            if (!await db.Entities.AnyAsync(e => e.Id == EntityId))
+            {
+                db.Entities.Add(new AuthorizingEntity
+                {
+                    Id = EntityId,
+                    Name = "Instituto Esperança",
+                    Cnpj = "12345678000199",
+                    Type = EntityType.ONG,
+                    ResponsibleName = "Maria Silva",
+                    Email = "entidade@mealfy.com",
+                    Phone = "81999990000",
+                    Region = "Recife",
+                    Status = AccountStatus.Approved,
+                });
+            }
+
+            db.Users.Add(new User
+            {
+                Id = EntityUserId,
+                Name = "Maria Silva",
+                Email = "entidade@mealfy.com",
+                Role = UserRole.Entity,
+                Status = AccountStatus.Approved,
+                EntityId = EntityId,
             });
         }
 
