@@ -1,72 +1,77 @@
 # Onde paramos — Mealfy
 
-Atualizado: 23/05/2026
+Atualizado: 25/05/2026
 
-## Feito recentemente
+## Quando chegar em casa — gerar o APK
 
-- **Cadastro primeira vez:** doador (`/register-donor`), entidade (`/register-entity`), beneficiario (`/register-beneficiary`)
-- **Login com senha obrigatoria** — contas demo `@mealfy.com` usam senha **`mealfy123`** (nao Firebase)
-- **Correcao login admin:** colunas SQLite em `Users` (ex.: `Facebook`), seeder garante usuario admin no banco
-- **Carrossel** doadores em destaque (admin + card ao clicar)
-- **Mapa** — botoes Detalhes/Doar nos popups
-- **Entidade** — familias sem estrutura + atribuicao
-- **Firebase** frontend + Firestore; API .NET com gift iFood, doacoes
-- Scripts: `sync:lan`, `dev:check`, `firewall`, `stop:api`, `expo:go`
-- Deploy producao documentado: `DEPLOY-PRODUCAO.md` (Firebase Hosting + Render + `build:apk:prod`)
-- Repo GitHub: https://github.com/Joavl/Mealfy
-
-## Como retomar (amanha)
+### Opcao rapida (mesma Wi-Fi, teste hoje)
 
 ```powershell
 cd Mealfy
 
-# Terminal 1 — API
-npm run dev:api
+# 1) Preparar (build do site + IP + EAS)
+npm run prepare:apk:local
 
-# Terminal 2 — site
+# 2) Servidores (2 terminais)
+npm run dev:api
 npm run dev
+
+# 3) Gerar APK (~10-20 min) — link de download no terminal
+npm run build:apk
 ```
 
-Abra http://localhost:5173
+Guia detalhado: **COMO-BAIXAR-APK.md**
 
-Se a API nao subir (arquivo bloqueado):
+### Opcao enviar para outra pessoa (4G / outra cidade)
+
+1. Publicar API no Render (ver **DEPLOY-PRODUCAO.md**)
+2. Editar `.env.production` — trocar `SEU-SERVICO` pela URL da API
+3. `npm run deploy:web`
+4. `npm run prepare:apk:prod`
+5. `npm run build:apk:prod`
+
+---
+
+## O que ja esta pronto no codigo
+
+- Cadastro doador, entidade, beneficiario
+- Login com senha (demo `@mealfy.com` → **mealfy123**)
+- Admin, carrossel, mapa, entidade, gift iFood, Firebase
+- Scripts: `prepare:apk`, `build:apk`, `stop:api`, `sync:lan`
+- App mobile v1.1.0 (versionCode 2)
+- Correcao TypeScript no cadastro beneficiario (build APK)
+
+---
+
+## Retomar desenvolvimento normal
 
 ```powershell
-npm run stop:api
-npm run dev:api
+cd Mealfy
+npm run dev:api    # terminal 1
+npm run dev        # terminal 2
 ```
 
-## Contas demo
+http://localhost:5173
 
-| Perfil | Login | Senha |
-|--------|--------|--------|
-| Admin | `admin@mealfy.com` | `mealfy123` |
-| Doador | `doador@mealfy.com` | `mealfy123` |
-| Entidade | `entidade@mealfy.com` | `mealfy123` |
-| Beneficiario | CPF `123.456.789-00` | (sem senha) |
+**Admin:** `admin@mealfy.com` / `mealfy123` (rodape → acesso administrativo)
 
-Admin: tela de entrada → rodape **"Acesso administrativo restrito"**.
+Se API travar: `npm run stop:api` depois `npm run dev:api`
 
-Se login falhar: apague `server/src/Mealfy.Api/mealfy.dev.db` e rode `npm run dev:api` de novo.
+---
 
-## Celular (mesma Wi-Fi)
+## Requisitos APK (uma vez em casa)
 
 ```powershell
-npm run sync:lan
-npm run dev:mobile
-# ou
-npm run expo:go
+npm install -g eas-cli
+eas login
 ```
 
-## Pendente / proximos passos
+Conta gratuita: https://expo.dev
 
-1. Firebase Console — dominios autorizados (`localhost`, hosting) se usar login Google
-2. Publicar site + API para APK funcionar fora de casa → `DEPLOY-PRODUCAO.md`
-3. `firebase-service-account.json` na API (opcional, producao)
-4. Login Facebook OAuth real (hoje abre pagina Mealfy)
+---
 
-## Arquivos importantes
+## Repo
 
-- `.env` — nao vai pro Git; copiar de `.env.example`
-- `COMO-RODAR.md` — guia completo
-- `DEPLOY-PRODUCAO.md` — APK para qualquer cidade
+https://github.com/Joavl/Mealfy
+
+Arquivos nao vao pro Git: `.env`, `.env.production`, `firebase-service-account.json`

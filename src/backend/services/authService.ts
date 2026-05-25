@@ -674,10 +674,8 @@ export const authService = {
       throw new Error('CPF já cadastrado.');
     }
 
-    const family = await familyService.addFamily({
-      ...familyDraft,
-      id: familyId,
-    });
+    const { id: _draftFamilyId, ...familyPayload } = familyDraft;
+    const family = await familyService.addFamily(familyPayload);
 
     const newUser: User = {
       id: firestoreUid ?? `u-ben-${Date.now()}`,
