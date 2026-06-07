@@ -1,0 +1,152 @@
+/* =========================================================
+   Feed — Página Alimentar (Placeholder Fase 2)
+   ========================================================= */
+
+.feed-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--color-background);
+}
+
+.feed-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Introdução ─────────────────────────────────────────── */
+.feed-intro {
+  padding-top: 28px;
+  padding-bottom: 8px;
+}
+
+.feed-title {
+  font-family: var(--font-family-heading);
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.feed-subtitle {
+  font-size: 0.95rem;
+  color: var(--color-outline);
+  line-height: 1.5;
+}
+
+/* ─── Seletor de modos ───────────────────────────────────── */
+.feed-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feed-mode-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 18px 16px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-outline-low);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.feed-mode-card:active {
+  transform: scale(0.98);
+  box-shadow: none;
+}
+
+.feed-mode-card:hover {
+  border-color: var(--color-outline-variant);
+  box-shadow: var(--shadow-md);
+}
+
+/* Ícone */
+.feed-mode-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+}
+
+.feed-mode-icon--primary {
+  background-color: rgba(var(--color-primary-rgb), 0.09);
+  color: var(--color-primary);
+}
+
+.feed-mode-icon--secondary {
+  background-color: rgba(212, 167, 44, 0.12);
+  color: var(--color-secondary);
+}
+
+/* Texto */
+.feed-mode-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.feed-mode-title {
+  font-family: var(--font-family-body);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin-bottom: 4px;
+}
+
+.feed-mode-desc {
+  font-size: 0.82rem;
+  color: var(--color-outline);
+  line-height: 1.4;
+}
+
+/* Seta */
+.feed-mode-arrow {
+  font-size: 1.4rem;
+  color: var(--color-outline-variant);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.feed-mode-card:hover .feed-mode-arrow {
+  transform: translateX(3px);
+}
+
+/* ─── Nota informativa ───────────────────────────────────── */
+.feed-info-note {
+  background: rgba(var(--color-primary-rgb), 0.04);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.08);
+  border-radius: var(--radius-lg);
+}
+
+.feed-info-text {
+  font-size: 0.82rem;
+  color: var(--color-outline);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* ─── Reduced motion ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .feed-mode-card,
+  .feed-mode-arrow {
+    transition: none !important;
+  }
+
+  .feed-mode-card:active {
+    transform: none !important;
+  }
+}

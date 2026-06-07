@@ -22,7 +22,7 @@ const BigDonation: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   if (!community && !selectedRegion) {
-    navigate('/explore');
+    navigate('/map');
     return null;
   }
 

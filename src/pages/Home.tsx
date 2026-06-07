@@ -127,7 +127,7 @@ const Home: React.FC = () => {
               variant="outline" 
               size="large" 
               fullWidth
-              onClick={() => navigate('/explore')}
+              onClick={() => navigate('/map')}
               className="cta-secondary text-inverted border-inverted"
             >
               Explorar ações na região

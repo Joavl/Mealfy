@@ -1,77 +1,152 @@
+/* =========================================================
+   Mealfy — BottomTabBar: Floating Glassmorphism Dock
+   ========================================================= */
+
+/* ─── Dock container ──────────────────────────────────────── */
 .bottom-tab-bar {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: calc(76px + env(safe-area-inset-bottom, 0px));
-  padding: 6px 10px env(safe-area-inset-bottom, 0px);
-  background-color: rgba(255, 253, 248, 0.9);
+
+  /* Flutua acima da borda inferior com margem lateral */
+  bottom: calc(var(--navbar-bottom-gap, 16px) + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 488px; /* 520px - 32px de margens */
+
+  height: var(--navbar-height, 64px);
+  padding: 8px 12px;
+
   display: flex;
   justify-content: space-around;
   align-items: center;
-  box-shadow: 0 -16px 36px rgba(31, 36, 32, 0.12);
+  gap: 4px;
+
+  /* Forma */
+  border-radius: 28px;
+
+  /* Glassmorphism — blur real */
+  background: var(--glass-bg, rgba(251, 247, 238, 0.82));
+  backdrop-filter: var(--glass-blur, blur(20px) saturate(1.4));
+  -webkit-backdrop-filter: var(--glass-blur, blur(20px) saturate(1.4));
+
+  /* Profundidade: borda interna + sombra externa */
+  border: 1px solid var(--glass-border, rgba(255, 253, 248, 0.65));
+  box-shadow:
+    0 8px 32px rgba(6, 61, 88, 0.14),
+    0 2px 8px rgba(6, 61, 88, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
   z-index: 9000;
-  border-top: 1px solid rgba(128, 111, 93, 0.14);
-  backdrop-filter: blur(18px);
+
+  /* Sem interferência com teclado virtual */
+  will-change: transform;
 }
 
+/* Fallback opaco quando backdrop-filter não é suportado */
+@supports not (backdrop-filter: blur(1px)) {
+  .bottom-tab-bar {
+    background: var(--glass-bg-solid, rgba(251, 247, 238, 0.97));
+  }
+}
+
+/* Desktop: centralizado com a página */
+@media (min-width: 760px) {
+  .bottom-tab-bar {
+    max-width: 488px;
+  }
+}
+
+/* ─── Tab item — base ─────────────────────────────────────── */
 .tab-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 3px;
+
+  flex: 1;
+  min-height: 48px;
+  min-width: 44px; /* área mínima de toque */
+  padding: 6px 8px;
+  border-radius: 20px;
+
   color: var(--color-outline);
   text-decoration: none;
-  font-size: 0.7rem;
-  font-weight: 600;
-  gap: 4px;
-  transition: color 0.2s ease, transform 0.2s ease;
-  flex: 1;
-  min-height: 56px;
-  border-radius: 18px;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  user-select: none;
+
+  /* Transição suave: 150–200ms conforme spec */
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Feedback de toque */
 .tab-item:active {
-  transform: scale(0.95);
+  transform: scale(0.91);
 }
 
+/* ─── Estado ativo — padrão (primary) ───────────────────── */
 .tab-item.active {
   color: var(--color-primary);
-  background-color: rgba(var(--color-primary-rgb), 0.06);
+  background-color: rgba(var(--color-primary-rgb), 0.09);
 }
 
-.tab-item.active svg {
-  color: var(--color-primary);
+.tab-item.active .tab-label {
+  font-weight: 700;
 }
 
-.donate-tab {
-  position: relative;
-}
-
-.donate-icon-wrapper {
-  background: linear-gradient(180deg, var(--color-primary-container), var(--color-primary));
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+/* ─── Ícone wrapper ───────────────────────────────────────── */
+.tab-icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 16px 30px rgba(var(--color-primary-rgb), 0.28);
-  margin-top: -30px; /* Float above the bar */
-  margin-bottom: 4px;
-  border: 4px solid var(--color-background);
-  transition: transform 0.2s ease, background-color 0.2s ease;
+  width: 28px;
+  height: 28px;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.donate-tab.active .donate-icon-wrapper {
-  background: linear-gradient(180deg, #f2cc5a, var(--color-secondary));
+.tab-item.active .tab-icon-wrapper {
+  transform: scale(1.05);
 }
 
-.donate-tab.active span {
+/* ─── Label ───────────────────────────────────────────────── */
+.tab-label {
+  font-family: var(--font-family-body);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  transition: font-weight 0.18s ease;
+}
+
+/* ─── Aba Alimentar — estado especial dourado ────────────── */
+.tab-item--feed.active {
+  color: var(--color-secondary);
+  background-color: rgba(212, 167, 44, 0.11);
+}
+
+.tab-item--feed.active .tab-label {
+  font-weight: 800;
   color: var(--color-secondary);
 }
 
-.donate-tab:active .donate-icon-wrapper {
-  transform: scale(0.95);
+/* Ícone da aba Alimentar: leve aumento no ativo */
+.tab-item--feed.active .tab-icon-wrapper {
+  transform: scale(1.12);
+}
+
+/* ─── Redução de movimento (acessibilidade) ──────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .tab-item,
+  .tab-icon-wrapper,
+  .tab-label {
+    transition: none !important;
+  }
+
+  .tab-item:active {
+    transform: none !important;
+  }
 }

@@ -160,9 +160,9 @@ const Success: React.FC = () => {
             className="shadow-glow" 
             size="large" 
             fullWidth
-            onClick={() => navigate('/explore')}
+            onClick={() => navigate('/map')}
           >
-            Acompanhar impacto da região
+            Ver impacto no mapa
           </Button>
           
           <div className="secondary-actions flex gap-3 mt-2">
