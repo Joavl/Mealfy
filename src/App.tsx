@@ -55,21 +55,45 @@ const PrivateRoute = ({
 };
 
 // ─── DonateRedirect ────────────────────────────────────────
-// Rota /donate legada. Encaminha estado de família/lote para
-// /donate-confirm (checkout), e sem estado vai para /feed.
+// Rota /donate legada (mantida por compatibilidade).
+//
+// Comportamento:
+// - Preserva location.state na íntegra (targetFamily, selectedFamilyIds,
+//   selectedCommunity, valores calculados, etc.)
+// - Preserva query params (location.search)
+// - Se há dados de família ou lote → /donate-confirm (checkout)
+// - Sem dados → /feed (seletor de modo)
+// - Proteção de loop: se veio de /donate-confirm, vai direto para /feed
 const DonateRedirect = () => {
   const location = useLocation();
-  const hasTargetFamily = Boolean(location.state?.targetFamily);
-  const hasBatch = Boolean(location.state?.selectedFamilyIds?.length);
 
-  if (hasTargetFamily || hasBatch) {
+  const hasTargetFamily = Boolean(location.state?.targetFamily);
+  const hasBatch =
+    Array.isArray(location.state?.selectedFamilyIds) &&
+    location.state.selectedFamilyIds.length > 0;
+
+  // Anti-loop: se o referrer já era /donate-confirm, não volta para lá
+  const cameFromConfirm = location.state?._from === '/donate-confirm';
+
+  if ((hasTargetFamily || hasBatch) && !cameFromConfirm) {
+    // Injeta _from no state para detectar possível loop na próxima navegação
+    const forwardState = {
+      ...location.state,
+      _from: '/donate',
+    };
     return (
-      <Navigate to="/donate-confirm" state={location.state} replace />
+      <Navigate
+        to={`/donate-confirm${location.search}`}
+        state={forwardState}
+        replace
+      />
     );
   }
 
+  // Sem contexto de família, vai para o seletor de modo Alimentar
   return <Navigate to="/feed" replace />;
 };
+
 
 // ─── Layout ────────────────────────────────────────────────
 // Wrapper global que controla visibilidade da BottomTabBar.

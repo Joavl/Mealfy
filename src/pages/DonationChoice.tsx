@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import AppHeader from '../components/layout/AppHeader';
 import Button from '../components/ui/Button';
 import CommunitySelectorModal from '../components/modals/CommunitySelectorModal';
@@ -30,7 +30,10 @@ const DonationChoice: React.FC = () => {
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  if (!selectedCommunity) return null;
+  // Sem comunidade selecionada: redireciona para o seletor de modo
+  // em vez de exibir tela em branco.
+  if (!selectedCommunity) return <Navigate to="/feed" replace />;
+
 
   const amounts = IFOOD_AMOUNT_TIERS.map((tier) => ({
     value: tier.value,

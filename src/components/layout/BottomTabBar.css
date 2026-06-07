@@ -11,15 +11,15 @@
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 32px);
-  max-width: 488px; /* 520px - 32px de margens */
+  max-width: 488px;
 
   height: var(--navbar-height, 64px);
-  padding: 8px 12px;
+  padding: 8px 10px;
 
   display: flex;
   justify-content: space-around;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 
   /* Forma */
   border-radius: 28px;
@@ -37,9 +37,10 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 
   z-index: 9000;
-
-  /* Sem interferência com teclado virtual */
   will-change: transform;
+
+  /* Evita que o teclado virtual desloque a navbar no iOS */
+  position: fixed;
 }
 
 /* Fallback opaco quando backdrop-filter não é suportado */
@@ -49,7 +50,7 @@
   }
 }
 
-/* Desktop: centralizado com a página */
+/* Desktop: centralizado como a página */
 @media (min-width: 760px) {
   .bottom-tab-bar {
     max-width: 488px;
@@ -65,9 +66,9 @@
   gap: 3px;
 
   flex: 1;
-  min-height: 48px;
-  min-width: 44px; /* área mínima de toque */
-  padding: 6px 8px;
+  min-height: 48px;   /* Área mínima de toque: 48×44 (WCAG 2.5.5) */
+  min-width: 44px;
+  padding: 6px 6px;
   border-radius: 20px;
 
   color: var(--color-outline);
@@ -76,11 +77,20 @@
   cursor: pointer;
   user-select: none;
 
-  /* Transição suave: 150–200ms conforme spec */
+  /* Transições 150–200ms conforme spec */
   transition:
     color 0.18s ease,
     background-color 0.18s ease,
     transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Foco visível por teclado — não apenas pela cor */
+  outline: none;
+}
+
+.tab-item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 20px;
 }
 
 /* Feedback de toque */
@@ -103,8 +113,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -119,7 +129,12 @@
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.01em;
+  white-space: nowrap;     /* Nunca quebra linha no label */
   transition: font-weight 0.18s ease;
+}
+
+.tab-item.active .tab-label {
+  font-weight: 700;
 }
 
 /* ─── Aba Alimentar — estado especial dourado ────────────── */
@@ -130,12 +145,34 @@
 
 .tab-item--feed.active .tab-label {
   font-weight: 800;
-  color: var(--color-secondary);
 }
 
 /* Ícone da aba Alimentar: leve aumento no ativo */
 .tab-item--feed.active .tab-icon-wrapper {
   transform: scale(1.12);
+}
+
+/* ─── Viewport estreito — 320px ───────────────────────────── */
+@media (max-width: 340px) {
+  .bottom-tab-bar {
+    padding: 8px 6px;
+    gap: 0;
+    border-radius: 22px;
+  }
+
+  .tab-item {
+    padding: 6px 4px;
+    min-width: 36px;
+  }
+
+  .tab-icon-wrapper {
+    width: 22px;
+    height: 22px;
+  }
+
+  .tab-label {
+    font-size: 9px;
+  }
 }
 
 /* ─── Redução de movimento (acessibilidade) ──────────────── */

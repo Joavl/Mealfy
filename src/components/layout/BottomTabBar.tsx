@@ -18,11 +18,18 @@ const BottomTabBar: React.FC = () => {
           end
           className={({ isActive }) => `tab-item${isActive ? ' active' : ''}`}
           aria-label="Início"
+          aria-current={undefined} // definido via className + data abaixo
         >
-          <span className="tab-icon-wrapper">
-            <Home size={22} />
-          </span>
-          <span className="tab-label">Início</span>
+          {({ isActive }) => (
+            <>
+              <span className="tab-icon-wrapper" aria-hidden="true">
+                <Home size={22} />
+              </span>
+              <span className="tab-label" aria-current={isActive ? 'page' : undefined}>
+                Início
+              </span>
+            </>
+          )}
         </NavLink>
 
         <NavLink
@@ -30,10 +37,16 @@ const BottomTabBar: React.FC = () => {
           className={({ isActive }) => `tab-item tab-item--feed${isActive ? ' active' : ''}`}
           aria-label="Alimentar"
         >
-          <span className="tab-icon-wrapper">
-            <Heart size={22} />
-          </span>
-          <span className="tab-label">Alimentar</span>
+          {({ isActive }) => (
+            <>
+              <span className="tab-icon-wrapper" aria-hidden="true">
+                <Heart size={22} />
+              </span>
+              <span className="tab-label" aria-current={isActive ? 'page' : undefined}>
+                Alimentar
+              </span>
+            </>
+          )}
         </NavLink>
 
         <NavLink
@@ -41,10 +54,16 @@ const BottomTabBar: React.FC = () => {
           className={({ isActive }) => `tab-item${isActive ? ' active' : ''}`}
           aria-label="Mapa"
         >
-          <span className="tab-icon-wrapper">
-            <MapPin size={22} />
-          </span>
-          <span className="tab-label">Mapa</span>
+          {({ isActive }) => (
+            <>
+              <span className="tab-icon-wrapper" aria-hidden="true">
+                <MapPin size={22} />
+              </span>
+              <span className="tab-label" aria-current={isActive ? 'page' : undefined}>
+                Mapa
+              </span>
+            </>
+          )}
         </NavLink>
 
         <NavLink
@@ -52,10 +71,16 @@ const BottomTabBar: React.FC = () => {
           className={({ isActive }) => `tab-item${isActive ? ' active' : ''}`}
           aria-label="Perfil"
         >
-          <span className="tab-icon-wrapper">
-            <User size={22} />
-          </span>
-          <span className="tab-label">Perfil</span>
+          {({ isActive }) => (
+            <>
+              <span className="tab-icon-wrapper" aria-hidden="true">
+                <User size={22} />
+              </span>
+              <span className="tab-label" aria-current={isActive ? 'page' : undefined}>
+                Perfil
+              </span>
+            </>
+          )}
         </NavLink>
       </nav>
     );
@@ -68,32 +93,50 @@ const BottomTabBar: React.FC = () => {
         <NavLink
           to="/entity/dashboard"
           className={({ isActive }) => `tab-item${isActive ? ' active' : ''}`}
-          aria-label="Painel"
+          aria-label="Painel da entidade"
         >
-          <span className="tab-icon-wrapper">
-            <LayoutDashboard size={22} />
-          </span>
-          <span className="tab-label">Painel</span>
+          {({ isActive }) => (
+            <>
+              <span className="tab-icon-wrapper" aria-hidden="true">
+                <LayoutDashboard size={22} />
+              </span>
+              <span className="tab-label" aria-current={isActive ? 'page' : undefined}>
+                Painel
+              </span>
+            </>
+          )}
         </NavLink>
         <NavLink
           to="/register-family"
           className={({ isActive }) => `tab-item${isActive ? ' active' : ''}`}
           aria-label="Cadastrar família"
         >
-          <span className="tab-icon-wrapper">
-            <Users size={22} />
-          </span>
-          <span className="tab-label">Cadastrar</span>
+          {({ isActive }) => (
+            <>
+              <span className="tab-icon-wrapper" aria-hidden="true">
+                <Users size={22} />
+              </span>
+              <span className="tab-label" aria-current={isActive ? 'page' : undefined}>
+                Cadastrar
+              </span>
+            </>
+          )}
         </NavLink>
         <NavLink
           to="/profile"
           className={({ isActive }) => `tab-item${isActive ? ' active' : ''}`}
           aria-label="Perfil"
         >
-          <span className="tab-icon-wrapper">
-            <User size={22} />
-          </span>
-          <span className="tab-label">Perfil</span>
+          {({ isActive }) => (
+            <>
+              <span className="tab-icon-wrapper" aria-hidden="true">
+                <User size={22} />
+              </span>
+              <span className="tab-label" aria-current={isActive ? 'page' : undefined}>
+                Perfil
+              </span>
+            </>
+          )}
         </NavLink>
       </nav>
     );
@@ -108,20 +151,32 @@ const BottomTabBar: React.FC = () => {
           className={({ isActive }) => `tab-item${isActive ? ' active' : ''}`}
           aria-label="Início"
         >
-          <span className="tab-icon-wrapper">
-            <Home size={22} />
-          </span>
-          <span className="tab-label">Início</span>
+          {({ isActive }) => (
+            <>
+              <span className="tab-icon-wrapper" aria-hidden="true">
+                <Home size={22} />
+              </span>
+              <span className="tab-label" aria-current={isActive ? 'page' : undefined}>
+                Início
+              </span>
+            </>
+          )}
         </NavLink>
         <NavLink
           to="/profile"
           className={({ isActive }) => `tab-item${isActive ? ' active' : ''}`}
           aria-label="Perfil"
         >
-          <span className="tab-icon-wrapper">
-            <User size={22} />
-          </span>
-          <span className="tab-label">Perfil</span>
+          {({ isActive }) => (
+            <>
+              <span className="tab-icon-wrapper" aria-hidden="true">
+                <User size={22} />
+              </span>
+              <span className="tab-label" aria-current={isActive ? 'page' : undefined}>
+                Perfil
+              </span>
+            </>
+          )}
         </NavLink>
       </nav>
     );
@@ -134,22 +189,34 @@ const BottomTabBar: React.FC = () => {
         <NavLink
           to="/admin/dashboard"
           className={({ isActive }) => `tab-item${isActive ? ' active' : ''}`}
-          aria-label="Admin"
+          aria-label="Painel administrativo"
         >
-          <span className="tab-icon-wrapper">
-            <ShieldCheck size={22} />
-          </span>
-          <span className="tab-label">Admin</span>
+          {({ isActive }) => (
+            <>
+              <span className="tab-icon-wrapper" aria-hidden="true">
+                <ShieldCheck size={22} />
+              </span>
+              <span className="tab-label" aria-current={isActive ? 'page' : undefined}>
+                Admin
+              </span>
+            </>
+          )}
         </NavLink>
         <NavLink
           to="/profile"
           className={({ isActive }) => `tab-item${isActive ? ' active' : ''}`}
           aria-label="Perfil"
         >
-          <span className="tab-icon-wrapper">
-            <User size={22} />
-          </span>
-          <span className="tab-label">Perfil</span>
+          {({ isActive }) => (
+            <>
+              <span className="tab-icon-wrapper" aria-hidden="true">
+                <User size={22} />
+              </span>
+              <span className="tab-label" aria-current={isActive ? 'page' : undefined}>
+                Perfil
+              </span>
+            </>
+          )}
         </NavLink>
       </nav>
     );
