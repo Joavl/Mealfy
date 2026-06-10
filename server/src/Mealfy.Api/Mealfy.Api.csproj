@@ -17,6 +17,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>mealfy-api-73a4b7c8-0f04-4c4f-9b62-11c7fae9b3a5</UserSecretsId>
   </PropertyGroup>
 
 </Project>
