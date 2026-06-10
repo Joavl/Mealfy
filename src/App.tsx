@@ -29,6 +29,8 @@ import Register from './pages/Register';
 import RegisterBeneficiary from './pages/RegisterBeneficiary';
 import IndicateFamily from './pages/IndicateFamily';
 
+const AdminRoutes = React.lazy(() => import('./admin/routes/AdminRoutes'));
+
 import './App.css';
 
 // ─── PrivateRoute ──────────────────────────────────────────
@@ -111,7 +113,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   ];
   const isHiddenRoute = hideTabBarRoutes.some(route =>
     location.pathname.startsWith(route),
-  );
+  ) || location.pathname.startsWith('/admin');
 
   const showTabBar = !isHiddenRoute;
 
@@ -305,23 +307,8 @@ function App() {
                 }
               />
 
-              {/* ── Rotas do admin ────────────────────────── */}
-              <Route
-                path="/admin/dashboard"
-                element={
-                  <PrivateRoute allowedRoles={['admin']}>
-                    <AdminDashboard />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/admin/featured-donors"
-                element={
-                  <PrivateRoute allowedRoles={['admin']}>
-                    <AdminFeaturedDonors />
-                  </PrivateRoute>
-                }
-              />
+              {/* ── Rotas do admin reorganizadas ───────────────── */}
+              <Route path="/admin/*" element={<AdminRoutes />} />
 
               {/* ── Redirect por role ─────────────────────── */}
               <Route path="/dashboard-redirect" element={<DashboardRedirect />} />
