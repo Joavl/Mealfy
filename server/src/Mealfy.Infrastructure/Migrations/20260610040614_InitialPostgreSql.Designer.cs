@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Mealfy.Infrastructure.Migrations
 {
     [DbContext(typeof(MealfyDbContext))]
-    [Migration("20260610040122_InitialPostgreSql")]
+    [Migration("20260610040614_InitialPostgreSql")]
     partial class InitialPostgreSql
     {
         /// <inheritdoc />
@@ -213,7 +213,8 @@ namespace Mealfy.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ConvertedFamilyId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"ConvertedFamilyId\" IS NOT NULL");
 
                     b.HasIndex("IndicatedByUserId");
 
@@ -502,13 +503,13 @@ namespace Mealfy.Infrastructure.Migrations
                     b.HasOne("Mealfy.Domain.Entities.User", "Donor")
                         .WithMany()
                         .HasForeignKey("DonorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Mealfy.Domain.Entities.Family", "Family")
                         .WithMany("Donations")
                         .HasForeignKey("FamilyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Donor");
@@ -518,6 +519,11 @@ namespace Mealfy.Infrastructure.Migrations
 
             modelBuilder.Entity("Mealfy.Domain.Entities.DonorIndication", b =>
                 {
+                    b.HasOne("Mealfy.Domain.Entities.Family", null)
+                        .WithOne()
+                        .HasForeignKey("Mealfy.Domain.Entities.DonorIndication", "ConvertedFamilyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Mealfy.Domain.Entities.User", "IndicatedByUser")
                         .WithMany()
                         .HasForeignKey("IndicatedByUserId")
@@ -532,7 +538,7 @@ namespace Mealfy.Infrastructure.Migrations
                     b.HasOne("Mealfy.Domain.Entities.AuthorizingEntity", "CreatedByEntity")
                         .WithMany("Families")
                         .HasForeignKey("CreatedByEntityId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("CreatedByEntity");
                 });
@@ -553,19 +559,19 @@ namespace Mealfy.Infrastructure.Migrations
                     b.HasOne("Mealfy.Domain.Entities.Donation", "Donation")
                         .WithOne("GiftCard")
                         .HasForeignKey("Mealfy.Domain.Entities.GiftCard", "DonationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Mealfy.Domain.Entities.User", "Donor")
                         .WithMany()
                         .HasForeignKey("DonorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Mealfy.Domain.Entities.Family", "Family")
                         .WithMany()
                         .HasForeignKey("FamilyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Donation");

@@ -76,7 +76,7 @@ namespace Mealfy.Infrastructure.Migrations
                         column: x => x.CreatedByEntityId,
                         principalTable: "Entities",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -183,13 +183,13 @@ namespace Mealfy.Infrastructure.Migrations
                         column: x => x.FamilyId,
                         principalTable: "Families",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Donations_Users_DonorId",
                         column: x => x.DonorId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -212,6 +212,12 @@ namespace Mealfy.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Indications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Indications_Families_ConvertedFamilyId",
+                        column: x => x.ConvertedFamilyId,
+                        principalTable: "Families",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Indications_Users_IndicatedByUserId",
                         column: x => x.IndicatedByUserId,
@@ -245,19 +251,19 @@ namespace Mealfy.Infrastructure.Migrations
                         column: x => x.DonationId,
                         principalTable: "Donations",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_GiftCards_Families_FamilyId",
                         column: x => x.FamilyId,
                         principalTable: "Families",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_GiftCards_Users_DonorId",
                         column: x => x.DonorId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
@@ -321,7 +327,8 @@ namespace Mealfy.Infrastructure.Migrations
                 name: "IX_Indications_ConvertedFamilyId",
                 table: "Indications",
                 column: "ConvertedFamilyId",
-                unique: true);
+                unique: true,
+                filter: "\"ConvertedFamilyId\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Indications_IndicatedByUserId",

@@ -54,7 +54,7 @@ CREATE TABLE "Families" (
     "InternalRef" text,
     "CreatedAt" timestamp with time zone NOT NULL,
     CONSTRAINT "PK_Families" PRIMARY KEY ("Id"),
-    CONSTRAINT "FK_Families_Entities_CreatedByEntityId" FOREIGN KEY ("CreatedByEntityId") REFERENCES "Entities" ("Id") ON DELETE SET NULL
+    CONSTRAINT "FK_Families_Entities_CreatedByEntityId" FOREIGN KEY ("CreatedByEntityId") REFERENCES "Entities" ("Id") ON DELETE RESTRICT
 );
 
 CREATE TABLE "Users" (
@@ -118,8 +118,8 @@ CREATE TABLE "Donations" (
     "Message" text,
     "CreatedAt" timestamp with time zone NOT NULL,
     CONSTRAINT "PK_Donations" PRIMARY KEY ("Id"),
-    CONSTRAINT "FK_Donations_Families_FamilyId" FOREIGN KEY ("FamilyId") REFERENCES "Families" ("Id") ON DELETE CASCADE,
-    CONSTRAINT "FK_Donations_Users_DonorId" FOREIGN KEY ("DonorId") REFERENCES "Users" ("Id") ON DELETE CASCADE
+    CONSTRAINT "FK_Donations_Families_FamilyId" FOREIGN KEY ("FamilyId") REFERENCES "Families" ("Id") ON DELETE RESTRICT,
+    CONSTRAINT "FK_Donations_Users_DonorId" FOREIGN KEY ("DonorId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
 );
 
 CREATE TABLE "Indications" (
@@ -136,6 +136,7 @@ CREATE TABLE "Indications" (
     "ConvertedAt" timestamp with time zone,
     "ConvertedByUserId" uuid,
     CONSTRAINT "PK_Indications" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_Indications_Families_ConvertedFamilyId" FOREIGN KEY ("ConvertedFamilyId") REFERENCES "Families" ("Id") ON DELETE RESTRICT,
     CONSTRAINT "FK_Indications_Users_IndicatedByUserId" FOREIGN KEY ("IndicatedByUserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
 );
 
@@ -153,9 +154,9 @@ CREATE TABLE "GiftCards" (
     "CreatedAt" timestamp with time zone NOT NULL,
     "RedeemedAt" timestamp with time zone,
     CONSTRAINT "PK_GiftCards" PRIMARY KEY ("Id"),
-    CONSTRAINT "FK_GiftCards_Donations_DonationId" FOREIGN KEY ("DonationId") REFERENCES "Donations" ("Id") ON DELETE CASCADE,
-    CONSTRAINT "FK_GiftCards_Families_FamilyId" FOREIGN KEY ("FamilyId") REFERENCES "Families" ("Id") ON DELETE CASCADE,
-    CONSTRAINT "FK_GiftCards_Users_DonorId" FOREIGN KEY ("DonorId") REFERENCES "Users" ("Id") ON DELETE CASCADE
+    CONSTRAINT "FK_GiftCards_Donations_DonationId" FOREIGN KEY ("DonationId") REFERENCES "Donations" ("Id") ON DELETE RESTRICT,
+    CONSTRAINT "FK_GiftCards_Families_FamilyId" FOREIGN KEY ("FamilyId") REFERENCES "Families" ("Id") ON DELETE RESTRICT,
+    CONSTRAINT "FK_GiftCards_Users_DonorId" FOREIGN KEY ("DonorId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
 );
 
 CREATE INDEX "IX_AuditLogs_EntityType_EntityId" ON "AuditLogs" ("EntityType", "EntityId");
@@ -180,7 +181,7 @@ CREATE INDEX "IX_GiftCards_DonorId" ON "GiftCards" ("DonorId");
 
 CREATE INDEX "IX_GiftCards_FamilyId" ON "GiftCards" ("FamilyId");
 
-CREATE UNIQUE INDEX "IX_Indications_ConvertedFamilyId" ON "Indications" ("ConvertedFamilyId");
+CREATE UNIQUE INDEX "IX_Indications_ConvertedFamilyId" ON "Indications" ("ConvertedFamilyId") WHERE "ConvertedFamilyId" IS NOT NULL;
 
 CREATE INDEX "IX_Indications_IndicatedByUserId" ON "Indications" ("IndicatedByUserId");
 
@@ -193,7 +194,7 @@ CREATE INDEX "IX_Users_EntityId" ON "Users" ("EntityId");
 CREATE INDEX "IX_Users_FirebaseUid" ON "Users" ("FirebaseUid");
 
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260610040122_InitialPostgreSql', '8.0.11');
+VALUES ('20260610040614_InitialPostgreSql', '8.0.11');
 
 COMMIT;
 

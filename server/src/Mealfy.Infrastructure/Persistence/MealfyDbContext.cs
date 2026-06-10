@@ -40,7 +40,7 @@ public class MealfyDbContext : DbContext
             e.HasOne(x => x.CreatedByEntity)
                 .WithMany(x => x.Families)
                 .HasForeignKey(x => x.CreatedByEntityId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<FamilyValidation>(e =>
@@ -57,10 +57,26 @@ public class MealfyDbContext : DbContext
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => new { x.Status, x.CreatedAt }).HasDatabaseName("IX_Indications_Status_CreatedAt");
-            e.HasIndex(x => x.ConvertedFamilyId).IsUnique();
+            
+            // Unique nullable index on ConvertedFamilyId with partial filter for PostgreSQL
+            var indexBuilder = e.HasIndex(x => x.ConvertedFamilyId).IsUnique();
+            if (Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                indexBuilder.HasFilter("\"ConvertedFamilyId\" IS NOT NULL");
+            }
+            else
+            {
+                indexBuilder.HasFilter("ConvertedFamilyId IS NOT NULL");
+            }
+
             e.HasOne(x => x.IndicatedByUser)
                 .WithMany()
                 .HasForeignKey(x => x.IndicatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne<Family>()
+                .WithOne()
+                .HasForeignKey<DonorIndication>(x => x.ConvertedFamilyId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -68,9 +84,9 @@ public class MealfyDbContext : DbContext
         {
             e.HasKey(x => x.Id);
             e.Property(x => x.Amount).HasPrecision(18, 2);
-            e.HasOne(x => x.Donor).WithMany().HasForeignKey(x => x.DonorId);
-            e.HasOne(x => x.Family).WithMany(x => x.Donations).HasForeignKey(x => x.FamilyId);
-            e.HasOne(x => x.GiftCard).WithOne(x => x.Donation).HasForeignKey<GiftCard>(x => x.DonationId);
+            e.HasOne(x => x.Donor).WithMany().HasForeignKey(x => x.DonorId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Family).WithMany(x => x.Donations).HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.GiftCard).WithOne(x => x.Donation).HasForeignKey<GiftCard>(x => x.DonationId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<GiftCard>(e =>
@@ -79,8 +95,8 @@ public class MealfyDbContext : DbContext
             e.Property(x => x.Amount).HasPrecision(18, 2);
             e.HasIndex(x => x.FamilyId);
             e.HasIndex(x => x.DonorId);
-            e.HasOne(x => x.Family).WithMany().HasForeignKey(x => x.FamilyId);
-            e.HasOne(x => x.Donor).WithMany().HasForeignKey(x => x.DonorId);
+            e.HasOne(x => x.Family).WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Donor).WithMany().HasForeignKey(x => x.DonorId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<AuditLog>(e =>
