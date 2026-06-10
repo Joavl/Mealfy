@@ -14,6 +14,7 @@ public class MealfyDbContext : DbContext
     public DbSet<DonorIndication> Indications => Set<DonorIndication>();
     public DbSet<Donation> Donations => Set<Donation>();
     public DbSet<GiftCard> GiftCards => Set<GiftCard>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -35,6 +36,7 @@ public class MealfyDbContext : DbContext
         modelBuilder.Entity<Family>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasQueryFilter(x => !x.IsDeleted);
             e.HasOne(x => x.CreatedByEntity)
                 .WithMany(x => x.Families)
                 .HasForeignKey(x => x.CreatedByEntityId)
@@ -54,6 +56,8 @@ public class MealfyDbContext : DbContext
         modelBuilder.Entity<DonorIndication>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.Status, x.CreatedAt }).HasDatabaseName("IX_Indications_Status_CreatedAt");
+            e.HasIndex(x => x.ConvertedFamilyId).IsUnique();
             e.HasOne(x => x.IndicatedByUser)
                 .WithMany()
                 .HasForeignKey(x => x.IndicatedByUserId)
@@ -77,6 +81,27 @@ public class MealfyDbContext : DbContext
             e.HasIndex(x => x.DonorId);
             e.HasOne(x => x.Family).WithMany().HasForeignKey(x => x.FamilyId);
             e.HasOne(x => x.Donor).WithMany().HasForeignKey(x => x.DonorId);
+        });
+
+        modelBuilder.Entity<AuditLog>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Action).IsRequired().HasMaxLength(100);
+            e.Property(x => x.EntityType).IsRequired().HasMaxLength(50);
+            e.Property(x => x.IpAddress).HasMaxLength(45);
+
+            if (Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                e.Property(x => x.PreviousValue).HasColumnType("jsonb");
+                e.Property(x => x.NewValue).HasColumnType("jsonb");
+            }
+
+            e.HasIndex(x => new { x.UserId, x.CreatedAt }).HasDatabaseName("IX_AuditLogs_UserId_CreatedAt");
+            e.HasIndex(x => new { x.EntityType, x.EntityId }).HasDatabaseName("IX_AuditLogs_EntityType_EntityId");
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

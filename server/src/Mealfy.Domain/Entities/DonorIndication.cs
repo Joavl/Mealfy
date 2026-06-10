@@ -13,6 +13,9 @@ public class DonorIndication
     public Guid IndicatedByUserId { get; set; }
     public IndicationStatus Status { get; set; } = IndicationStatus.Pending;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public Guid? ConvertedFamilyId { get; set; }
+    public DateTimeOffset? ConvertedAt { get; set; }
+    public Guid? ConvertedByUserId { get; set; }
 
     public User IndicatedByUser { get; set; } = null!;
 }

@@ -20,6 +20,8 @@ public static class DependencyInjection
         {
             if (provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
                 options.UseSqlServer(connectionString);
+            else if (provider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+                options.UseNpgsql(connectionString);
             else
                 options.UseSqlite(connectionString);
         });

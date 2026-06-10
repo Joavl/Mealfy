@@ -30,6 +30,7 @@ public class Family
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public float? IvcadScore { get; set; }
+    public bool IsDeleted { get; set; }
     public string? InternalRef { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
