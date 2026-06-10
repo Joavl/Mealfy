@@ -78,6 +78,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body.app-initializing {
+  background-color: #020E1E !important;
+  background-image: none !important;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-family-heading);
   font-weight: 780;

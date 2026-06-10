@@ -5,7 +5,8 @@ import type { User, Community, UserRole, PrivacySettings } from '../backend/type
 import { authService } from '../backend/services/authService';
 import { communityService } from '../backend/services/communityService';
 import { usersApi } from '../api/usersApi';
-import SplashScreen from '../components/ui/SplashScreen';
+import { AppLoadingScreen } from '../components/ui/AppLoadingScreen';
+import { useAppInitialization } from '../hooks/useAppInitialization';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -26,7 +27,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isInitializing, setIsInitializing] = useState(true);
+  const { status, setStatus, isAppReady, initializationComplete } = useAppInitialization();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   
@@ -53,9 +54,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setSelectedCommunity(comms[0] || null);
 
       } catch (err) {
-        console.error("Erro inicializando app", err);
-      } finally {
-        setIsInitializing(false);
+        console.error("Erro carregando dados de sessão/comunidades", err);
       }
     };
 
@@ -157,10 +156,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSelectedRegionState(null);
   };
 
-  if (isInitializing) {
-    return <SplashScreen />;
-  }
-
   return (
     <AppContext.Provider
       value={{
@@ -179,11 +174,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         clearSelectedRegion,
       }}
     >
-      {children}
+      {isAppReady && children}
+      {!initializationComplete && (
+        <AppLoadingScreen
+          status={status}
+          setStatus={setStatus}
+          onExitComplete={() => setStatus('complete')}
+        />
+      )}
     </AppContext.Provider>
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAppContext = () => {
   const context = useContext(AppContext);
   if (context === undefined) {

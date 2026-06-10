@@ -1,0 +1,258 @@
+.app-loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background-color: #020E1E;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  pointer-events: auto; /* Mantém eventos de ponteiro para bloquear cliques indesejados no background durante a exibição/saída */
+  
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Estado initial - Oculto totalmente na parte inferior */
+.app-loading-screen.initial {
+  transform: translate3d(0, 100%, 0);
+  border-radius: 28px 28px 0 0;
+}
+
+/* Estado entering - Subida suave com cantos arredondados suavizando até zero */
+.app-loading-screen.entering {
+  transform: translate3d(0, 0, 0);
+  border-radius: 0;
+  transition: 
+    transform 900ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 700ms ease-out;
+  box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.45);
+}
+
+/* Estado visible - Posicionado perfeitamente cobrindo a viewport */
+.app-loading-screen.visible {
+  transform: translate3d(0, 0, 0);
+  border-radius: 0;
+}
+
+/* Estado exiting - Desloca completamente pela parte superior */
+.app-loading-screen.exiting {
+  transform: translate3d(0, -100%, 0);
+  transition: transform 700ms cubic-bezier(0.65, 0, 0.35, 1) 100ms;
+}
+
+/* Container de Conteúdo Interno com Safe Area */
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding:
+    max(24px, env(safe-area-inset-top))
+    max(24px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom))
+    max(24px, env(safe-area-inset-left));
+  box-sizing: border-box;
+}
+
+.logo-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+/* Logo - Transição e estado inicial */
+.loading-logo {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0) scale(0.94);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Logo - Entrada sutil e atraso coordenado */
+.app-loading-screen.entering .loading-logo,
+.app-loading-screen.visible .loading-logo {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition:
+    opacity 650ms ease-out 280ms,
+    transform 750ms cubic-bezier(0.22, 1, 0.36, 1) 220ms;
+}
+
+/* Logo - Saída rápida deslizando sutilmente para cima */
+.app-loading-screen.exiting .loading-logo {
+  opacity: 0;
+  transform: translate3d(0, -12px, 0) scale(0.98);
+  transition: 
+    opacity 250ms ease-in-out,
+    transform 250ms ease-in-out;
+  transition-delay: 0ms;
+}
+
+/* Indicador de carregamento inferior */
+.indicator-wrapper {
+  position: absolute;
+  bottom: calc(48px + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Indicador - Entrada sequencial após o logotipo */
+.app-loading-screen.entering .indicator-wrapper,
+.app-loading-screen.visible .indicator-wrapper {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition:
+    opacity 650ms ease-out 550ms,
+    transform 750ms cubic-bezier(0.22, 1, 0.36, 1) 500ms;
+}
+
+/* Indicador - Saída rápida */
+.app-loading-screen.exiting .indicator-wrapper {
+  opacity: 0;
+  transform: translate3d(0, -12px, 0) scale(0.98);
+  transition: 
+    opacity 250ms ease-in-out,
+    transform 250ms ease-in-out;
+  transition-delay: 0ms;
+}
+
+.loading-text {
+  color: rgba(255, 255, 255, 0.65);
+  font-family: var(--font-family-body), system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: center;
+  margin: 0;
+}
+
+/* Três pontos sequenciais */
+.dots-container {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 4px;
+}
+
+.dot {
+  animation: loadingPulse 1.4s ease-in-out infinite;
+  display: inline-block;
+  will-change: opacity, transform;
+}
+
+.dot:nth-child(1) { animation-delay: 0ms; }
+.dot:nth-child(2) { animation-delay: 160ms; }
+.dot:nth-child(3) { animation-delay: 320ms; }
+
+.progress-bar-container {
+  width: 120px;
+  height: 2px;
+  background-color: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-secondary, #d4a72c);
+  transform-origin: left;
+  animation: progressFill 2400ms linear forwards; /* Duração de 2.4s alinhada ao hook */
+}
+
+/* Animações e Keyframes */
+@keyframes loadingPulse {
+  0%, 100% {
+    transform: scale(0.92);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+@keyframes progressFill {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+/* Suporte à acessibilidade de movimento reduzido (Prefers Reduced Motion) */
+@media (prefers-reduced-motion: reduce) {
+  .app-loading-screen.initial {
+    transform: none !important;
+    opacity: 0;
+  }
+
+  .app-loading-screen.entering {
+    transform: none !important;
+    opacity: 1;
+    border-radius: 0;
+    transition: opacity 300ms ease-out !important;
+    box-shadow: none;
+  }
+
+  .app-loading-screen.visible {
+    transform: none !important;
+    opacity: 1;
+  }
+
+  .app-loading-screen.exiting {
+    transform: none !important;
+    opacity: 0;
+    transition: opacity 300ms ease-out !important;
+  }
+
+  .app-loading-screen.entering .loading-logo,
+  .app-loading-screen.visible .loading-logo {
+    opacity: 1;
+    transform: none !important;
+    transition: opacity 300ms ease-out 100ms !important;
+  }
+
+  .app-loading-screen.entering .indicator-wrapper,
+  .app-loading-screen.visible .indicator-wrapper {
+    opacity: 1;
+    transform: none !important;
+    transition: opacity 300ms ease-out 200ms !important;
+  }
+
+  .app-loading-screen.exiting .loading-logo,
+  .app-loading-screen.exiting .indicator-wrapper {
+    opacity: 0;
+    transform: none !important;
+    transition: opacity 150ms ease-out !important;
+  }
+
+  .progress-bar-fill {
+    animation: none;
+    transform: scaleX(1);
+  }
+
+  .dot {
+    animation: none;
+    opacity: 1;
+  }
+}
