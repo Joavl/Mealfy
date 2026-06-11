@@ -5,6 +5,7 @@ import { MockDatabase } from '../../database/mock-db';
 import { AppError } from '../../shared/errors/AppError';
 import { normalizeString } from '../../shared/utils/normalizeUtils';
 import { IndicationStatus, FamilyStatus, SupportStatus } from '@prisma/client';
+import { coordsForRegion } from '../families/families.service';
 
 export class IndicationsService {
   static async create(data: any, userId: string): Promise<any> {
@@ -96,6 +97,8 @@ export class IndicationsService {
 
       const familyId = randomUUID();
 
+      const [lat, lng] = coordsForRegion(indication.region);
+
       const [family] = await prisma.$transaction([
         prisma.family.create({
           data: {
@@ -110,8 +113,8 @@ export class IndicationsService {
             sourceType: 'donor_indication',
             sourceLabel: userRole === 'ADMIN' ? 'Validado por Admin Mealfy' : `Validado por ${user.name}`,
             originalIndicationId: indication.id,
-            latitude: -23.612 + Math.random() * 0.05,
-            longitude: -46.593 + Math.random() * 0.05,
+            latitude: lat,
+            longitude: lng,
           },
         }),
         prisma.familyIndication.update({
@@ -164,6 +167,7 @@ export class IndicationsService {
       }
 
       const families = await MockDatabase.read<any>('families');
+      const [lat, lng] = coordsForRegion(indication.region);
       const newFamily = {
         id: `f-conv-${randomUUID()}`,
         representativeName: indication.representativeName,
@@ -175,8 +179,8 @@ export class IndicationsService {
         sourceType: 'donor_indication',
         sourceLabel: userRole === 'ADMIN' ? 'Validado por Admin Mealfy' : `Validado por ${user.name}`,
         originalIndicationId: indication.id,
-        latitude: -23.612 + (Math.random() * 0.05),
-        longitude: -46.593 + (Math.random() * 0.05),
+        latitude: lat,
+        longitude: lng,
       };
 
       families.unshift(newFamily);

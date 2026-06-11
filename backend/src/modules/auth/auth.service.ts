@@ -1,9 +1,9 @@
 import { randomUUID } from 'crypto';
-import * as admin from 'firebase-admin';
 import { env } from '../../config/env';
 import { prisma } from '../../config/database';
 import { MockDatabase } from '../../database/mock-db';
 import { AppError } from '../../shared/errors/AppError';
+import { getTokenVerifier } from '../../shared/auth/TokenVerifier';
 import { FamiliesService, coordsForRegion } from '../families/families.service';
 import { UserRole, AccountStatus, EntityType, FamilyStatus, SupportStatus } from '@prisma/client';
 
@@ -86,9 +86,9 @@ export class AuthService {
           donorProfile: {
             create: {
               totalDonated: 0,
-              showOnRanking: data.showOnRanking ?? true,
-              showInstagram: data.showInstagram ?? false,
-              anonymousMode: data.anonymousMode ?? false,
+              showOnRanking: data.privacySettings?.showOnRanking ?? true,
+              showInstagram: data.privacySettings?.showInstagram ?? false,
+              anonymousMode: data.privacySettings?.anonymousMode ?? false,
               instagram: data.instagram,
               facebook: data.facebook,
             },
@@ -129,9 +129,9 @@ export class AuthService {
         status: 'active',
         firebaseUid: data.firebaseUid,
         privacySettings: {
-          showOnRanking: data.showOnRanking ?? true,
-          showInstagram: data.showInstagram ?? false,
-          anonymousMode: data.anonymousMode ?? false,
+          showOnRanking: data.privacySettings?.showOnRanking ?? true,
+          showInstagram: data.privacySettings?.showInstagram ?? false,
+          anonymousMode: data.privacySettings?.anonymousMode ?? false,
         },
       };
 
@@ -273,22 +273,10 @@ export class AuthService {
   }
 
   static async loginFirebase(idToken: string): Promise<any> {
-    let uid = '';
-    let email = '';
-    let name = '';
-
-    if (env.AUTH_MODE === 'firebase') {
-      try {
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
-        uid = decodedToken.uid;
-        email = decodedToken.email || '';
-        name = decodedToken.name || email.split('@')[0] || 'Usuário';
-      } catch {
-        throw new AppError('Invalid Firebase ID Token', 401);
-      }
-    } else {
-      uid = idToken; // in mock mode, token is user ID or firebaseUid
-    }
+    const decoded = await getTokenVerifier().verify(idToken);
+    const uid = decoded.uid;
+    const email = decoded.email;
+    const name = decoded.name;
 
     let user: any = null;
 

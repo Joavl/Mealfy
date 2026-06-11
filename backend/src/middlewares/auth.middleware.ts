@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import * as admin from 'firebase-admin';
 import { env } from '../config/env';
 import { prisma } from '../config/database';
 import { AppError } from '../shared/errors/AppError';
 import { MockDatabase } from '../database/mock-db';
+import { getTokenVerifier } from '../shared/auth/TokenVerifier';
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -23,24 +23,10 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       throw new AppError('Authentication required', 401);
     }
 
-    let uid = '';
-    let email = '';
-    let name = '';
-
-    if (env.AUTH_MODE === 'firebase') {
-      try {
-        const decodedToken = await admin.auth().verifyIdToken(token);
-        uid = decodedToken.uid;
-        email = decodedToken.email || '';
-        name = decodedToken.name || email.split('@')[0] || 'Usuário';
-      } catch {
-        throw new AppError('Invalid Firebase ID Token', 401);
-      }
-    } else {
-      // Mock mode
-      uid = token;
-      // In mock mode we will look up by uid as ID or firebaseUid
-    }
+    const decoded = await getTokenVerifier().verify(token);
+    const uid = decoded.uid;
+    const email = decoded.email;
+    const name = decoded.name;
 
     let user: any = null;
 

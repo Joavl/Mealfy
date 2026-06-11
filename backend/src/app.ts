@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import { env } from './config/env';
 import { errorMiddleware } from './middlewares/error.middleware';
+import { prisma } from './config/database';
+import { MockDatabase } from './database/mock-db';
 
 import { authRoutes } from './modules/auth/auth.routes';
 import { familiesRoutes } from './modules/families/families.routes';
@@ -25,9 +27,33 @@ app.use(cors({
 
 app.use(express.json());
 
-// Health check
+// Health check (Liveness)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Health check (Readiness)
+app.get('/api/health/ready', async (req, res) => {
+  try {
+    if (env.DATABASE_MODE === 'prisma') {
+      await prisma.$queryRaw`SELECT 1`;
+    } else {
+      await MockDatabase.read('users');
+    }
+    return res.json({
+      status: 'ready',
+      database: 'connected',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    console.error('Readiness check failed:', err);
+    return res.status(503).json({
+      status: 'unready',
+      database: 'disconnected',
+      error: err.message || 'Unknown database error',
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // Routes with /api prefix

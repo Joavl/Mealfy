@@ -13,9 +13,17 @@ const REGION_COORDS: Record<string, [number, number]> = {
 };
 
 export function coordsForRegion(region: string): [number, number] {
-  const base = REGION_COORDS[region] ?? [-23.5505, -46.6333];
-  const j = () => (Math.random() - 0.5) * 0.012;
-  return [base[0] + j(), base[1] + j()];
+  const base = REGION_COORDS[region];
+  if (base) {
+    // Known region: random value between -0.006 and +0.006
+    const j = () => (Math.random() - 0.5) * 0.012;
+    return [base[0] + j(), base[1] + j()];
+  } else {
+    // Unknown region: fallback São Paulo with random value between -0.01 and +0.01
+    const baseSP = [-23.5505, -46.6333];
+    const j = () => (Math.random() - 0.5) * 0.02;
+    return [baseSP[0] + j(), baseSP[1] + j()];
+  }
 }
 
 export function isPubliclyVisibleFamily(f: any): boolean {

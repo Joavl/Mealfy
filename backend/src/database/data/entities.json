@@ -1,14 +1,36 @@
 [
   {
-    "id": "e-fa3a4976-efdc-45cf-bb32-99b3850e809f",
-    "name": "vercel",
-    "cnpj": "22222222222222",
-    "region": "cidade baixa",
+    "id": "entity-1",
+    "name": "Instituto Esperança",
+    "cnpj": "12345678000199",
     "type": "ONG",
-    "responsibleName": "alisson vercel",
-    "email": "vercel@email.com",
-    "phone": "(11) 92222-3133",
+    "responsibleName": "Entidade Aprovada",
+    "email": "entidade@mealfy.com",
+    "phone": "11999999999",
+    "region": "Recife · PE",
+    "status": "approved"
+  },
+  {
+    "id": "entity-pending-1",
+    "name": "Associação Heliópolis Viva",
+    "cnpj": "98765432000188",
+    "type": "INSTITUTO",
+    "responsibleName": "Entidade Pendente",
+    "email": "entidadependente@mealfy.com",
+    "phone": "11988888888",
+    "region": "Heliópolis",
+    "status": "approved"
+  },
+  {
+    "id": "e-7094ca80-159c-4b78-be07-c04f7ab1ad34",
+    "name": "Mãos Dadas ONG",
+    "cnpj": "12345678901234",
+    "region": "Heliópolis",
+    "type": "ONG",
+    "responsibleName": "Maria Silva",
+    "email": "maosdadas@example.com",
+    "phone": "11988887777",
     "status": "pending",
-    "createdAt": "2026-05-23T19:15:23.469Z"
+    "createdAt": "2026-06-11T05:29:14.637Z"
   }
 ]

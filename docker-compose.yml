@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mealfy-test-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: mealfy_test
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata-test:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mealfy_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mealfy-test-api
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_MODE: prisma
+      AUTH_MODE: mock
+      DATABASE_URL: postgresql://postgres:postgrespassword@db:5432/mealfy_test?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata-test:

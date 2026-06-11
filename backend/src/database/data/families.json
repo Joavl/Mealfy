@@ -1,15 +1,83 @@
 [
   {
+    "id": "f-conv-2fecf48d-aba5-4970-a214-524163ad393c",
+    "representativeName": "Indicada de Teste",
+    "region": "Heliópolis",
+    "childrenCount": 3,
+    "status": "approved",
+    "supportStatus": "fed",
+    "sourceType": "donor_indication",
+    "sourceLabel": "Validado por Admin Mealfy",
+    "originalIndicationId": "ind-bce49a7a-8547-4475-9186-614e7148f468",
+    "latitude": -23.608845581479013,
+    "longitude": -46.59829604903627,
+    "lastFedAt": "2026-06-11T05:29:14.794Z"
+  },
+  {
+    "representativeName": "Família Silva",
+    "familyName": "Família Silva",
+    "responsibleName": "José Silva",
+    "responsibleCpf": "99988877766",
+    "neighborhood": "Heliópolis",
+    "region": "Heliópolis",
+    "city": "São Paulo",
+    "state": "SP",
+    "shortAddress": "Heliópolis",
+    "description": "Família Família Silva, responsável José Silva. 2 criança(s).",
+    "childrenCount": 2,
+    "children": [
+      {
+        "id": "ch-0",
+        "name": "Criança A",
+        "age": 0,
+        "school": "A informar"
+      },
+      {
+        "id": "ch-1",
+        "name": "Criança B",
+        "age": 0,
+        "school": "A informar"
+      }
+    ],
+    "mainNeed": "Alimentação básica",
+    "latitude": -23.61252015495587,
+    "longitude": -46.58939317083274,
+    "photoUrl": "http://example.com/photo.jpg",
+    "sourceType": "beneficiary_self",
+    "sourceLabel": "Cadastro direto da família",
+    "status": "approved",
+    "supportStatus": "fed",
+    "needsEntitySupport": true,
+    "priorityLevel": 4,
+    "id": "f-8665ccde-b21c-4d7d-b8d3-555ad6a104fd",
+    "communityId": "c1",
+    "lastFedAt": "2026-06-11T05:29:14.783Z"
+  },
+  {
+    "id": "family-1",
+    "representativeName": "Ana Costa",
+    "region": "Recife · PE",
+    "neighborhood": "Boa Viagem",
+    "childrenCount": 2,
+    "status": "approved",
+    "supportStatus": "needs_help",
+    "sourceType": "entity",
+    "sourceLabel": "Instituto Esperança",
+    "latitude": -8.05,
+    "longitude": -34.88
+  },
+  {
     "id": "f-helio-1",
     "representativeName": "Família Silva (Helio)",
     "region": "Heliópolis",
     "childrenCount": 2,
     "status": "approved",
-    "supportStatus": "needs_help",
+    "supportStatus": "fed",
     "sourceType": "entity",
     "sourceLabel": "Cadastrado por Admin",
     "latitude": -23.612,
-    "longitude": -46.593
+    "longitude": -46.593,
+    "lastFedAt": "2026-06-11T05:29:14.803Z"
   },
   {
     "id": "f-helio-2",
@@ -21,7 +89,8 @@
     "sourceType": "entity",
     "sourceLabel": "Cadastrado por Admin",
     "latitude": -23.613,
-    "longitude": -46.594
+    "longitude": -46.594,
+    "lastFedAt": "2026-06-11T05:29:14.811Z"
   },
   {
     "id": "f-helio-3",
@@ -33,78 +102,7 @@
     "sourceType": "donor_indication",
     "sourceLabel": "Indicado",
     "latitude": -23.614,
-    "longitude": -46.595
-  },
-  {
-    "id": "f-paraiso-1",
-    "representativeName": "Família Oliveira (Para)",
-    "region": "Paraisópolis",
-    "childrenCount": 4,
-    "status": "approved",
-    "supportStatus": "needs_help",
-    "sourceType": "entity",
-    "sourceLabel": "Cadastrado por Admin",
-    "latitude": -23.615,
-    "longitude": -46.728
-  },
-  {
-    "id": "f-paraiso-2",
-    "representativeName": "Família Pereira (Para Fed)",
-    "region": "Paraisópolis",
-    "childrenCount": 2,
-    "status": "approved",
-    "supportStatus": "fed",
-    "sourceType": "entity",
-    "sourceLabel": "Cadastrado por Admin",
-    "latitude": -23.616,
-    "longitude": -46.729
-  },
-  {
-    "id": "f-paraiso-3",
-    "representativeName": "Família Costa (Para Pend)",
-    "region": "Paraisópolis",
-    "childrenCount": 1,
-    "status": "pending",
-    "supportStatus": "needs_help",
-    "sourceType": "donor_indication",
-    "sourceLabel": "Indicado",
-    "latitude": -23.617,
-    "longitude": -46.73
-  },
-  {
-    "id": "f-brasi-1",
-    "representativeName": "Família Santos (Brasi)",
-    "region": "Brasilândia",
-    "childrenCount": 3,
-    "status": "approved",
-    "supportStatus": "needs_help",
-    "sourceType": "entity",
-    "sourceLabel": "Cadastrado por Admin",
-    "latitude": -23.456,
-    "longitude": -46.689
-  },
-  {
-    "id": "f-brasi-2",
-    "representativeName": "Família Ferreira (Brasi Fed)",
-    "region": "Brasilândia",
-    "childrenCount": 1,
-    "status": "approved",
-    "supportStatus": "fed",
-    "sourceType": "entity",
-    "sourceLabel": "Cadastrado por Admin",
-    "latitude": -23.457,
-    "longitude": -46.69
-  },
-  {
-    "id": "f-brasi-3",
-    "representativeName": "Família Alves (Brasi Pend)",
-    "region": "Brasilândia",
-    "childrenCount": 2,
-    "status": "pending",
-    "supportStatus": "needs_help",
-    "sourceType": "donor_indication",
-    "sourceLabel": "Indicado",
-    "latitude": -23.458,
-    "longitude": -46.691
+    "longitude": -46.595,
+    "lastFedAt": "2026-06-11T05:29:14.748Z"
   }
 ]

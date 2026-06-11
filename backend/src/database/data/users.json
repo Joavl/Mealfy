@@ -13,14 +13,13 @@
     "email": "doador@mealfy.com",
     "role": "donor",
     "status": "active",
-    "totalDonated": 150,
+    "totalDonated": 320,
+    "facebook": "mealfy.doadores",
+    "instagram": "@doadordemo",
     "privacySettings": {
       "showOnRanking": true,
       "showInstagram": true,
       "anonymousMode": false
-    },
-    "impactPreferences": {
-      "preferredRegion": "Heliópolis"
     }
   },
   {
@@ -36,7 +35,7 @@
     "name": "Entidade Pendente",
     "email": "entidadependente@mealfy.com",
     "role": "entity",
-    "status": "pending",
+    "status": "approved",
     "entityId": "entity-pending-1"
   },
   {
@@ -48,13 +47,70 @@
     "beneficiaryId": "family-1"
   },
   {
-    "id": "u-9a18b183-1bc7-4d67-a96e-ebc203f0811c",
-    "name": "alisson vercel",
-    "email": "vercel@email.com",
+    "id": "u-fe6410ea-99fd-46af-b8e2-70faa57fb436",
+    "name": "John Donor",
+    "email": "johndonor@example.com",
+    "role": "donor",
+    "documentType": "cpf",
+    "documentNumber": "12345678909",
+    "phone": "11999998888",
+    "totalDonated": 0,
+    "status": "active",
+    "privacySettings": {
+      "showOnRanking": true,
+      "showInstagram": false,
+      "anonymousMode": false
+    }
+  },
+  {
+    "id": "u-2ce4146a-622e-462d-9bb9-d595f4ec956b",
+    "name": "Maria Silva",
+    "email": "maosdadas@example.com",
     "role": "entity",
-    "entityId": "e-fa3a4976-efdc-45cf-bb32-99b3850e809f",
-    "phone": "(11) 92222-3133",
+    "entityId": "e-7094ca80-159c-4b78-be07-c04f7ab1ad34",
+    "phone": "11988887777",
     "totalDonated": 0,
     "status": "pending"
+  },
+  {
+    "id": "u-8e1be2d9-36c4-4536-8465-ff7ff3378eca",
+    "name": "José Silva",
+    "email": "beneficiario+7766@mealfy.local",
+    "role": "beneficiary",
+    "documentType": "cpf",
+    "documentNumber": "99988877766",
+    "beneficiaryId": "f-8665ccde-b21c-4d7d-b8d3-555ad6a104fd",
+    "totalDonated": 0,
+    "status": "active"
+  },
+  {
+    "id": "u-1808ca78-9dad-4018-a84a-84f4d91feacb",
+    "name": "Visible Donor",
+    "email": "vis@example.com",
+    "role": "donor",
+    "documentType": "cpf",
+    "documentNumber": "11111111111",
+    "totalDonated": 500,
+    "status": "active",
+    "privacySettings": {
+      "showOnRanking": true,
+      "showInstagram": false,
+      "anonymousMode": false
+    }
+  },
+  {
+    "id": "u-f43823ef-a59c-4b1e-8481-01116011d33e",
+    "name": "Hidden Donor",
+    "email": "hid@example.com",
+    "role": "donor",
+    "documentType": "cpf",
+    "documentNumber": "22222222222",
+    "totalDonated": 800,
+    "status": "active",
+    "privacySettings": {
+      "showOnRanking": false,
+      "showInstagram": false,
+      "anonymousMode": false
+    }
   }
 ]

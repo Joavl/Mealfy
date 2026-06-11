@@ -185,8 +185,15 @@ export class DonationsService {
       try {
         const res = await this.create(id, donor, amountPerFamily);
         results.push(res);
-      } catch (e) {
-        console.error(`Failed to donate to ${id}`, e);
+      } catch (e: any) {
+        console.error(
+          JSON.stringify({
+            event: 'BATCH_DONATION_PARTIAL_FAILURE',
+            familyId: id,
+            donorId: donor?.id,
+            error: e.message || 'Unknown error',
+          })
+        );
       }
     }
     return results;
@@ -245,6 +252,21 @@ export class DonationsService {
   }
 
   static async createRegional(communityId: string, totalAmount: number, donor: any): Promise<any> {
+    if (
+      typeof totalAmount !== 'number' ||
+      Number.isNaN(totalAmount) ||
+      !Number.isFinite(totalAmount) ||
+      totalAmount <= 0 ||
+      totalAmount > 10000000
+    ) {
+      throw new AppError('Valor de doação inválido', 400);
+    }
+
+    const totalCents = Math.round(totalAmount * 100);
+    if (!Number.isSafeInteger(totalCents)) {
+      throw new AppError('Valor fora dos limites seguros de precisão', 400);
+    }
+
     if (env.DATABASE_MODE === 'prisma') {
       const families = await prisma.family.findMany({
         where: {
@@ -254,25 +276,37 @@ export class DonationsService {
         },
       });
 
-      // Filter families inside community region / city
       const eligibleFamilies = families.filter((f) =>
         f.region.includes(communityId) ||
         (f.neighborhood && f.neighborhood.includes(communityId)) ||
         f.city === communityId
       );
 
+      // Deterministic sort by id ASC
+      eligibleFamilies.sort((a, b) => a.id.localeCompare(b.id));
+
       if (eligibleFamilies.length === 0) {
         throw new AppError('No families in need found in this community', 400);
       }
 
-      const amountPerFamily = Math.floor(totalAmount / eligibleFamilies.length);
-      if (amountPerFamily <= 0) {
-        throw new AppError('Valor total insuficiente para distribuir entre as famílias', 400);
+      if (totalCents < eligibleFamilies.length) {
+        throw new AppError('Valor total insuficiente para distribuir (mínimo de R$ 0,01 por família)', 400);
       }
 
+      const familyCount = eligibleFamilies.length;
+      const baseCentsPerFamily = Math.floor(totalCents / familyCount);
+      let residueCents = totalCents % familyCount;
+
       const results = [];
-      for (const family of eligibleFamilies) {
-        const res = await this.create(family.id, donor, amountPerFamily, `Doação Regional - ${communityId}`, communityId);
+      for (let i = 0; i < familyCount; i++) {
+        const family = eligibleFamilies[i];
+        let familyCents = baseCentsPerFamily;
+        if (residueCents > 0) {
+          familyCents += 1;
+          residueCents -= 1;
+        }
+        const familyAmount = familyCents / 100;
+        const res = await this.create(family.id, donor, familyAmount, `Doação Regional - ${communityId}`, communityId);
         results.push(res);
       }
 
@@ -287,24 +321,38 @@ export class DonationsService {
       const families = await MockDatabase.read<any>('families');
       const eligibleFamilies = families.filter(
         (f: any) =>
+          f.status === 'approved' &&
           f.supportStatus === 'needs_help' &&
           (f.region?.toLowerCase().includes(communityId.toLowerCase()) ||
             f.neighborhood?.toLowerCase().includes(communityId.toLowerCase()) ||
             f.city?.toLowerCase() === communityId.toLowerCase())
       );
 
+      // Deterministic sort by id ASC
+      eligibleFamilies.sort((a: any, b: any) => a.id.localeCompare(b.id));
+
       if (eligibleFamilies.length === 0) {
         throw new AppError('No families in need found in this community', 400);
       }
 
-      const amountPerFamily = Math.floor(totalAmount / eligibleFamilies.length);
-      if (amountPerFamily <= 0) {
-        throw new AppError('Valor total insuficiente para distribuir entre as famílias', 400);
+      if (totalCents < eligibleFamilies.length) {
+        throw new AppError('Valor total insuficiente para distribuir (mínimo de R$ 0,01 por família)', 400);
       }
 
+      const familyCount = eligibleFamilies.length;
+      const baseCentsPerFamily = Math.floor(totalCents / familyCount);
+      let residueCents = totalCents % familyCount;
+
       const results = [];
-      for (const family of eligibleFamilies) {
-        const res = await this.create(family.id, donor, amountPerFamily, `Doação Regional - ${communityId}`, communityId);
+      for (let i = 0; i < familyCount; i++) {
+        const family = eligibleFamilies[i];
+        let familyCents = baseCentsPerFamily;
+        if (residueCents > 0) {
+          familyCents += 1;
+          residueCents -= 1;
+        }
+        const familyAmount = familyCents / 100;
+        const res = await this.create(family.id, donor, familyAmount, `Doação Regional - ${communityId}`, communityId);
         results.push(res);
       }
 

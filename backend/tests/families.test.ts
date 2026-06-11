@@ -1,19 +1,39 @@
 import { describe, it, expect } from 'vitest';
 import { coordsForRegion, isPubliclyVisibleFamily } from '../src/modules/families/families.service';
 
-describe('Families Helpers', () => {
-  it('should generate coords inside SP for unknown region', () => {
-    const [lat, lng] = coordsForRegion('Unknown Region');
-    expect(lat).toBeLessThan(-23.5);
-    expect(lat).toBeGreaterThan(-23.6);
-    expect(lng).toBeLessThan(-46.6);
-    expect(lng).toBeGreaterThan(-46.7);
+describe('Families Helpers & Geographic Jitter', () => {
+  it('should generate coords with max +-0.006 jitter for known regions', () => {
+    // Heliópolis base is [-23.612, -46.593]
+    const baseLat = -23.612;
+    const baseLng = -46.593;
+
+    for (let i = 0; i < 100; i++) {
+      const [lat, lng] = coordsForRegion('Heliópolis');
+      const diffLat = lat - baseLat;
+      const diffLng = lng - baseLng;
+
+      expect(diffLat).toBeGreaterThanOrEqual(-0.006);
+      expect(diffLat).toBeLessThanOrEqual(0.006);
+      expect(diffLng).toBeGreaterThanOrEqual(-0.006);
+      expect(diffLng).toBeLessThanOrEqual(0.006);
+    }
   });
 
-  it('should generate coords near Heliopolis', () => {
-    const [lat] = coordsForRegion('Heliópolis');
-    expect(lat).toBeLessThan(-23.6);
-    expect(lat).toBeGreaterThan(-23.62);
+  it('should generate coords with max +-0.01 jitter centered on São Paulo for unknown regions', () => {
+    // Fallback base is [-23.5505, -46.6333]
+    const fallbackLat = -23.5505;
+    const fallbackLng = -46.6333;
+
+    for (let i = 0; i < 100; i++) {
+      const [lat, lng] = coordsForRegion('Unknown Region Name');
+      const diffLat = lat - fallbackLat;
+      const diffLng = lng - fallbackLng;
+
+      expect(diffLat).toBeGreaterThanOrEqual(-0.01);
+      expect(diffLat).toBeLessThanOrEqual(0.01);
+      expect(diffLng).toBeGreaterThanOrEqual(-0.01);
+      expect(diffLng).toBeLessThanOrEqual(0.01);
+    }
   });
 
   it('should return true for approved family visibility', () => {
