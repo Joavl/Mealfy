@@ -2,8 +2,8 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { AdminService } from './admin.service';
 import { FeaturedDonorsService } from './featured-donors.service';
-import { authMiddleware } from '../../shared/middlewares/auth';
-import { roleGuard } from '../../shared/middlewares/roleGuard';
+import { authMiddleware } from '../../middlewares/auth.middleware';
+import { roleGuard } from '../../middlewares/role.middleware';
 
 const adminRoutes = Router();
 

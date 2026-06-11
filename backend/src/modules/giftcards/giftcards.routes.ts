@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { GiftCardsService } from './giftcards.service';
-import { authMiddleware } from '../../shared/middlewares/auth';
-import { roleGuard } from '../../shared/middlewares/roleGuard';
+import { authMiddleware } from '../../middlewares/auth.middleware';
+import { roleGuard } from '../../middlewares/role.middleware';
 
 const giftcardsRoutes = Router();
 

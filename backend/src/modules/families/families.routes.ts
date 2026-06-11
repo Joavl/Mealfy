@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { FamiliesController } from './families.controller';
-import { authMiddleware } from '../../shared/middlewares/auth';
-import { roleGuard } from '../../shared/middlewares/roleGuard';
+import { authMiddleware } from '../../middlewares/auth.middleware';
+import { roleGuard } from '../../middlewares/role.middleware';
 
 const familiesRoutes = Router();
 

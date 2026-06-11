@@ -1,0 +1,267 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  DONOR
+  ENTITY
+  BENEFICIARY
+  ADMIN
+}
+
+enum AccountStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ACTIVE
+}
+
+enum FamilyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum SupportStatus {
+  NEEDS_HELP
+  SUPPORTED
+  FED
+  PENDING
+  REJECTED
+  SUSPENDED
+}
+
+enum EntityType {
+  ONG
+  IGREJA
+  ESCOLA
+  INSTITUTO
+}
+
+enum ValidationSource {
+  CADUNICO
+  BOLSAFAMILIA
+  SISVAN
+  IVCAD
+}
+
+enum IndicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CONVERTED
+}
+
+enum GiftCardStatus {
+  SENT
+  REDEEMED
+  CANCELLED
+}
+
+model User {
+  id             String         @id @default(uuid())
+  name           String
+  email          String         @unique
+  role           UserRole
+  status         AccountStatus  @default(ACTIVE)
+  phone          String?
+  documentType   String?
+  documentNumber String?        @unique
+  firebaseUid    String?        @unique
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  
+  // Relations
+  donorProfile   DonorProfile?
+  organizationId String?
+  organization   Organization?  @relation("OrgUsers", fields: [organizationId], references: [id])
+  beneficiaryId  String?
+  beneficiaryOf  Family?        @relation("BeneficiaryFamily", fields: [beneficiaryId], references: [id])
+  indications    FamilyIndication[] @relation("IndicatedBy")
+  donations      Donation[]     @relation("DonorDonations")
+  vouchers       Voucher[]      @relation("DonorVouchers")
+  auditLogs      AuditLog[]     @relation("UserAuditLogs")
+}
+
+model DonorProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalDonated Decimal  @default(0.0) @db.Decimal(10, 2)
+  showOnRanking Boolean @default(true)
+  showInstagram Boolean @default(false)
+  anonymousMode Boolean @default(false)
+  instagram     String?
+  facebook      String?
+}
+
+model Organization {
+  id                 String        @id @default(uuid())
+  name               String
+  cnpj               String        @unique
+  type               EntityType
+  responsibleName    String
+  email              String
+  phone              String
+  region             String
+  addressOrDistrict  String?
+  websiteOrInstagram String?
+  shortDescription   String?
+  status             AccountStatus @default(PENDING)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  
+  // Relations
+  users              User[]        @relation("OrgUsers")
+  families           Family[]      @relation("OrgFamilies")
+}
+
+model Family {
+  id                  String             @id @default(uuid())
+  representativeName  String
+  familyName          String?
+  responsibleCpf      String?            @unique
+  childrenNamesJson   String?
+  photoUrl            String?
+  description         String?
+  shortAddress        String?
+  mainNeed            String             @default("Alimentação básica")
+  priorityLevel       Int                @default(3)
+  needsEntitySupport  Boolean            @default(false)
+  region              String
+  neighborhood        String?
+  city                String             @default("São Paulo")
+  state               String             @default("SP")
+  childrenCount       Int                @default(0)
+  status              FamilyStatus       @default(PENDING)
+  supportStatus       SupportStatus      @default(NEEDS_HELP)
+  lastFedAt           DateTime?
+  createdByEntityId   String?
+  createdByEntity     Organization?      @relation("OrgFamilies", fields: [createdByEntityId], references: [id])
+  sourceType          String             @default("entity")
+  sourceLabel         String             @default("")
+  originalIndicationId String?           @unique
+  originalIndication  FamilyIndication?  @relation("IndicationToFamily", fields: [originalIndicationId], references: [id])
+  latitude            Float
+  longitude           Float
+  ivcadScore          Float?
+  isDeleted           Boolean            @default(false)
+  internalRef         String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  
+  // Relations
+  validations         FamilyValidation[] @relation("FamilyValidations")
+  donations           Donation[]         @relation("FamilyDonations")
+  vouchers            Voucher[]          @relation("FamilyVouchers")
+  beneficiaries       User[]             @relation("BeneficiaryFamily")
+}
+
+model FamilyValidation {
+  id        String           @id @default(uuid())
+  familyId  String
+  family    Family           @relation("FamilyValidations", fields: [familyId], references: [id], onDelete: Cascade)
+  source    ValidationSource
+  verified  Boolean
+  checkedAt DateTime         @default(now())
+  notes     String?
+}
+
+model FamilyIndication {
+  id                 String           @id @default(uuid())
+  representativeName String
+  region             String
+  childrenCount      Int              @default(0)
+  observation        String
+  contact            String?
+  indicatedByUserId  String
+  indicatedByUser    User             @relation("IndicatedBy", fields: [indicatedByUserId], references: [id])
+  status             IndicationStatus @default(PENDING)
+  createdAt          DateTime         @default(now())
+  convertedFamilyId  String?          @unique
+  convertedFamily    Family?          @relation("IndicationToFamily")
+  convertedAt        DateTime?
+  convertedByUserId  String?
+}
+
+model Donation {
+  id          String         @id @default(uuid())
+  donorId     String
+  donor       User           @relation("DonorDonations", fields: [donorId], references: [id])
+  familyId    String
+  family      Family         @relation("FamilyDonations", fields: [familyId], references: [id])
+  amount      Decimal        @db.Decimal(10, 2)
+  communityId String?
+  message     String?
+  createdAt   DateTime       @default(now())
+  voucher     Voucher?       @relation("DonationVoucher")
+  batchId     String?
+  batch       DonationBatch? @relation("BatchDonations", fields: [batchId], references: [id])
+}
+
+model DonationBatch {
+  id          String     @id @default(uuid())
+  donorId     String
+  amountTotal Decimal    @db.Decimal(10, 2)
+  createdAt   DateTime   @default(now())
+  donations   Donation[] @relation("BatchDonations")
+}
+
+model Voucher {
+  id         String         @id @default(uuid())
+  donationId String         @unique
+  donation   Donation       @relation("DonationVoucher", fields: [donationId], references: [id], onDelete: Cascade)
+  familyId   String
+  family     Family         @relation("FamilyVouchers", fields: [familyId], references: [id])
+  donorId    String
+  donor      User           @relation("DonorVouchers", fields: [donorId], references: [id])
+  amount     Decimal        @db.Decimal(10, 2)
+  provider   String         @default("mock")
+  code       String
+  label      String
+  status     GiftCardStatus @default(SENT)
+  message    String?
+  createdAt  DateTime       @default(now())
+  redeemedAt DateTime?
+}
+
+model Highlight {
+  id             String   @id @default(uuid())
+  userId         String?
+  organizationId String?
+  title          String
+  description    String?
+  imageUrl       String?
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  body      String
+  userId    String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation("UserAuditLogs", fields: [userId], references: [id])
+  action        String
+  entityType    String
+  entityId      String
+  previousValue String?  @db.Text
+  newValue      String?  @db.Text
+  reason        String?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+}

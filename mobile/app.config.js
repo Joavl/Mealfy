@@ -14,11 +14,11 @@ function getLanIp() {
 
 const lanIp = getLanIp();
 const webPort = process.env.EXPO_PUBLIC_WEB_PORT || '5173';
-const apiPort = process.env.EXPO_PUBLIC_API_PORT || '3000';
+const apiPort = process.env.EXPO_PUBLIC_API_PORT || '3001';
 const webAppUrl =
   process.env.EXPO_PUBLIC_WEB_APP_URL || `http://${lanIp}:${webPort}`;
 const apiUrl =
-  process.env.EXPO_PUBLIC_API_URL || `http://${lanIp}:${apiPort}`;
+  process.env.EXPO_PUBLIC_API_URL || `http://${lanIp}:${apiPort}/api`;
 const usesHttps = webAppUrl.startsWith('https://');
 
 /** @type {import('expo/config').ExpoConfig} */

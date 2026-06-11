@@ -1,7 +1,7 @@
 # Verifica site, API e se o IP do .env bate com a Wi-Fi
 $root = Split-Path $PSScriptRoot -Parent
 $web = "http://127.0.0.1:5173"
-$api = "http://127.0.0.1:3000/health"
+$api = "http://127.0.0.1:3001/api/health"
 
 Write-Host ""
 Write-Host "Mealfy - checagem de servidores" -ForegroundColor Cyan
@@ -34,7 +34,7 @@ if ($ip) {
   Write-Host ""
   Write-Host "IP da Wi-Fi: $ip" -ForegroundColor Yellow
   Write-Host "  Site no celular: http://${ip}:5173"
-  Write-Host "  API no celular:  http://${ip}:3000"
+  Write-Host "  API no celular:  http://${ip}:3001/api"
 
   $envPath = Join-Path $root ".env"
   if (Test-Path $envPath) {

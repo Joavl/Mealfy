@@ -1,9 +1,11 @@
 import Constants from 'expo-constants';
 
-export const API_URL =
-  Constants.expoConfig?.extra?.apiUrl ??
-  process.env.EXPO_PUBLIC_API_URL ??
-  'http://localhost:3000';
+const rawApiUrl = process.env.EXPO_PUBLIC_API_URL || Constants.expoConfig?.extra?.apiUrl;
+if (!rawApiUrl) {
+  throw new Error("EXPO_PUBLIC_API_URL is missing. Please configure EXPO_PUBLIC_API_URL in your mobile environment.");
+}
+
+export const API_URL = rawApiUrl;
 
 export type FamilyPin = {
   id: string;

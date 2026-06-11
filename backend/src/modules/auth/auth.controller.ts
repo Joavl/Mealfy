@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { AuthService } from './auth.service';
+import { AuthService, formatUser } from './auth.service';
 import { registerDonorSchema, registerEntitySchema, registerBeneficiarySchema, loginSchema } from './auth.validator';
+import { AppError } from '../../shared/errors/AppError';
 
 export class AuthController {
   static async registerDonor(req: Request, res: Response) {
@@ -25,13 +26,22 @@ export class AuthController {
     const { email, password } = loginSchema.parse(req.body);
     const user = await AuthService.login(email, password);
     return res.json({
-      token: user.id, // Emitting user ID as mock token
+      token: user.id,
       user
     });
   }
 
+  static async loginFirebase(req: Request, res: Response) {
+    const { idToken } = req.body;
+    if (!idToken) {
+      throw new AppError('Firebase ID Token is required', 400);
+    }
+    const result = await AuthService.loginFirebase(idToken);
+    return res.json(result);
+  }
+
   static async me(req: Request, res: Response) {
-    return res.json(req.user);
+    return res.json(formatUser(req.user));
   }
 
   static async updatePreferences(req: Request, res: Response) {

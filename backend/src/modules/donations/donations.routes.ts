@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { DonationsController } from './donations.controller';
-import { authMiddleware } from '../../shared/middlewares/auth';
-import { roleGuard } from '../../shared/middlewares/roleGuard';
+import { authMiddleware } from '../../middlewares/auth.middleware';
+import { roleGuard } from '../../middlewares/role.middleware';
 
 const donationsRoutes = Router();
 

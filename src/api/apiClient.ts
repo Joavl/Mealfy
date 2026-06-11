@@ -1,7 +1,7 @@
 import { storage } from '../backend/utils/storage';
 import { FIREBASE_ID_TOKEN_KEY } from '../lib/firebaseAuth';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export interface ApiResponse<T = any> {
   data: T;

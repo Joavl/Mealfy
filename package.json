@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "dev:api": "dotnet run --project server/src/Mealfy.Api",
+    "dev:api": "npm run dev --prefix backend",
     "stop:api": "powershell -ExecutionPolicy Bypass -File scripts/stop-api.ps1",
     "dev:check": "powershell -ExecutionPolicy Bypass -File scripts/check-dev.ps1",
     "sync:lan": "powershell -ExecutionPolicy Bypass -File scripts/sync-lan-ip.ps1",

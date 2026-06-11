@@ -1,7 +1,6 @@
 import { app } from './app';
+import { env } from './config/env';
 
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`🚀 Mealfy Backend running on port ${PORT}`);
+app.listen(env.PORT, () => {
+  console.log(`🚀 Mealfy Backend running on port ${env.PORT} (mode: ${env.NODE_ENV}, auth: ${env.AUTH_MODE}, db: ${env.DATABASE_MODE})`);
 });
