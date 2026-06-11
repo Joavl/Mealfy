@@ -11,7 +11,7 @@ describe('Families Helpers', () => {
   });
 
   it('should generate coords near Heliopolis', () => {
-    const [lat, lng] = coordsForRegion('Heliópolis');
+    const [lat] = coordsForRegion('Heliópolis');
     expect(lat).toBeLessThan(-23.6);
     expect(lat).toBeGreaterThan(-23.62);
   });

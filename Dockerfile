@@ -1,29 +1,36 @@
-# API Mealfy — deploy em Render, Railway, Fly.io, etc.
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
+# Dockerfile for Node.js Express TypeScript API
+FROM node:20-alpine AS build
 
-COPY server/src/Mealfy.Api/Mealfy.Api.csproj server/src/Mealfy.Api/
-COPY server/src/Mealfy.Application/Mealfy.Application.csproj server/src/Mealfy.Application/
-COPY server/src/Mealfy.Domain/Mealfy.Domain.csproj server/src/Mealfy.Domain/
-COPY server/src/Mealfy.Infrastructure/Mealfy.Infrastructure.csproj server/src/Mealfy.Infrastructure/
-
-RUN dotnet restore server/src/Mealfy.Api/Mealfy.Api.csproj
-
-COPY server/ server/
-
-RUN dotnet publish server/src/Mealfy.Api/Mealfy.Api.csproj -c Release -o /app/publish
-
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
-RUN mkdir -p /app/data
+# Copy package files
+COPY backend/package*.json ./
 
-COPY --from=build /app/publish .
+# Install all dependencies (including devDependencies for build)
+RUN npm ci
 
-ENV ASPNETCORE_ENVIRONMENT=Production
-ENV Database__Provider=Sqlite
-ENV ConnectionStrings__DefaultConnection=Data Source=/app/data/mealfy.db
+# Copy backend source code and Prisma schema
+COPY backend/ ./
 
-EXPOSE 8080
+# Generate Prisma Client
+RUN npx prisma generate
 
-ENTRYPOINT ["dotnet", "Mealfy.Api.dll"]
+# Build TypeScript code
+RUN npm run build
+
+# Production Stage
+FROM node:20-alpine AS production
+
+WORKDIR /app
+
+# Copy built package and package files
+COPY backend/package*.json ./
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/prisma ./prisma
+
+# Expose API port
+EXPOSE 3001
+
+# Run the API server
+CMD ["node", "dist/server.js"]
