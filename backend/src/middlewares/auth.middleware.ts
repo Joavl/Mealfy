@@ -33,7 +33,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         uid = decodedToken.uid;
         email = decodedToken.email || '';
         name = decodedToken.name || email.split('@')[0] || 'Usuário';
-      } catch (err) {
+      } catch {
         throw new AppError('Invalid Firebase ID Token', 401);
       }
     } else {

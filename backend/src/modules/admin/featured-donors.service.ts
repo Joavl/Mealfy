@@ -117,12 +117,12 @@ export class FeaturedDonorsService {
           instagram: u.instagram,
           privacySettings: u.privacySettings,
         }))
-        .sort((a, b) => b.totalDonated - a.totalDonated);
+        .sort((a: any, b: any) => b.totalDonated - a.totalDonated);
     } else {
       const users = await MockDatabase.read<any>('users');
       return users
-        .filter((u) => u.role === 'donor')
-        .map((u) => ({
+        .filter((u: any) => u.role === 'donor')
+        .map((u: any) => ({
           id: u.id,
           name: u.name,
           email: u.email,
@@ -130,7 +130,7 @@ export class FeaturedDonorsService {
           instagram: (u as any).instagram,
           privacySettings: u.privacySettings,
         }))
-        .sort((a, b) => b.totalDonated - a.totalDonated);
+        .sort((a: any, b: any) => b.totalDonated - a.totalDonated);
     }
   }
 

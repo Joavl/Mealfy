@@ -137,7 +137,7 @@ export class IndicationsService {
       return family;
     } else {
       const indications = await MockDatabase.read<any>('indications');
-      const idx = indications.findIndex(i => i.id === indicationId);
+      const idx = indications.findIndex((i: any) => i.id === indicationId);
       
       if (idx === -1) throw new AppError('Indicação não encontrada', 404);
       const indication = indications[idx];
@@ -204,7 +204,7 @@ export class IndicationsService {
       };
     } else {
       const indications = await MockDatabase.read<any>('indications');
-      const idx = indications.findIndex(i => i.id === id);
+      const idx = indications.findIndex((i: any) => i.id === id);
       if (idx === -1) throw new AppError('Indicação não encontrada', 404);
       
       indications[idx].status = status;

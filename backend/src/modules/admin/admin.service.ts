@@ -41,8 +41,8 @@ export class AdminService {
       const entities = await MockDatabase.read<any>('entities');
 
       return users
-        .filter(u => u.role === 'entity' && u.status === 'pending')
-        .map(u => ({
+        .filter((u: any) => u.role === 'entity' && u.status === 'pending')
+        .map((u: any) => ({
           ...u,
           entityData: entities.find((e: any) => e.id === u.entityId)
         }));
@@ -79,7 +79,7 @@ export class AdminService {
       const users = await MockDatabase.read<any>('users');
       const entities = await MockDatabase.read<any>('entities');
 
-      const uIdx = users.findIndex(u => u.id === userId);
+      const uIdx = users.findIndex((u: any) => u.id === userId);
       if (uIdx === -1) throw new AppError('User not found', 404);
 
       users[uIdx].status = 'approved';
@@ -123,7 +123,7 @@ export class AdminService {
       });
     } else {
       const users = await MockDatabase.read<any>('users');
-      const uIdx = users.findIndex(u => u.id === userId);
+      const uIdx = users.findIndex((u: any) => u.id === userId);
       if (uIdx === -1) throw new AppError('User not found', 404);
 
       users[uIdx].status = 'rejected';

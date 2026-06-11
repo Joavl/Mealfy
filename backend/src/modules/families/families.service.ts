@@ -50,14 +50,14 @@ export class FamiliesService {
       
       if (query?.region) {
         const normalizedQuery = query.region.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        visible = visible.filter(f => {
+        visible = visible.filter((f: any) => {
           const fReg = (f.neighborhood || f.region || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
           return fReg === normalizedQuery;
         });
       }
 
       if (query?.communityId) {
-        visible = visible.filter(f => f.communityId === query.communityId);
+        visible = visible.filter((f: any) => f.communityId === query.communityId);
       }
 
       return visible;
@@ -74,7 +74,7 @@ export class FamiliesService {
       return family;
     } else {
       const families = await MockDatabase.read<any>('families');
-      const family = families.find(f => f.id === id);
+      const family = families.find((f: any) => f.id === id);
       if (!family) throw new AppError('Family not found', 404);
       return family;
     }
@@ -164,7 +164,7 @@ export class FamiliesService {
       return families.filter(f => norm(f.region || f.neighborhood || '') === norm(region));
     } else {
       const families = await MockDatabase.read<any>('families');
-      return families.filter((f) => {
+      return families.filter((f: any) => {
         if (!f.needsEntitySupport || f.createdByEntityId) return false;
         if (f.status !== 'approved') return false;
         if (!region) return true;
@@ -202,7 +202,7 @@ export class FamiliesService {
       return updated;
     } else {
       const families = await MockDatabase.read<any>('families');
-      const idx = families.findIndex((f) => f.id === familyId);
+      const idx = families.findIndex((f: any) => f.id === familyId);
       if (idx === -1) throw new AppError('Family not found', 404);
 
       const fam: any = families[idx];
@@ -239,7 +239,7 @@ export class FamiliesService {
       return updated;
     } else {
       const families = await MockDatabase.read<any>('families');
-      const idx = families.findIndex(f => f.id === id);
+      const idx = families.findIndex((f: any) => f.id === id);
       
       if (idx === -1) throw new AppError('Family not found', 404);
 

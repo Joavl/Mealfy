@@ -4,7 +4,7 @@ import { prisma } from '../../config/database';
 import { MockDatabase } from '../../database/mock-db';
 import { AppError } from '../../shared/errors/AppError';
 import { voucherProvider } from '../vouchers/voucherProvider';
-import { SupportStatus, GiftCardStatus } from '@prisma/client';
+import { SupportStatus, GiftCardStatus, FamilyStatus } from '@prisma/client';
 
 export class DonationsService {
   private static calculateAmount(childrenCount: number): number {
@@ -118,7 +118,7 @@ export class DonationsService {
       };
     } else {
       const families = await MockDatabase.read<any>('families');
-      const fIdx = families.findIndex((f) => f.id === familyId);
+      const fIdx = families.findIndex((f: any) => f.id === familyId);
 
       if (fIdx === -1) throw new AppError('Family not found', 404);
       
@@ -157,7 +157,7 @@ export class DonationsService {
 
       // Update donor total
       const users = await MockDatabase.read<any>('users');
-      const uIdx = users.findIndex((u) => u.id === donor.id);
+      const uIdx = users.findIndex((u: any) => u.id === donor.id);
       if (uIdx !== -1) {
         users[uIdx].totalDonated = (users[uIdx].totalDonated || 0) + amount;
       }
@@ -235,11 +235,11 @@ export class DonationsService {
       const families = await MockDatabase.read<any>('families');
 
       return donations
-        .filter((d) => d.donorId === userId)
-        .map((d) => ({
+        .filter((d: any) => d.donorId === userId)
+        .map((d: any) => ({
           ...d,
-          giftCard: giftCards.find((gc) => gc.donationId === d.id),
-          family: families.find((f) => f.id === d.familyId),
+          giftCard: giftCards.find((gc: any) => gc.donationId === d.id),
+          family: families.find((f: any) => f.id === d.familyId),
         }));
     }
   }
@@ -286,7 +286,7 @@ export class DonationsService {
     } else {
       const families = await MockDatabase.read<any>('families');
       const eligibleFamilies = families.filter(
-        (f) =>
+        (f: any) =>
           f.supportStatus === 'needs_help' &&
           (f.region?.toLowerCase().includes(communityId.toLowerCase()) ||
             f.neighborhood?.toLowerCase().includes(communityId.toLowerCase()) ||

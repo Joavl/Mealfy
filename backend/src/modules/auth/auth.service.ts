@@ -5,7 +5,7 @@ import { prisma } from '../../config/database';
 import { MockDatabase } from '../../database/mock-db';
 import { AppError } from '../../shared/errors/AppError';
 import { FamiliesService, coordsForRegion } from '../families/families.service';
-import { UserRole, AccountStatus, EntityType } from '@prisma/client';
+import { UserRole, AccountStatus, EntityType, FamilyStatus, SupportStatus } from '@prisma/client';
 
 export function formatUser(user: any) {
   if (!user) return null;
@@ -111,7 +111,7 @@ export class AuthService {
       return formatUser(user);
     } else {
       const users = await MockDatabase.read<any>('users');
-      if (users.find((u) => u.email?.toLowerCase() === emailNormalized)) {
+      if (users.find((u: any) => u.email?.toLowerCase() === emailNormalized)) {
         throw new AppError('Email already registered', 409);
       }
 
@@ -156,7 +156,7 @@ export class AuthService {
       const entityId = randomUUID();
       const userId = randomUUID();
 
-      const org = await prisma.organization.create({
+      await prisma.organization.create({
         data: {
           id: entityId,
           name: data.name,
@@ -196,7 +196,7 @@ export class AuthService {
       const users = await MockDatabase.read<any>('users');
       const entities = await MockDatabase.read<any>('entities');
 
-      if (users.find((u) => u.email?.toLowerCase() === emailNormalized)) {
+      if (users.find((u: any) => u.email?.toLowerCase() === emailNormalized)) {
         throw new AppError('Email already registered', 409);
       }
 
@@ -262,7 +262,7 @@ export class AuthService {
       return formatUser(user);
     } else {
       const users = await MockDatabase.read<any>('users');
-      const user = users.find((u) => u.email?.toLowerCase() === normalizedEmail);
+      const user = users.find((u: any) => u.email?.toLowerCase() === normalizedEmail);
 
       if (!user) {
         throw new AppError('Invalid credentials', 401);
@@ -283,7 +283,7 @@ export class AuthService {
         uid = decodedToken.uid;
         email = decodedToken.email || '';
         name = decodedToken.name || email.split('@')[0] || 'Usuário';
-      } catch (err) {
+      } catch {
         throw new AppError('Invalid Firebase ID Token', 401);
       }
     } else {
@@ -376,12 +376,7 @@ export class AuthService {
       }
 
       const [lat, lng] = coordsForRegion(data.region);
-      const children = (data.childrenNames || []).map((name: string, i: number) => ({
-        id: `ch-${i}`,
-        name,
-        age: 0,
-        school: 'A informar',
-      }));
+
 
       // Create Family
       const family = await prisma.family.create({
@@ -436,7 +431,7 @@ export class AuthService {
       return { user: formatUser(user), family };
     } else {
       const users = await MockDatabase.read<any>('users');
-      if (users.find((u) => u.documentNumber === cpf)) {
+      if (users.find((u: any) => u.documentNumber === cpf)) {
         throw new AppError('CPF já cadastrado', 409);
       }
 
@@ -531,7 +526,7 @@ export class AuthService {
       return formatUser(updated);
     } else {
       const users = await MockDatabase.read<any>('users');
-      const userIndex = users.findIndex((u) => u.id === userId);
+      const userIndex = users.findIndex((u: any) => u.id === userId);
 
       if (userIndex === -1) {
         throw new AppError('User not found', 404);

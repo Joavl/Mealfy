@@ -1,92 +1,53 @@
-# Mealfy — Arquitetura
+# Mealfy — Arquitetura do Sistema
 
-## Visão geral
+## Visão Geral da Stack
 
 | Camada | Tecnologia | Pasta |
-|--------|------------|--------|
-| **Web** | React + Vite | `Mealfy/` (raiz do front) |
-| **Mobile** | Expo (React Native) | `Mealfy/mobile/` |
-| **API** | ASP.NET Core 8 | `Mealfy/server/` |
-| **Banco relacional** | SQL Server + EF Core | LocalDB em dev |
-| **Auth / push** | Firebase | Console Firebase (você cria a conta) |
+|---|---|---|
+| **Web (Frontend)** | React + TypeScript + Vite | `src/` (raiz) |
+| **Mobile (Frontend)** | Expo (React Native) | `mobile/` |
+| **API (Backend)** | Node.js + Express + TypeScript | `backend/` |
+| **Banco de Dados** | PostgreSQL + Prisma ORM | Configurado via Prisma |
+| **Autenticação** | Firebase Authentication | Admin SDK no Backend |
 
-## Por que SQL Server + Firebase?
+---
 
-- **SQL Server (EF Core):** dados de negócio — usuários, entidades, famílias, validações (CadÚnico, Bolsa Família, SISVAN, IVCAD), doações, vínculos.
-- **Firebase:** login (e-mail/senha, Google), notificações push (FCM) e, se quiser depois, Firestore só para chat/eventos em tempo real — **não duplicar** o cadastro principal no Firestore.
+## Banco de Dados (PostgreSQL + Prisma)
 
-## API ASP.NET
+O banco de dados relacional armazena toda a lógica e dados de negócio: usuários, organizações parceiras, famílias, indicações, doações realizadas e auditorias de controle.
 
+### Configuração do Banco
+No arquivo `backend/.env`:
+```env
+DATABASE_URL="postgresql://usuario:senha@localhost:5432/mealfy?schema=public"
+```
+
+Gere o cliente e execute as migrations:
 ```bash
-cd Mealfy/server
-dotnet run --project src/Mealfy.Api
+cd backend
+npx prisma generate
+npx prisma migrate dev
 ```
 
-- Swagger: http://localhost:3000/swagger  
-- Health: http://localhost:3000/health  
-- Rotas compatíveis com o front: `/auth/*`, `/families/*` (demais módulos migram do Node aos poucos)
+---
 
-### Connection string
+## Autenticação com Firebase
 
-Edite `server/src/Mealfy.Api/appsettings.json`:
+O **Firebase Authentication** é a fonte primária de identidade do usuário. O fluxo de autenticação funciona da seguinte maneira:
 
-```json
-"ConnectionStrings": {
-  "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=Mealfy;..."
-}
-```
+1. O aplicativo cliente (Web/Mobile) realiza a autenticação direta no Firebase (E-mail/Senha ou Login com Google) e obtém um **ID Token (JWT)**.
+2. O cliente envia esse token no cabeçalho das requisições HTTP (`Authorization: Bearer <ID_TOKEN>`).
+3. O middleware `auth.middleware.ts` do backend intercepta a requisição:
+   * Valida o token com o SDK `firebase-admin`.
+   * Recupera o `uid`, `email` e `name` do token.
+   * Localiza ou cadastra o usuário no banco de dados local PostgreSQL, relacionando-o pelo campo exclusivo `firebaseUid`.
+   * Insere o usuário autenticado na requisição (`req.user`) para controle de permissões.
 
-Para SQL Server instalado:
+---
 
-```json
-"DefaultConnection": "Server=localhost;Database=Mealfy;Trusted_Connection=True;TrustServerCertificate=True"
-```
+## Lógica e Regras de Negócio Importantes
 
-### Firebase na API
-
-1. Crie projeto em https://console.firebase.google.com  
-2. Ative **Authentication** (e-mail/senha, Google)  
-3. Gere **Service Account** → baixe JSON  
-4. Em `appsettings.json`:
-
-```json
-"Firebase": {
-  "ProjectId": "seu-projeto-id",
-  "CredentialsPath": "C:\\caminho\\seguro\\firebase-adminsdk.json"
-}
-```
-
-5. Front/mobile enviam `POST /auth/login/firebase` com `{ "idToken": "..." }`
-
-## Web
-
-```bash
-cd Mealfy
-npm run dev
-```
-
-`.env`: `VITE_API_URL=http://localhost:3000`
-
-## Mobile (Expo Go)
-
-App **nativo**: login, início, mapa (`npm run dev:api` + `npm run dev:mobile`).
-
-Versão web no celular (opcional): também `npm run dev` e abrir *Versão web* no app.
-
-`mobile/.env`: `EXPO_PUBLIC_API_URL=http://IP_DO_PC:3000`
-
-## Contas demo (seed)
-
-| Papel | E-mail |
-|-------|--------|
-| Doador | doador@mealfy.com |
-| Entidade | entidade@mealfy.com |
-
-Login mock: `POST /auth/login/mock` com `{ "email": "doador@mealfy.com", "password": "x" }`
-
-## Próximos passos
-
-1. Você cria o projeto Firebase e preenche as chaves  
-2. Migrar rotas restantes do Node (`/donations`, `/indications`, `/admin`) para ASP.NET  
-3. Publicar API (Azure App Service / Railway) + SQL Azure  
-4. Build mobile (EAS) para Android/iOS
+* **Validação Geográfica (Jitter)**: Para que os pinos de famílias no mapa não fiquem sobrepostos no mesmo ponto central, adiciona-se uma variação aleatória (jitter) nas coordenadas geográficas de latitude/longitude ao registrar famílias em Heliópolis, Paraisópolis, Cidade Tiradentes ou Grajaú.
+* **Redirecionamento de Doações Regionais**: Uma doação em lote focada em uma região específica distribui o saldo total igualmente entre todas as famílias que possuem o status `needs_help` naquela localidade, emitindo vouchers alimentares individuais.
+* **Privacidade no Ranking**: O ranking de doadores lista os usuários com o papel `DONOR` ordenados pelo montante de doações. Caso o usuário tenha configurado privacidade (`anonymousMode: true`), suas informações pessoais são omitidas e ele é exibido como "Doador Anônimo".
+* **Mock Mode para Testes**: O backend suporta `AUTH_MODE=mock` e `DATABASE_MODE=memory` para facilitar a execução local sem a necessidade de um servidor PostgreSQL ativo ou credenciais reais do Firebase. Estes modos são **estritamente proibidos** em ambiente de produção (`NODE_ENV=production`).

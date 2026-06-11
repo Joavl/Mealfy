@@ -47,14 +47,14 @@ $rootEnv = Join-Path $root ".env"
 $mobileEnv = Join-Path $root "mobile\.env"
 
 Update-EnvFile $rootEnv @{
-  "VITE_API_URL" = "http://${ip}:3000"
+  "VITE_API_URL" = "http://${ip}:3001/api"
   "VITE_HMR_HOST" = $ip
   "VITE_DISABLE_LOCAL_FALLBACK" = "false"
 }
 
 Update-EnvFile $mobileEnv @{
   "EXPO_PUBLIC_WEB_APP_URL" = "http://${ip}:5173"
-  "EXPO_PUBLIC_API_URL" = "http://${ip}:3000"
+  "EXPO_PUBLIC_API_URL" = "http://${ip}:3001/api"
 }
 
 Write-Host "[OK] .env atualizado" -ForegroundColor Green
@@ -62,7 +62,7 @@ Write-Host "[OK] mobile/.env atualizado" -ForegroundColor Green
 Write-Host ""
 Write-Host "Celular / Expo Go:" -ForegroundColor Yellow
 Write-Host "  Site: http://${ip}:5173"
-Write-Host "  API:  http://${ip}:3000"
+Write-Host "  API:  http://${ip}:3001/api"
 Write-Host ""
 
 exit 0

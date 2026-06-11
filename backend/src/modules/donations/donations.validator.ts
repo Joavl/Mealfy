@@ -3,6 +3,8 @@ import { z } from 'zod';
 export const createDonationSchema = z.object({
   familyId: z.string(),
   amount: z.number().positive(),
+  message: z.string().optional(),
+  communityId: z.string().optional(),
 });
 
 export const batchDonationSchema = z.object({

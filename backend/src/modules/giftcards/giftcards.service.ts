@@ -34,8 +34,8 @@ export class GiftCardsService {
     } else {
       const cards = await MockDatabase.read<any>('giftcards');
       return cards
-        .filter((c) => c.familyId === familyId)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        .filter((c: any) => c.familyId === familyId)
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
   }
 
@@ -95,7 +95,7 @@ export class GiftCardsService {
       };
     } else {
       const cards = await MockDatabase.read<any>('giftcards');
-      const idx = cards.findIndex((c) => c.id === giftCardId);
+      const idx = cards.findIndex((c: any) => c.id === giftCardId);
       if (idx === -1) throw new AppError('Gift card não encontrado', 404);
 
       const card = cards[idx];

@@ -1,77 +1,35 @@
-# Onde paramos — Mealfy
+# Onde Paramos — Mealfy
 
-Atualizado: 25/05/2026
+## Estado Atual da Branch (refactor/full-typescript)
 
-## Quando chegar em casa — gerar o APK
+O projeto foi totalmente migrado para um ecossistema unificado em **JavaScript/TypeScript**, removendo por completo a API legada em C# (ASP.NET Core) e o banco de dados SQL Server.
 
-### Opcao rapida (mesma Wi-Fi, teste hoje)
-
-```powershell
-cd Mealfy
-
-# 1) Preparar (build do site + IP + EAS)
-npm run prepare:apk:local
-
-# 2) Servidores (2 terminais)
-npm run dev:api
-npm run dev
-
-# 3) Gerar APK (~10-20 min) — link de download no terminal
-npm run build:apk
-```
-
-Guia detalhado: **COMO-BAIXAR-APK.md**
-
-### Opcao enviar para outra pessoa (4G / outra cidade)
-
-1. Publicar API no Render (ver **DEPLOY-PRODUCAO.md**)
-2. Editar `.env.production` — trocar `SEU-SERVICO` pela URL da API
-3. `npm run deploy:web`
-4. `npm run prepare:apk:prod`
-5. `npm run build:apk:prod`
+### O que foi feito:
+1. **Remoção de Arquivos Legados**: Exclusão completa das pastas `/server`, `/legacy-csharp-backend` e todos os arquivos `.cs`, `.csproj`, `.sln`.
+2. **Nova API Node.js (Official)**: O diretório `/backend` agora abriga a API oficial desenvolvida em Express e TypeScript com Prisma ORM e PostgreSQL.
+3. **Database Schema**: Implementado o `schema.prisma` com os relacionamentos de usuários, organizações, famílias, doações e vouchers.
+4. **Middlewares**: Implementados middlewares centrais de autenticação via token do Firebase (`auth.middleware.ts`), validação por Zod e controle de acesso por perfis/funções (`role.middleware.ts`).
+5. **Agnosticismo de Vouchers**: Implementada uma interface abstrata `VoucherProvider` e um `MockVoucherProvider` para remover dependências diretas de parceiros específicos.
+6. **Scripts e Configurações**: Scripts de execução local centralizados na raiz (`npm run dev:api`, `npm run dev`) e scripts auxiliares PowerShell adaptados para a porta `3001` da nova API.
 
 ---
 
-## O que ja esta pronto no codigo
+## Como Rodar o Ambiente Local
 
-- Cadastro doador, entidade, beneficiario
-- Login com senha (demo `@mealfy.com` → **mealfy123**)
-- Admin, carrossel, mapa, entidade, gift iFood, Firebase
-- Scripts: `prepare:apk`, `build:apk`, `stop:api`, `sync:lan`
-- App mobile v1.1.0 (versionCode 2)
-- Correcao TypeScript no cadastro beneficiario (build APK)
+1. **Backend**:
+   ```bash
+   cd backend
+   npm install
+   # Para rodar com banco em memória (sem PostgreSQL/Firebase real):
+   # Certifique-se de que no seu .env: AUTH_MODE=mock e DATABASE_MODE=memory
+   npm run dev
+   ```
+2. **Frontend Web**:
+   ```bash
+   npm install
+   npm run dev
+   ```
+   Acesse: http://localhost:5173
 
----
-
-## Retomar desenvolvimento normal
-
-```powershell
-cd Mealfy
-npm run dev:api    # terminal 1
-npm run dev        # terminal 2
-```
-
-http://localhost:5173
-
-**Admin:** `admin@mealfy.com` / `mealfy123` (rodape → acesso administrativo)
-
-Se API travar: `npm run stop:api` depois `npm run dev:api`
-
----
-
-## Requisitos APK (uma vez em casa)
-
-```powershell
-npm install -g eas-cli
-eas login
-```
-
-Conta gratuita: https://expo.dev
-
----
-
-## Repo
-
-https://github.com/Joavl/Mealfy
-
-Arquivos nao vao pro Git: `.env`, `.env.production`, `firebase-service-account.json`
+3. **Verificações de IP**:
+   * Rode `npm run sync:lan` para alinhar os arquivos `.env` com a Wi-Fi local de testes para o mobile.

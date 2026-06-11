@@ -59,7 +59,7 @@ export class SocialService {
       };
     } else {
       const users = await MockDatabase.read<any>('users');
-      const user = users.find((u) => u.id === userId);
+      const user = users.find((u: any) => u.id === userId);
 
       if (!user) {
         throw new AppError('Doador não encontrado', 404);

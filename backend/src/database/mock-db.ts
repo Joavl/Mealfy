@@ -12,18 +12,18 @@ export class MockDatabase {
     }
   }
 
-  static async read<T>(fileName: string): Promise<T[]> {
+  static async read<T = any>(fileName: string): Promise<T> {
     await this.ensureDir();
     const filePath = path.join(DATA_DIR, `${fileName}.json`);
     try {
       const content = await fs.readFile(filePath, 'utf-8');
-      return JSON.parse(content);
+      return JSON.parse(content) as T;
     } catch {
-      return [];
+      return [] as any;
     }
   }
 
-  static async write<T>(fileName: string, data: T[]): Promise<void> {
+  static async write(fileName: string, data: any): Promise<void> {
     await this.ensureDir();
     const filePath = path.join(DATA_DIR, `${fileName}.json`);
     await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');

@@ -1,13 +1,14 @@
 import { Request, Response } from 'express';
 import { DonationsService } from './donations.service';
+import { FamiliesService } from '../families/families.service';
 import { createDonationSchema, batchDonationSchema, regionalDonationSchema } from './donations.validator';
 
 export class DonationsController {
   static async create(req: Request, res: Response) {
     const { familyId, amount, message, communityId } = createDonationSchema.parse(req.body);
     const result = await DonationsService.create(familyId, req.user, amount, message, communityId);
-    const families = await import('../../database/mock-db').then(m => m.MockDatabase.read<any>('families'));
-    const family = families.find((f: any) => f.id === familyId);
+    const family = await FamiliesService.getFamilyById(familyId).catch(() => null);
+
     return res.status(201).json({
       donation: { ...result.donation, giftCardId: result.giftCard.id, communityId },
       giftCard: result.giftCard,
