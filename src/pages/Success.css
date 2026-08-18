@@ -1,0 +1,136 @@
+﻿.success-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--color-background);
+  padding-bottom: 80px;
+}
+
+.success-hero {
+  background-color: #ffffff;
+  padding-top: 60px;
+  padding-bottom: var(--spacing-6);
+  border-bottom-left-radius: var(--radius-xl);
+  border-bottom-right-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.success-icon-container {
+  position: relative;
+}
+
+.success-icon-bg {
+  width: 80px;
+  height: 80px;
+  background-color: var(--color-success);
+  border-radius: var(--radius-xl); /* Geometric */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(40, 167, 69, 0.2);
+  animation: scaleIn 0.5s ease-out forwards;
+}
+
+@keyframes scaleIn {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.success-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.success-subtitle {
+  font-size: 1rem;
+  line-height: 1.5;
+  max-width: 300px;
+}
+
+.receipt-card {
+  background-color: var(--color-background);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
+  width: 100%;
+  max-width: 320px;
+  border: 1px dashed var(--color-outline-variant);
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.receipt-label {
+  font-size: 0.85rem;
+  color: var(--color-outline);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.receipt-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.receipt-value.text-secondary {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.receipt-divider {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: var(--spacing-3) 0;
+}
+
+.message-section {
+  padding-top: var(--spacing-5);
+}
+
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.section-desc {
+  font-size: 0.9rem;
+  color: var(--color-outline);
+  line-height: 1.4;
+}
+
+.message-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: #ffffff;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.message-card:active {
+  transform: scale(0.98);
+}
+
+.message-card.selected {
+  border-color: var(--color-primary);
+  background-color: rgba(0, 54, 95, 0.03);
+}
+
+.message-text {
+  font-weight: 500;
+  color: var(--color-text-main);
+  font-size: 0.95rem;
+}
+
+.message-card.selected .message-text {
+  color: var(--color-primary);
+  font-weight: 600;
+}

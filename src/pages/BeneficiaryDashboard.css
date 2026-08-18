@@ -1,0 +1,192 @@
+﻿/* Beneficiary Dashboard Styles */
+.beneficiary-dashboard-page {
+  background-color: var(--color-background);
+  min-height: 100vh;
+}
+
+.beneficiary-dashboard-page .content {
+  padding-bottom: 100px;
+}
+
+/* Verification badge */
+.badge-verification {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: var(--radius-md);
+}
+
+.badge-verification--ok {
+  background-color: rgba(40, 167, 69, 0.15);
+  color: var(--color-success);
+}
+
+.badge-verification--pending {
+  background-color: rgba(199, 167, 84, 0.18);
+  color: var(--color-secondary);
+}
+
+/* Gift card partner logo + change link */
+.giftcard-partner-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+  font-family: var(--font-family-heading);
+}
+
+.giftcard-change-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* DEV Mode Switcher */
+.dev-state-switcher {
+  background-color: rgba(0, 54, 95, 0.08);
+  border-bottom: 1px solid rgba(0, 54, 95, 0.15);
+}
+
+.dev-btn {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-outline);
+  font-weight: 700;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.dev-btn.active {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverted);
+  border-color: var(--color-primary);
+}
+
+/* Status Banner */
+.status-banner {
+  box-shadow: var(--shadow-sm);
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+}
+
+.status-card {
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-lg);
+}
+
+/* Gift Card styling */
+.gift-card-display {
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease;
+}
+
+.gift-card-display:hover {
+  border-color: var(--color-primary);
+}
+
+/* History Item */
+.history-item {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  border-radius: var(--radius-md);
+  transition: border-color 0.2s;
+}
+
+.history-item:hover {
+  border-color: var(--color-outline-variant);
+}
+
+/* Colors Utilities fallback */
+.bg-warning\/10 {
+  background-color: rgba(199, 167, 84, 0.1);
+}
+.border-warning\/30 {
+  border-color: rgba(199, 167, 84, 0.3);
+}
+.bg-error\/10 {
+  background-color: rgba(220, 53, 69, 0.08);
+}
+.border-error\/30 {
+  border-color: rgba(220, 53, 69, 0.25);
+}
+.bg-background {
+  background-color: var(--color-background);
+}
+.bg-white {
+  background-color: var(--color-surface);
+}
+.rounded-lg {
+  border-radius: var(--radius-lg);
+}
+.rounded {
+  border-radius: var(--radius-md);
+}
+.font-mono {
+  font-family: monospace;
+}
+.font-black {
+  font-weight: 900;
+}
+.font-extrabold {
+  font-weight: 800;
+}
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   SOLICITAÇÃO DO DIA
+   O pedido vale por um ciclo (reset 08h). Sem ele a família não
+   aparece no mapa, então o estado precisa ficar explícito na tela.
+   ══════════════════════════════════════════════════════════════════ */
+.daily-request {
+  margin: var(--spacing-4) 0;
+  padding: var(--spacing-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-secondary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.daily-request--done {
+  border-left-color: var(--color-success);
+  background: rgba(31, 157, 87, 0.04);
+}
+
+.daily-request-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.daily-request-title {
+  font-family: var(--font-family-heading);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+.daily-request-text {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}

@@ -1,0 +1,68 @@
+.msg-picker-subtitle {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  margin-bottom: var(--spacing-4);
+}
+
+.msg-picker-loading {
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+  text-align: center;
+  padding: var(--spacing-5) 0;
+}
+
+.msg-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-5);
+}
+
+.msg-picker-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  text-align: left;
+  padding: var(--spacing-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.msg-picker-option:active {
+  transform: scale(0.995);
+}
+
+.msg-picker-option--active {
+  border-color: var(--color-primary);
+  background: rgba(0, 54, 95, 0.04);
+}
+
+.msg-picker-text {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--color-text-main);
+}
+
+.msg-picker-check {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.msg-picker-actions {
+  display: flex;
+  gap: var(--spacing-3);
+}
+
+.msg-picker-actions > * {
+  flex: 1;
+}
+
+/* O estilo do recado exibido (.msg-note) vive em App.css: ele aparece no
+   Success, no histórico do doador e no painel do beneficiário — telas que não
+   necessariamente montam este componente. */

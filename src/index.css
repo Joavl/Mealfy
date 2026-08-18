@@ -1,0 +1,359 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* ─────────────────────────────────────────────────────────────────────
+     DESIGN TOKENS — Mealfy Design System
+     Semantic tokens are theme-aware (see [data-theme="dark"] below, prepared
+     for a future dark mode). Brand palette is preserved and refined.
+     ───────────────────────────────────────────────────────────────────── */
+
+  /* Brand palette (raw) */
+  --brand-primary: #00365f;
+  --brand-primary-strong: #0a4f86;
+  --brand-secondary: #c7a754;
+  --brand-secondary-soft: #e9d7a2;
+  --color-primary-rgb: 0, 54, 95;
+  --color-secondary-rgb: 199, 167, 84;
+  --color-outline-rgb: 91, 99, 110;
+
+  /* Semantic colors — surfaces & text */
+  --color-primary: var(--brand-primary);
+  --color-primary-container: var(--brand-primary-strong);
+  --color-secondary: var(--brand-secondary);
+  --color-secondary-container: var(--brand-secondary-soft);
+
+  --color-background: #f5f5f3;        /* app canvas */
+  --color-surface: #ffffff;           /* cards / sheets */
+  --color-surface-2: #f1f3f6;         /* subtly elevated alt surface */
+  --color-surface-highest: #e7e9ee;   /* highest neutral fill / hairline fill */
+
+  --color-text-main: #15181d;         /* primary text */
+  --color-text-secondary: #5b636e;    /* muted foreground (AA on white) */
+  --color-text-tertiary: #8b929c;     /* captions / placeholders */
+  --color-text-inverted: #ffffff;
+
+  --color-border: #d0d5dd;            /* hairline borders */
+  --color-outline: #5b636e;           /* legacy: now a readable neutral */
+  --color-outline-variant: #d7dbe2;   /* legacy: subtle border */
+  --color-outline-low: #eef0f3;       /* very subtle fill/dots */
+
+  /* Status */
+  --color-success: #1f9d57;
+  --color-success-rgb: 31, 157, 87;
+  --color-warning: #e07b10;
+  --color-warning-rgb: 224, 123, 16;
+  --color-error: #d64550;
+  --color-error-rgb: 214, 69, 80;
+  --color-info: var(--brand-primary);
+
+  /* Focus ring (accessibility) */
+  --color-focus-ring: rgba(0, 54, 95, 0.45);
+  --focus-ring: 0 0 0 3px var(--color-focus-ring);
+
+  /* Typography */
+  --font-family-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-family-body: 'Plus Jakarta Sans', sans-serif;
+
+  /* Type scale (fluid-ish, mobile-first) */
+  --text-display: 2rem;      /* 32 — hero */
+  --text-title: 1.5rem;      /* 24 — page title */
+  --text-section: 1.1875rem; /* 19 — section title */
+  --text-card-title: 1rem;   /* 16 — card title */
+  --text-body: 0.9375rem;    /* 15 — body */
+  --text-body-sm: 0.8125rem; /* 13 — secondary */
+  --text-caption: 0.75rem;   /* 12 — caption */
+  --text-label: 0.6875rem;   /* 11 — overline/label */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+
+  /* Spacing (4px base) */
+  --spacing-1: 0.25rem;  /* 4  */
+  --spacing-2: 0.5rem;   /* 8  */
+  --spacing-3: 0.75rem;  /* 12 */
+  --spacing-4: 1rem;     /* 16 */
+  --spacing-5: 1.5rem;   /* 24 */
+  --spacing-6: 2rem;     /* 32 */
+  --spacing-7: 2.5rem;   /* 40 */
+  --spacing-8: 3rem;     /* 48 */
+
+  /* Border radius — soft, continuous, consistent */
+  --radius-sm: 8px;       /* chips, progress, tiny */
+  --radius-md: 12px;      /* controls: inputs, buttons, small cards */
+  --radius-lg: 16px;      /* cards / primary surfaces */
+  --radius-xl: 22px;      /* modals, hero panels, bottom sheets */
+  --radius-full: 9999px;  /* pills, circular */
+
+  /* Semantic radius aliases (preferred for new code) */
+  --radius-control: var(--radius-md);
+  --radius-card: var(--radius-lg);
+  --radius-modal: var(--radius-xl);
+  --radius-pill: var(--radius-full);
+
+  /* Elevation — soft, neutral, layered (prefer contrast over heavy shadow) */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.07), 0 1px 3px rgba(16, 24, 40, 0.10);
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.10), 0 2px 4px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 12px 28px rgba(16, 24, 40, 0.10), 0 4px 10px rgba(16, 24, 40, 0.05);
+  --shadow-xl: 0 24px 48px rgba(16, 24, 40, 0.14), 0 8px 16px rgba(16, 24, 40, 0.06);
+  --elevation-1: var(--shadow-sm);
+  --elevation-2: var(--shadow-md);
+  --elevation-3: var(--shadow-lg);
+
+  /* Motion */
+  --motion-fast: 140ms;
+  --motion-base: 220ms;
+  --motion-slow: 320ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Layout */
+  --layout-max-width: 480px;   /* app is mobile-first; center on large screens */
+  --gutter: 1.25rem;           /* 20 — horizontal page padding */
+  --header-height: 56px;
+  --tabbar-height: 64px;
+  --tabbar-clearance: calc(var(--tabbar-height) + var(--spacing-5) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Dark mode tokens — prepared, not yet activated app-wide.
+   Flip by adding data-theme="dark" on <html>. */
+[data-theme="dark"] {
+  --color-background: #0e1116;
+  --color-surface: #161a21;
+  --color-surface-2: #1c212a;
+  --color-surface-highest: #232936;
+  --color-text-main: #f3f5f8;
+  --color-text-secondary: #a4adba;
+  --color-text-tertiary: #79828f;
+  --color-border: #2a313c;
+  --color-outline: #a4adba;
+  --color-outline-variant: #2a313c;
+  --color-outline-low: #1c212a;
+  --color-focus-ring: rgba(120, 170, 220, 0.55);
+}
+
+/* Reset & Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-family-body);
+  font-size: var(--text-body);
+  background-color: var(--color-background);
+  color: var(--color-text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Rede de segurança contra corte lateral / scroll horizontal no Android real */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Mídia nunca estoura o container */
+img, svg, video, canvas {
+  max-width: 100%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-heading);
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+ul {
+  list-style: none;
+}
+
+/* Accessibility: visible focus only for keyboard users */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Utilities */
+.app-container {
+  width: 100%;
+  min-height: 100dvh;
+  background-color: var(--color-background);
+  position: relative;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+}
+
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  width: 100%;
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  position: relative;
+  background-color: var(--color-background);
+}
+
+/* Center the mobile app on large viewports with subtle framing */
+@media (min-width: 600px) {
+  body {
+    background-color: var(--color-surface-2);
+  }
+  .app-wrapper {
+    box-shadow: var(--shadow-lg);
+    min-height: 100dvh;
+  }
+}
+
+.page-content {
+  flex: 1;
+}
+
+.with-tab-bar {
+  padding-bottom: var(--tabbar-clearance);
+}
+
+/* Text Utilities */
+.text-center { text-align: center; }
+.text-primary { color: var(--color-primary); }
+.text-secondary { color: var(--color-secondary); }
+.text-inverted { color: var(--color-text-inverted); }
+.text-error { color: var(--color-error); }
+.text-success { color: var(--color-success); }
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.font-medium { font-weight: 500; }
+
+/* Flex/Layout */
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: var(--spacing-2); }
+.gap-3 { gap: var(--spacing-3); }
+.gap-4 { gap: var(--spacing-4); }
+.gap-6 { gap: var(--spacing-6); }
+
+/* Padding */
+.p-4 { padding: var(--spacing-4); }
+.py-4 { padding-top: var(--spacing-4); padding-bottom: var(--spacing-4); }
+.px-4 { padding-left: var(--spacing-4); padding-right: var(--spacing-4); }
+.py-6 { padding-top: var(--spacing-6); padding-bottom: var(--spacing-6); }
+.mb-2 { margin-bottom: var(--spacing-2); }
+.mb-4 { margin-bottom: var(--spacing-4); }
+.mt-4 { margin-top: var(--spacing-4); }
+
+/* Animation Utils */
+.transition-all { transition: all 0.3s ease; }
+.active-click:active { transform: scale(0.97); }
+
+/* Forms & Inputs Global Styles */
+.form-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  font-family: var(--font-family-body);
+  font-size: var(--text-body);
+  color: var(--color-text-main);
+  transition: border-color var(--motion-fast) var(--ease-standard),
+              box-shadow var(--motion-fast) var(--ease-standard),
+              background-color var(--motion-fast) var(--ease-standard);
+  outline: none;
+}
+
+.form-input:focus,
+.form-input:focus-visible {
+  border-color: var(--color-primary);
+  background-color: var(--color-surface);
+  box-shadow: var(--focus-ring);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.form-label {
+  display: block;
+  font-size: var(--text-label);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+/* Reusable Card */
+.surface-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-4);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Glassmorphism Utilities — used sparingly (navigation/overlays only) */
+.glassmorphism {
+  background: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: saturate(160%) blur(18px) !important;
+  -webkit-backdrop-filter: saturate(160%) blur(18px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+}
+
+.dark-glassmorphism {
+  background: rgba(0, 54, 95, 0.8) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.blur-bg {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mealfy</string>
+    <string name="title_activity_main">Mealfy</string>
+    <string name="package_name">com.mealfy.app</string>
+    <string name="custom_url_scheme">com.mealfy.app</string>
+</resources>

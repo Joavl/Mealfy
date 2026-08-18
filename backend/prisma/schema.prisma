@@ -1,0 +1,596 @@
+// Mealfy MVP — Prisma schema (Fase 1C: schema inicial completo)
+//
+// Convenções:
+// - Valores monetários em CENTAVOS (Int) para evitar problemas de ponto flutuante.
+// - Provider 99: enum interno `ninetynine`; UI pública exibe "99 Mercado".
+// - Nomes de tabela em snake_case via @@map.
+// - Regras de negócio (1x/dia, liberar vale só após pagamento, elegibilidade 0–17)
+//   são autoritativas nos SERVIÇOS do backend (Fases 2–5), não só no schema.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────── ENUMS ───────────────────────────
+
+enum UserRole {
+  donor
+  entity
+  beneficiary
+  admin
+}
+
+enum UserStatus {
+  active
+  pending
+  suspended
+  blocked
+}
+
+enum GiftCardProvider {
+  ifood
+  ninetynine // "99 Mercado" na UI
+  carrefour
+}
+
+enum FamilyApprovalStatus {
+  pending
+  approved
+  rejected
+  blocked
+}
+
+enum FamilyVerificationStatus {
+  unverified
+  gov_mock
+  manual
+}
+
+enum FamilySupportStatus {
+  needs_help
+  supported
+  fed
+}
+
+enum DataSource {
+  gov
+  manual
+}
+
+enum LocationPrecision {
+  approximate
+  exact_admin_only
+}
+
+enum DonationStatus {
+  pending_payment
+  payment_confirmed
+  gift_card_purchase_pending
+  gift_card_reserved
+  gift_card_released
+  completed
+  manual_review
+  failed
+  canceled
+  refunded
+}
+
+enum GiftCardProviderName {
+  manual_inventory
+  todo_incomm // pendência comercial — fornecedor ainda não escolhido
+  incentive_me // pendência comercial — fornecedor ainda não escolhido
+  ding_connect // pendência comercial — fornecedor ainda não escolhido
+  ifood_card // pendência comercial — fornecedor ainda não escolhido
+  stub
+}
+
+enum GiftCardOrderStatus {
+  pending
+  processing
+  issued
+  failed
+  manual_review
+  canceled
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  expired
+  canceled
+  failed
+  refunded
+}
+
+enum PaymentMethod {
+  pix
+  /// Cartão — inclui Google Pay/Apple Pay, que são carteiras que entregam um
+  /// cartão tokenizado ao gateway (não são meios de pagamento próprios).
+  card
+}
+
+enum GiftCardStatus {
+  available
+  reserved
+  used
+  expired
+  invalid
+}
+
+enum RecurringStatus {
+  active
+  paused
+  canceled
+}
+
+enum OAuthProvider {
+  google
+  facebook
+  apple
+  govbr
+}
+
+// ─────────────────────────── MODELS ───────────────────────────
+
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String?
+  role         UserRole
+  avatarUrl    String?
+  instagram    String?
+  phone        String?
+  // CPF verificado pelo Gov.br (só preenchido em login social Gov.br). Único quando presente.
+  cpf          String?    @unique
+  status       UserStatus @default(active)
+  // Preferências de visibilidade no ranking — opt-in explícito (default: não aparece)
+  showOnRanking Boolean   @default(false)
+  showInstagram Boolean   @default(false)
+  anonymousMode Boolean   @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  donorProfile        DonorProfile?
+  entity              Entity?
+  favorites           Favorite[]
+  beneficiaryFamilies Family[]      @relation("FamilyBeneficiary")
+  oauthAccounts       OAuthAccount[]
+
+  @@map("users")
+}
+
+/// Identidade social vinculada a um usuário. Um usuário pode ter vários provedores
+/// (Google, Facebook, Apple, Gov.br) apontando para a mesma conta Mealfy.
+model OAuthAccount {
+  id             String        @id @default(uuid())
+  provider       OAuthProvider
+  // ID do usuário no provedor (`sub` do ID token / id do Graph). Estável por provedor.
+  providerUserId String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  // E-mail retornado pelo provedor no momento do vínculo (pode divergir do e-mail da conta).
+  email          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("oauth_accounts")
+}
+
+model DonorProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publicSlug          String   @unique
+  totalDonations      Int      @default(0) // centavos
+  totalFamiliesHelped Int      @default(0)
+  rankingPosition     Int?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("donor_profiles")
+}
+
+model Entity {
+  id              String     @id @default(uuid())
+  userId          String     @unique
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  cnpj            String     @unique
+  responsibleName String
+  email           String
+  phone           String?
+  status          UserStatus @default(pending)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  families Family[]
+
+  @@map("entities")
+}
+
+/// Município brasileiro, importado do IBGE — a lista canônica de áreas.
+///
+/// Antes, "área" só existia se alguma família tivesse sido cadastrada ali, e o
+/// nome era texto livre digitado no cadastro: "Heliópolis", "heliopolis" e
+/// "Heliopolis " viravam três lugares diferentes. Aqui a chave é o código IBGE,
+/// então o município existe independentemente de haver família nele.
+///
+/// O bairro/comunidade continua sendo texto livre em `Family` — é informação
+/// que o IBGE não fornece e que só quem cadastra conhece.
+model Region {
+  id        String  @id @default(uuid())
+  /// Código IBGE do município (7 dígitos). Identidade estável e oficial.
+  ibgeCode  Int     @unique
+  name      String
+  /// Nome sem acento e em minúsculas, só para busca.
+  ///
+  /// `contains` com `mode: insensitive` resolve caixa, mas NÃO acento: quem
+  /// digitasse "sao paulo" não encontrava "São Paulo" — inaceitável, já que a
+  /// maioria dos municípios brasileiros tem acento. Coluna dedicada resolve sem
+  /// depender da extensão `unaccent` do Postgres.
+  nameSearch String @default("")
+  /// UF em duas letras (SP, RJ...).
+  state     String
+  /// Centroide da malha do IBGE. Nulo até ser buscado sob demanda: são 5.571
+  /// municípios e baixar a geometria de todos de uma vez seria lento e inútil,
+  /// já que só interessa onde existe família.
+  latitude  Float?
+  longitude Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  families    Family[]
+  communities Community[]
+
+  @@index([state])
+  @@index([nameSearch])
+  @@map("regions")
+}
+
+/// De onde veio a coordenada da comunidade.
+///
+/// Registrar a origem é o que impede o app de apresentar um palpite como se
+/// fosse localização confirmada: `region_centroid` é literalmente o centro do
+/// município, não o lugar.
+enum CommunitySource {
+  /// Encontrada no OpenStreetMap (base colaborativa, NÃO governamental).
+  osm
+  /// Só o texto que o cadastro informou; sem coordenada própria.
+  declared
+  /// Sem correspondência no OSM: herda o centro do município.
+  region_centroid
+}
+
+/// Comunidade/favela/bairro dentro de um município — "Cidade de Deus",
+/// "Heliópolis", "Rocinha".
+///
+/// Existe porque o município é grande demais para o doador saber a quem está
+/// doando: "Rio de Janeiro" não diz nada, "Cidade de Deus" diz tudo. O IBGE não
+/// publica esse nível como API (`/localidades/favelas` responde 404; a base de
+/// Favelas e Comunidades Urbanas do Censo 2022 só sai como arquivo), então a
+/// coordenada vem do OpenStreetMap e a origem fica gravada em `source`.
+///
+/// O nome continua sendo digitado por quem cadastra — ninguém escolhe de uma
+/// lista fechada, porque lista fechada nenhuma cobre as comunidades do país.
+/// `nameSearch` + unicidade por município é o que evita "Heliópolis",
+/// "heliopolis" e "Heliopolis " virarem três lugares no mapa.
+model Community {
+  id         String          @id @default(uuid())
+  regionId   String
+  region     Region          @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  /// Como foi digitado da primeira vez — é o que aparece na tela.
+  name       String
+  /// Minúsculo e sem acento; só para deduplicar e buscar.
+  nameSearch String
+  latitude   Float?
+  longitude  Float?
+  source     CommunitySource @default(declared)
+  /// Identificador OSM da área, quando houve correspondência. Guardado para
+  /// permitir reconferir a origem depois sem refazer a busca por nome.
+  osmId      String?
+  /// Quando tentamos geocodificar pela última vez. Nulo = nunca tentamos.
+  /// Sem isso, uma comunidade que o OSM não conhece seria reconsultada a cada
+  /// carregamento do mapa.
+  geocodedAt DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  families Family[]
+
+  @@unique([regionId, nameSearch])
+  @@index([regionId])
+  @@map("communities")
+}
+
+model Family {
+  id                        String                   @id @default(uuid())
+  responsibleName           String
+  displayName               String
+  entityId                  String?
+  entity                    Entity?                  @relation(fields: [entityId], references: [id])
+  nisMasked                 String?
+  cpfMasked                 String?
+  /// Município oficial. Passa a ser a fonte da posição no mapa — a família é
+  /// mostrada na região, não no endereço, o que também expõe menos.
+  regionId                  String?
+  region                    Region?                  @relation(fields: [regionId], references: [id])
+  /// Mantidos por compatibilidade e para exibição: continuam preenchidos, mas
+  /// quem manda no mapa agora é `region`.
+  city                      String
+  state                     String
+  /// Comunidade/favela onde a família mora — é isto que o doador vê no mapa,
+  /// porque o município sozinho não diz a quem ele está doando.
+  communityId               String?
+  communityRef              Community?               @relation(fields: [communityId], references: [id])
+  /// Bairro/comunidade como texto — continua sendo o que o cadastro digita, e é
+  /// a partir de `community` que a `Community` acima é resolvida. Mantidos
+  /// porque são a entrada crua: se a resolução mudar de regra, o texto original
+  /// ainda está aqui.
+  neighborhood              String?
+  community                 String?
+  approximateAddress        String?
+  fullAddressEncrypted      String? // só admin; criptografado em repouso
+  latitude                  Float?
+  longitude                 Float?
+  locationPrecision         LocationPrecision        @default(approximate)
+  preferredGiftCardProvider GiftCardProvider?
+  /// Marca escolhida na solicitação do dia. Só vale junto com
+  /// `supportRequestedAt`: sem pedido no ciclo atual, o fallback é o preferido.
+  todayRequestedProvider    GiftCardProvider?
+  /// Quando a família pediu apoio pela última vez.
+  ///
+  /// O pedido vale por UM ciclo (reset 08h SP) e expira sozinho — é isso que
+  /// impede a solicitação de amanhecer já feita. Antes só existia
+  /// `todayRequestedProvider`, que nunca expirava: uma vez gravado, a família
+  /// constava como tendo pedido para sempre.
+  supportRequestedAt        DateTime?
+  supportStatus             FamilySupportStatus      @default(needs_help)
+  lastFedAt                 DateTime?
+  lastDonationId            String?
+  lastDonorId               String?
+  lastDonorName             String?
+  lastDonorInstagram        String?
+  lastGiftCardProvider      GiftCardProvider?
+  verificationStatus        FamilyVerificationStatus @default(unverified)
+  approvalStatus            FamilyApprovalStatus      @default(pending)
+  dataSource                DataSource               @default(manual)
+  socialDescription         String?
+  needToday                 Boolean                  @default(true)
+  beneficiaryUserId         String?
+  createdAt                 DateTime                 @default(now())
+  updatedAt                 DateTime                 @updatedAt
+
+  dependents      FamilyDependent[]
+  beneficiaryUser User?             @relation("FamilyBeneficiary", fields: [beneficiaryUserId], references: [id], onDelete: SetNull)
+
+  @@index([approvalStatus])
+  @@index([entityId])
+  @@index([beneficiaryUserId])
+  @@map("families")
+}
+
+model FamilyDependent {
+  id              String   @id @default(uuid())
+  familyId        String
+  family          Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  name            String
+  age             Int
+  relationship    String?
+  isEligibleMinor Boolean  @default(false) // true quando age entre 0 e 17
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([familyId])
+  @@map("family_dependents")
+}
+
+model Donation {
+  id            String           @id @default(uuid())
+  donorId       String
+  familyId      String
+  amount        Int // centavos
+  provider      GiftCardProvider
+  status        DonationStatus   @default(pending_payment)
+  paymentId     String?          @unique
+  giftCardId    String?          @unique
+  failureReason String?
+  createdAt     DateTime         @default(now())
+  completedAt   DateTime?
+  canceledAt    DateTime?
+
+  messages DonationMessage[]
+
+  @@index([donorId])
+  @@index([familyId])
+  @@index([status])
+  @@map("donations")
+}
+
+enum DonationMessageAuthor {
+  donor
+  beneficiary
+}
+
+/// Mensagem trocada em torno de uma doação. Nesta versão o conteúdo é sempre
+/// escolhido de uma lista fixa (ver `messages.templates.ts`): não existe texto
+/// livre, o que evita expor famílias vulneráveis a conteúdo de estranhos sem
+/// nenhuma moderação.
+///
+/// Guarda a CHAVE do template e também o TEXTO renderizado no momento do envio:
+/// a chave garante que só mensagens previstas entrem (validação no servidor), e
+/// o texto congela o que a pessoa de fato enviou — se o template for reescrito
+/// depois, o histórico não muda de sentido retroativamente.
+model DonationMessage {
+  id          String                @id @default(uuid())
+  donationId  String
+  donation    Donation              @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  author      DonationMessageAuthor
+  templateKey String
+  body        String
+  createdAt   DateTime              @default(now())
+
+  // Um envio por lado, por doação — evita repetição e mantém a leitura simples.
+  @@unique([donationId, author])
+  @@index([donationId])
+  @@map("donation_messages")
+}
+
+model Payment {
+  id                String         @id @default(uuid())
+  donationId        String         @unique
+  provider          String // nome do gateway (mock no MVP)
+  method            PaymentMethod  @default(pix)
+  status            PaymentStatus  @default(pending)
+  amount            Int
+  pixQrCode         String?
+  pixCopyPaste      String?
+  externalPaymentId String?        @unique
+  expiresAt         DateTime?
+  paidAt            DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  events PaymentEvent[]
+
+  @@index([status])
+  @@map("payments")
+}
+
+model PaymentEvent {
+  id              String    @id @default(uuid())
+  paymentId       String
+  payment         Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  externalEventId String    @unique // garante idempotência do webhook
+  eventType       String
+  payload         Json
+  processedAt     DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([paymentId])
+  @@map("payment_events")
+}
+
+model GiftCard {
+  id            String           @id @default(uuid())
+  provider      GiftCardProvider
+  codeEncrypted String // nunca em claro
+  codeMasked    String // ex.: "****-1234"
+  codeHash      String           @unique // anti-duplicidade na importação
+  amount        Int
+  status        GiftCardStatus   @default(available)
+  batchId       String? // opcional: cards de fornecedor externo não têm batch de import manual
+  batch         GiftCardBatch?   @relation(fields: [batchId], references: [id])
+  reservedAt    DateTime?
+  usedAt        DateTime?
+  expiresAt     DateTime?
+  donationId    String?          @unique
+  familyId      String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([provider, status])
+  @@index([batchId])
+  @@map("gift_cards")
+}
+
+model GiftCardBatch {
+  id               String           @id @default(uuid())
+  provider         GiftCardProvider
+  batchName        String
+  importedByUserId String
+  totalCodes       Int
+  amount           Int
+  createdAt        DateTime         @default(now())
+
+  giftCards GiftCard[]
+
+  @@map("gift_card_batches")
+}
+
+// Histórico de tentativas de emissão de gift card (1 doação pode ter várias
+// linhas — uma por tentativa — até chegar em `issued` ou ficar em
+// `manual_review`). `provider` é a MARCA do cartão (enum existente);
+// `externalProvider` é o FORNECEDOR/integração que tentou emitir.
+model GiftCardOrder {
+  id                  String               @id @default(uuid())
+  donationId          String
+  familyId            String
+  provider            GiftCardProvider
+  externalProvider    GiftCardProviderName @default(manual_inventory)
+  externalOrderId     String?
+  idempotencyKey      String               @unique
+  amount              Int
+  currency            String               @default("BRL")
+  status              GiftCardOrderStatus  @default(pending)
+  failureReason       String?
+  rawRequestMetadata  Json?
+  rawResponseMetadata Json?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([donationId])
+  @@index([familyId])
+  @@index([status])
+  @@map("gift_card_orders")
+}
+
+model GiftCardEvent {
+  id         String   @id @default(uuid())
+  giftCardId String
+  eventType  String // imported | reserved | released | invalidated | resent
+  userId     String?
+  donationId String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([giftCardId])
+  @@map("gift_card_events")
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  donorId   String
+  donor     User     @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  familyId  String
+  createdAt DateTime @default(now())
+
+  @@unique([donorId, familyId])
+  @@map("favorites")
+}
+
+model RecurringSupportIntent {
+  id                   String          @id @default(uuid())
+  donorId              String
+  familyId             String
+  status               RecurringStatus @default(active)
+  type                 String          @default("daily_reminder")
+  requiresConfirmation Boolean         @default(true)
+  maxDailyAmount       Int?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  @@index([donorId])
+  @@map("recurring_support_intents")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorUserId String?
+  action      String
+  entityType  String
+  entityId    String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

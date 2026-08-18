@@ -1,0 +1,93 @@
+/* ======================================================
+   SplashScreen — Premium Loading Screen
+   Background: Dark navy #020F1F (matches logo bg)
+   ====================================================== */
+
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  background-color: #020F1F;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+
+  /* Entry animation — start invisible */
+  opacity: 0;
+  transform: scale(1.02);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  overflow: hidden;
+}
+
+.splash-screen.splash-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.splash-screen.splash-exiting {
+  opacity: 0;
+  transform: scale(0.98);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  pointer-events: none;
+}
+
+/* ---- Content wrapper ---- */
+.splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: contentEntry 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.1s;
+}
+
+@keyframes contentEntry {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Logo image wrapper ---- */
+.splash-logo-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The actual logo image — limpa, sem glow/halo. O border-radius recorta os
+   cantos (a PNG tem sombras cinza nos cantos) deixando só o emblema circular. */
+.splash-logo-img {
+  width: 260px;
+  height: 260px;
+  object-fit: contain;
+  border-radius: 50%;
+  animation: logoFloat 5s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+  0%   { transform: translateY(0px); }
+  50%  { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+
+/* ---- Progress bar ---- */
+.splash-progress-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.splash-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #b8922e, #c7a754, #e9d7a2);
+  border-radius: 0 2px 2px 0;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(196, 164, 84, 0.7);
+}

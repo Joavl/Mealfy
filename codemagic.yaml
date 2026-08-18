@@ -1,0 +1,69 @@
+# Codemagic — build iOS ASSINADO (.ipa) sem precisar de Mac.
+#
+# PRÉ-REQUISITOS (só você pode fazer — exigem a conta Apple):
+#   1. Apple Developer Program ativo (US$ 99/ano).
+#   2. No Codemagic: Teams > Integrations > Apple Developer Portal —
+#      conecte uma "App Store Connect API key" e dê um nome a ela.
+#      Troque "Mealfy AppStore Key" abaixo por esse nome.
+#   3. Crie um Environment group chamado "supabase" com as variáveis:
+#         VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+#   4. Para teste no SEU iPhone (ad-hoc): registre o UDID do aparelho no
+#      portal Apple e use distribution_type: ad_hoc (já configurado abaixo).
+#      Para convidar testadores via TestFlight: troque para app_store e
+#      habilite o bloco "publishing" no final.
+#
+# bundleId do app: com.mealfy.app (de capacitor.config.ts)
+
+workflows:
+  ios-adhoc:
+    name: Mealfy iOS (.ipa ad-hoc)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      groups:
+        - supabase
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+        BUNDLE_ID: "com.mealfy.app"
+      node: 22
+      xcode: latest
+      cocoapods: default
+    integrations:
+      app_store_connect: Mealfy AppStore Key   # <-- nome da sua API key no Codemagic
+    scripts:
+      - name: Instalar dependências
+        script: npm ci
+      - name: Build do app web
+        script: npm run build
+      - name: Adicionar plataforma iOS (CocoaPods)
+        script: npx cap add ios --packagemanager CocoaPods || true
+      - name: Sincronizar Capacitor
+        script: npx cap sync ios
+      - name: CocoaPods
+        script: cd ios/App && pod install --repo-update
+      - name: Configurar assinatura (ad-hoc)
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_ADHOC \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Gerar .ipa
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      email:
+        recipients:
+          - lucas.for.study.42@gmail.com   # recebe o link/arquivo .ipa quando o build termina
+      # --- Para TestFlight em vez de ad-hoc, troque o passo de assinatura para
+      #     --type IOS_APP_STORE e habilite abaixo:
+      # app_store_connect:
+      #   auth: integration
+      #   submit_to_testflight: true

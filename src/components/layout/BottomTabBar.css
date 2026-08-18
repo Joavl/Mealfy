@@ -1,0 +1,98 @@
+.bottom-tab-bar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - var(--gutter) * 2);
+  max-width: calc(var(--layout-max-width) - var(--gutter) * 2);
+  bottom: calc(var(--spacing-3) + env(safe-area-inset-bottom, 0px));
+  z-index: 9000;
+  height: var(--tabbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 4px;
+  padding: 6px;
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .bottom-tab-bar {
+    background: rgba(255, 255, 255, 0.97);
+  }
+}
+
+.tab-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  min-width: 44px;
+  gap: 3px;
+  padding: 8px 4px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: var(--text-label);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.01em;
+  background-color: transparent;
+  transition: color var(--motion-base) var(--ease-standard),
+              transform var(--motion-fast) var(--ease-standard);
+}
+
+.tab-item svg,
+.tab-item span {
+  position: relative;
+  z-index: 1;
+  transition: color var(--motion-base) var(--ease-standard),
+              transform var(--motion-base) var(--ease-out);
+}
+
+.tab-item:active {
+  transform: scale(0.94);
+}
+
+.tab-item:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+/* Active state: animated pill indicator slides between items */
+.active-pill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: rgba(var(--color-primary-rgb), 0.10);
+  border-radius: var(--radius-md);
+}
+
+.tab-item.active {
+  color: var(--color-primary);
+}
+
+.tab-item.active svg {
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+/* "Alimente" uses the secondary (gold) accent when active */
+.donate-tab.active {
+  color: var(--color-secondary);
+}
+
+.donate-tab.active svg {
+  color: var(--color-secondary);
+}
+
+.donate-tab.active ~ .active-pill,
+.donate-tab.active .active-pill {
+  background-color: rgba(var(--color-secondary-rgb), 0.14);
+}

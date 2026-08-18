@@ -1,0 +1,110 @@
+﻿.register-family-page {
+  min-height: 100vh;
+  background-color: var(--color-background);
+  padding-bottom: 80px;
+}
+
+.register-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background-color: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-outline);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-outline-variant);
+  color: var(--color-text-main);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--color-primary);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 54, 95, 0.1);
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-help {
+  font-size: 0.75rem;
+  color: var(--color-outline);
+}
+
+.submit-container {
+  margin-top: 12px;
+}
+
+/* Custom verification boxes */
+.bg-success\/15 {
+  background-color: rgba(40, 167, 69, 0.08);
+}
+.border-success\/30 {
+  border-color: rgba(40, 167, 69, 0.25);
+}
+.text-success {
+  color: var(--color-success);
+}
+.bg-primary\/5 {
+  background-color: rgba(0, 54, 95, 0.03);
+}
+.border-primary\/10 {
+  border-color: rgba(0, 54, 95, 0.1);
+}
+.bg-surface-highest\/50 {
+  background-color: rgba(226, 226, 226, 0.25);
+}
+.border-outline\/10 {
+  border-color: rgba(144, 111, 108, 0.1);
+}
+.w-24 {
+  width: 6rem;
+}
+.w-1\/2 {
+  width: 50%;
+}
+.flex-1 {
+  flex: 1 1 0%;
+}
+.gap-3 {
+  gap: 0.75rem;
+}
+.gap-2 {
+  gap: 0.5rem;
+}
+.p-4 {
+  padding: 1rem;
+}
+.rounded {
+  border-radius: var(--radius-md);
+}
+.font-black {
+  font-weight: 900;
+}

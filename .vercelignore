@@ -1,0 +1,19 @@
+# ATENÇÃO: mesma semântica do .gitignore — padrão sem barra inicial casa em
+# QUALQUER nível. Escrever `backend/` excluía também `src/backend/`, que é a
+# camada de serviços do próprio app, e o build quebrava com dezenas de
+# "Cannot find module". Todos os padrões aqui são ancorados na raiz com `/`.
+
+# A Vercel publica APENAS o app. A API vive no Render — subir uma segunda cópia
+# serverless traria rate limit em memória (inútil entre instâncias), nenhum
+# agendador para a reconciliação e risco de timeout.
+/backend/
+
+# Projeto nativo e artefatos de build não vão para a web.
+/android/
+/ios/
+/dist/
+
+# Documentação e scripts não fazem parte do bundle publicado.
+/docs/
+/scripts/
+/supabase/

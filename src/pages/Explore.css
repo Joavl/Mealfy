@@ -1,0 +1,106 @@
+﻿.explore-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--color-background);
+}
+
+.search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  color: var(--color-outline);
+}
+
+.search-input {
+  width: 100%;
+  height: 48px;
+  padding-left: 48px;
+  padding-right: 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  font-family: var(--font-family-body);
+  font-size: 0.95rem;
+  color: var(--color-text-main);
+  box-shadow: var(--shadow-sm);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  border-color: var(--color-primary-container);
+  box-shadow: 0 0 0 2px rgba(10, 79, 134, 0.2);
+}
+
+.explore-header {
+  display: flex;
+  flex-direction: column;
+}
+
+.community-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  transition: transform 0.2s ease;
+}
+
+.community-card:active {
+  transform: scale(0.98);
+}
+
+.community-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.community-title {
+  font-family: var(--font-family-heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-error {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #c82333;
+}
+
+.status-warning {
+  background-color: rgba(199, 167, 84, 0.2);
+  color: #9c8038;
+}
+
+.status-success {
+  background-color: rgba(40, 167, 69, 0.1);
+  color: #218838;
+}
+
+.detail-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.help-btn {
+  border-color: var(--color-primary-container);
+  color: var(--color-primary-container);
+}

@@ -1,0 +1,684 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Auth.css — Estilos compartilhados entre Auth.tsx e Register.tsx
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Base page ── */
+.auth-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  overflow-x: hidden;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   HERO — seção superior com imagem
+   ══════════════════════════════════════════════════════════════════ */
+.auth-hero {
+  position: relative;
+  height: 36vh;
+  min-height: 220px;
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 28px 0;
+  flex-shrink: 0;
+}
+
+.auth-hero-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  z-index: 0;
+}
+
+.auth-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(2, 15, 31, 0.25) 0%,
+    rgba(2, 15, 31, 0.92) 100%
+  );
+  z-index: 1;
+}
+
+.auth-hero-content {
+  position: relative;
+  z-index: 2;
+  padding-bottom: 40px;
+}
+
+.auth-brand {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 1.6rem;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  margin-bottom: 4px;
+  line-height: 1;
+}
+
+.auth-hero-title {
+  font-family: var(--font-family-heading);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.15;
+  margin-bottom: 6px;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+}
+
+.auth-hero-subtitle {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.4;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   FORM PANEL — painel principal de login com glassmorphism suave
+   ══════════════════════════════════════════════════════════════════ */
+.auth-login-page .auth-form-panel {
+  flex: 1;
+  position: relative;
+  z-index: 3;
+  margin-top: -30px;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: 28px 24px calc(32px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+
+  /* Painel OPACO de propósito.
+     Antes era `rgba(255,255,255,0.92)` com backdrop-filter: como ele sobrepõe o
+     hero escuro (margin-top negativo), os 8% de transparência deixavam o
+     gradiente vazar e criavam uma tarja acinzentada no topo. A borda branca
+     semitransparente nos quatro lados ainda desenhava um vinco nas laterais,
+     contra o fundo branco da página. */
+  background: #fff;
+  border: none;
+  box-shadow: 0 -6px 24px rgba(2, 15, 31, 0.10);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   INPUT GROUPS
+   ══════════════════════════════════════════════════════════════════ */
+.auth-input-group {
+  margin-bottom: 18px;
+}
+
+.auth-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.auth-input-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #906f6c;
+  margin-bottom: 8px;
+}
+
+.auth-label-row .auth-input-label {
+  margin-bottom: 0;
+}
+
+.auth-forgot-link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #00365f;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s;
+}
+.auth-forgot-link:hover { color: #004f8a; }
+
+.auth-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #bbb;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 14px 14px 14px 42px;
+  font-size: 16px; /* evita zoom automático em mobile */
+  font-family: var(--font-family-body);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: #1a1c1c;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  -webkit-appearance: none;
+}
+
+.auth-input::placeholder { color: #bbb; }
+
+.auth-input:focus {
+  border-color: #00365f;
+  box-shadow: 0 0 0 3px rgba(0, 54, 95, 0.1);
+}
+
+.auth-input--password {
+  padding-right: 48px;
+}
+
+.auth-input-wrapper--error .auth-input {
+  border-color: #dc3545;
+}
+
+.auth-pwd-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
+}
+.auth-pwd-toggle:hover { color: #00365f; }
+.auth-pwd-toggle:active { transform: translateY(-50%) scale(0.92); }
+
+.auth-field-error {
+  font-size: 0.78rem;
+  color: #dc3545;
+  margin-top: 6px;
+  padding-left: 2px;
+}
+
+/* ── Form-level error ── */
+.auth-form-error {
+  background: #fff5f5;
+  border: 1px solid #fcc;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  color: #c0392b;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   BUTTONS
+   ══════════════════════════════════════════════════════════════════ */
+.auth-btn-primary {
+  width: 100%;
+  padding: 15px;
+  border-radius: var(--radius-lg);
+  background: #00365f;
+  color: #fff;
+  font-family: var(--font-family-body);
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(0, 54, 95, 0.25);
+  margin-bottom: 20px;
+}
+
+.auth-btn-primary:hover:not(:disabled) {
+  background: #004f8a;
+  box-shadow: 0 6px 20px rgba(0, 54, 95, 0.35);
+}
+
+.auth-btn-primary:active:not(:disabled) { transform: scale(0.98); }
+
+.auth-btn-primary:disabled {
+  background: #c9c9c9;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* ── Spinner ── */
+.auth-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: authSpin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.auth-spinner--dark {
+  border-color: rgba(0, 54, 95, 0.2);
+  border-top-color: #00365f;
+}
+
+@keyframes authSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Google button ── */
+.auth-btn-google {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  font-family: var(--font-family-body);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1c1c;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.1s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  margin-bottom: 12px;
+}
+
+.auth-btn-google:hover:not(:disabled) {
+  border-color: #bbb;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.auth-btn-google:active:not(:disabled) { transform: scale(0.98); }
+
+.auth-btn-google--disabled,
+.auth-btn-google:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Meta (mock) ── */
+.auth-btn-meta {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  font-family: var(--font-family-body);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1c1c;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.1s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  margin-bottom: 12px;
+}
+
+.auth-btn-meta:hover:not(:disabled) {
+  border-color: #bbb;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.10);
+}
+
+.auth-btn-meta:active:not(:disabled) { transform: scale(0.98); }
+
+.auth-btn-meta:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ── Gov.br (mock) ── */
+.auth-btn-govbr {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: #1351B4;
+  border: 1.5px solid #1351B4;
+  font-family: var(--font-family-body);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  transition: opacity 0.2s, transform 0.1s;
+  box-shadow: 0 1px 4px rgba(19, 81, 180, 0.25);
+  margin-bottom: 24px;
+}
+
+.auth-btn-govbr:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.auth-btn-govbr:active:not(:disabled) { transform: scale(0.98); }
+
+.auth-btn-govbr:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.govbr-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   PROVEDORES SOCIAIS — quadrados discretos, lado a lado
+   ══════════════════════════════════════════════════════════════════ */
+.auth-social-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.auth-social-square {
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  border-radius: var(--radius-lg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  color: #1a1c1c;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.1s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.auth-social-square:hover:not(:disabled) {
+  border-color: #bbb;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.auth-social-square:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Estado travado: escuro e com o logo dessaturado — comunica indisponível
+   sem precisar de texto tipo "em breve". */
+.auth-social-square--locked,
+.auth-social-square:disabled {
+  background: #262b36;
+  border-color: #2f3542;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.auth-social-square--locked svg,
+.auth-social-square:disabled svg {
+  filter: grayscale(1);
+  opacity: 0.42;
+}
+
+/* Apple usa currentColor: no estado travado precisa clarear para aparecer
+   sobre o fundo escuro. */
+.auth-social-square--locked {
+  color: #f2f4f7;
+}
+
+/* ── Apple (mock) ── */
+.auth-btn-apple {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: #000;
+  border: 1.5px solid #000;
+  font-family: var(--font-family-body);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  transition: opacity 0.2s, box-shadow 0.2s, transform 0.1s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  margin-bottom: 12px;
+}
+
+.auth-btn-apple:hover:not(:disabled) {
+  opacity: 0.9;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.auth-btn-apple:active:not(:disabled) { transform: scale(0.98); }
+
+.auth-btn-apple:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ── Separator ── */
+.auth-separator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.auth-separator-line {
+  flex: 1;
+  height: 1px;
+  background: #ebebeb;
+}
+
+.auth-separator-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* ── Register link ── */
+.auth-register-prompt {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #777;
+}
+
+.auth-register-link {
+  background: none;
+  border: none;
+  color: #00365f;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 0;
+  transition: color 0.15s;
+}
+.auth-register-link:hover { color: #004f8a; }
+
+/* ══════════════════════════════════════════════════════════════════
+   DEV PANEL (nunca aparece em produção — controlado por import.meta.env.DEV)
+   ══════════════════════════════════════════════════════════════════ */
+.auth-dev-panel {
+  margin-top: 28px;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: #fffbf0;
+  border: 1.5px dashed #f59e0b;
+}
+
+.auth-dev-title {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #b45309;
+  margin-bottom: 10px;
+}
+
+.auth-dev-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.auth-dev-chip {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #92400e;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.auth-dev-chip:hover { background: #fde68a; }
+.auth-dev-chip:active { transform: scale(0.96); }
+
+.auth-dev-hint {
+  font-size: 0.72rem;
+  color: #a16207;
+}
+
+.auth-dev-hint code {
+  background: #fde68a;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: monospace;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CLASSES HERDADAS — usadas por Register.tsx (não remover)
+   ══════════════════════════════════════════════════════════════════ */
+.auth-content {
+  flex: 1;
+  background-color: var(--color-background, #fff);
+  border-top-left-radius: var(--radius-xl, 24px);
+  border-top-right-radius: var(--radius-xl, 24px);
+  margin-top: -20px;
+  position: relative;
+  z-index: 3;
+}
+
+.role-card-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: var(--radius-xl, 16px);
+  background-color: var(--color-background, #fff);
+  border: 1px solid var(--color-outline-variant, #e0e0e0);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s;
+}
+.role-card-btn:active { transform: scale(0.97); }
+
+.role-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.role-card-text { flex: 1; }
+
+.role-card-text h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-main, #1a1c1c);
+  margin-bottom: 2px;
+}
+
+.role-card-text p {
+  font-size: 0.75rem;
+  color: var(--color-outline, #906f6c);
+  line-height: 1.2;
+}
+
+/* Login sub-view (Register.tsx usa .login-hero) */
+.login-hero {
+  background-color: var(--color-background, #fff);
+  padding: 24px;
+  padding-top: env(safe-area-inset-top, 40px);
+  padding-bottom: 40px;
+}
+
+.login-hero-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-primary, #00365f);
+  line-height: 1.2;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+
+.login-hero-subtitle {
+  font-size: 1rem;
+  color: var(--color-outline, #906f6c);
+  line-height: 1.4;
+}
+
+.login-content {
+  background-color: #fff;
+  border-top-left-radius: var(--radius-xl, 24px);
+  border-top-right-radius: var(--radius-xl, 24px);
+  margin-top: -24px;
+  min-height: calc(100vh - 200px);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-surface-highest, #f5f5f5);
+  border: none;
+  cursor: pointer;
+  color: var(--color-primary, #00365f);
+  transition: background 0.15s;
+}
+.back-btn:active { transform: scale(0.95); }

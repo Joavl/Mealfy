@@ -1,0 +1,55 @@
+# Blueprint do Render para a API do Mealfy.
+#
+# Uso: Render → New → Blueprint → aponte para este repositório.
+# (Também é possível criar o serviço pelo dashboard sem este arquivo; ele existe
+# para que a configuração do deploy fique versionada junto com o código.)
+#
+# Região: Oregon de propósito — é a mesma região do Postgres no Supabase
+# (us-west-2), então a latência entre API e banco fica mínima.
+services:
+  - type: web
+    name: mealfy-backend
+    runtime: docker
+    # A API vive em backend/; a raiz do repositório é o app mobile/web.
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    plan: free
+    # O Dockerfile roda `prisma migrate deploy` antes de subir a API.
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: PAYMENT_PROVIDER
+        value: mock
+      - key: PIX_EXPIRATION_MINUTES
+        value: "30"
+      - key: GIFT_CARD_PROVIDER
+        value: manual_inventory
+      - key: GIFT_CARD_ORDER_STALE_MINUTES
+        value: "15"
+
+      # ── Segredos: preencher no dashboard, NUNCA neste arquivo ──
+      # sync: false faz o Render pedir o valor em vez de versioná-lo.
+
+      # Postgres do Supabase (transaction pooler, porta 6543)
+      - key: DATABASE_URL
+        sync: false
+      # Session pooler (porta 5432) — exigido pelo `prisma migrate deploy`
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      # ATENÇÃO: precisa ser a MESMA chave já usada para cifrar os gift cards.
+      # Uma chave diferente torna os códigos existentes impossíveis de decifrar.
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: PAYMENT_WEBHOOK_SECRET
+        sync: false
+
+      # Origem permitida pelo CORS. Começa aberto porque só o app mobile
+      # consome a API; travar no domínio do front assim que ele existir.
+      - key: CORS_ORIGIN
+        value: "*"

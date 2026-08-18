@@ -1,0 +1,502 @@
+﻿.profile-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--color-background);
+}
+
+.profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  /* Bottom reduzido + folga p/ o card de impacto que sobrepõe (margin-top negativo).
+     Mantém o e-mail visível, sem ser coberto nem colado na borda. */
+  padding: var(--spacing-4) var(--spacing-4) var(--spacing-5);
+}
+
+.avatar-container {
+  position: relative;
+  margin-bottom: var(--spacing-3);
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  background-color: var(--color-primary-container);
+  color: var(--color-text-inverted);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 800;
+  font-family: var(--font-family-heading);
+  border: 2px solid var(--color-secondary);
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}
+
+/* Preview de avatar dentro das Configurações da Conta.
+   Tamanho explícito porque o projeto não expõe as utilidades w-14/h-14. */
+.settings-avatar {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.settings-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ranking-badge {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-secondary);
+  color: var(--color-primary);
+  padding: 2px 8px;
+  border-radius: var(--radius-md);
+  font-size: 0.65rem;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #ffffff;
+  cursor: pointer;
+}
+
+.user-name {
+  font-family: var(--font-family-heading);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+  line-height: 1.2;
+}
+
+.user-email {
+  font-size: 0.85rem;
+  color: var(--color-outline);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-align: center;
+  line-height: 1.3;
+  /* E-mail logo abaixo do cargo, sem espaçamento exagerado acima */
+  margin-top: 2px;
+  padding: 0 var(--spacing-3);
+}
+
+.impact-summary-container {
+  /* Sobreposição menor: não cobre o e-mail do header */
+  margin-top: -12px;
+  position: relative;
+  z-index: 10;
+  padding: 0 var(--spacing-4);
+}
+
+.impact-summary {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  /* Padding reduzido — bloco de ranking/estatísticas mais compacto */
+  padding: var(--spacing-3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid var(--color-border);
+}
+
+.shadow-glow-soft {
+  box-shadow: 0 8px 20px rgba(0, 54, 95, 0.08);
+}
+
+.impact-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.impact-value {
+  font-family: var(--font-family-heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  margin-bottom: 4px;
+}
+
+.impact-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-outline);
+  text-transform: uppercase;
+}
+
+.impact-divider {
+  width: 1px;
+  height: 30px;
+  background-color: var(--color-border);
+}
+
+/* Achievement Progress CSS */
+.achievement-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
+  margin: var(--spacing-4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.achievement-card:hover {
+  border-color: var(--color-secondary);
+  background-color: rgba(199, 167, 84, 0.02);
+}
+
+.achievement-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-2);
+}
+
+.achievement-title {
+  font-family: var(--font-family-heading);
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.achievement-level {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+}
+
+.achievement-progress-container {
+  width: 100%;
+  background-color: var(--color-surface-highest);
+  height: 6px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: var(--spacing-2);
+}
+
+.achievement-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  border-radius: var(--radius-sm);
+}
+
+.achievement-footer {
+  font-size: 0.75rem;
+  color: var(--color-outline);
+}
+
+/* Wikipedia-Style Infobox Card */
+.wikipedia-infobox-container {
+  margin: var(--spacing-4);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
+}
+
+.infobox-title {
+  font-family: var(--font-family-heading);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  border-bottom: 1.5px solid var(--color-secondary);
+  padding-bottom: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.infobox-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--spacing-4);
+}
+
+.infobox-row {
+  border-bottom: 1px solid rgba(0, 54, 95, 0.05);
+}
+
+.infobox-row:last-child {
+  border-bottom: none;
+}
+
+.infobox-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-outline);
+  padding: var(--spacing-2) 0;
+  width: 40%;
+  text-transform: uppercase;
+}
+
+.infobox-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  padding: var(--spacing-2) 0;
+}
+
+.infobox-instagram-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  background-color: rgba(199, 167, 84, 0.12);
+  color: var(--color-secondary);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.infobox-instagram-chip:hover {
+  background-color: rgba(199, 167, 84, 0.22);
+}
+
+.infobox-mission {
+  margin-bottom: var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: rgba(199, 167, 84, 0.08);
+  border-left: 3px solid var(--color-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.infobox-mission-title {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-secondary);
+  margin-bottom: var(--spacing-1);
+}
+
+.infobox-mission-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--color-primary);
+}
+
+.infobox-qr-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-4);
+  background-color: var(--color-background);
+  border: 1px dashed var(--color-outline-variant);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-4);
+}
+
+.infobox-qr-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-outline);
+  margin-top: var(--spacing-2);
+  text-transform: uppercase;
+}
+
+/* Quotes */
+.quote-section {
+  background-color: rgba(199, 167, 84, 0.05);
+  border-left: 3px solid var(--color-secondary);
+  border-radius: var(--radius-sm);
+  margin: var(--spacing-4);
+  padding: var(--spacing-4);
+}
+
+.quote-text {
+  font-size: 0.85rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--color-text-main);
+}
+
+.quote-author {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-outline);
+  text-align: right;
+  margin-top: var(--spacing-2);
+}
+
+/* History List */
+.history-section {
+  margin: var(--spacing-4);
+}
+
+.section-title {
+  font-family: var(--font-family-heading);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.history-card {
+  display: flex;
+  align-items: center;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-3);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-2);
+}
+
+.history-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  background-color: rgba(0, 54, 95, 0.05);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: var(--spacing-3);
+}
+
+.history-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-impact {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text-main);
+  margin-bottom: 2px;
+}
+
+.history-date {
+  font-size: 0.75rem;
+  color: var(--color-outline);
+}
+
+.history-amount {
+  font-family: var(--font-family-heading);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--color-primary);
+}
+
+/* Action Menu buttons */
+.action-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin: var(--spacing-4);
+}
+
+.menu-btn {
+  justify-content: flex-start;
+  padding-left: var(--spacing-4);
+  color: var(--color-text-main);
+  font-weight: 600;
+  height: 52px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  width: 100%;
+}
+
+.menu-btn:hover {
+  background-color: var(--color-background);
+  border-color: var(--color-outline-variant);
+}
+
+/* Modal badge grid */
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-4);
+}
+
+.badge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-3);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.badge-item.locked {
+  opacity: 0.5;
+}
+
+.badge-icon-container {
+  width: 48px;
+  height: 48px;
+  background-color: rgba(199, 167, 84, 0.1);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-2);
+  color: var(--color-secondary);
+}
+
+.locked .badge-icon-container {
+  background-color: var(--color-surface-highest);
+  color: var(--color-outline);
+}
+
+.badge-name {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.badge-desc {
+  font-size: 0.6rem;
+  color: var(--color-outline);
+  margin-top: 2px;
+}
+
+.badge-empty-hint {
+  padding: var(--spacing-3);
+  background-color: rgba(199, 167, 84, 0.08);
+  border: 1px solid rgba(199, 167, 84, 0.25);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-align: center;
+  line-height: 1.4;
+}

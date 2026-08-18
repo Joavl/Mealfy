@@ -1,0 +1,65 @@
+/* Faixa editorial discreta (ticker/marquee) entre os stories e o hero.
+   Texto corre continuamente da direita p/ esquerda, em loop, sem paginação. */
+
+.faith-ticker {
+  width: 100%;
+  overflow: hidden;
+  padding: 7px 0;
+  /* Faixa "faceando" o hero: sem margem inferior, encostada na imagem */
+  margin: 2px 0 0;
+  border-top: 1px solid rgba(2, 14, 30, 0.08);
+  border-bottom: 1px solid rgba(2, 14, 30, 0.08);
+  /* Fade suave nas laterais — o texto surge/some em vez de cortar seco */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+}
+
+.faith-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: faithTicker 28s linear infinite;
+  will-change: transform;
+}
+
+.faith-ticker-track span {
+  white-space: nowrap;
+  /* Espaçamento embutido em cada cópia → translateX(-50%) fecha o loop sem salto */
+  padding-right: 40px;
+  font-family: var(--font-family-heading);
+  font-size: 14px;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--color-primary);
+}
+
+@keyframes faithTicker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Acessibilidade: quem prefere menos movimento vê a mensagem estática,
+   centralizada e por inteiro (sem rolagem, sem corte). */
+@media (prefers-reduced-motion: reduce) {
+  .faith-ticker {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .faith-ticker-track {
+    animation: none;
+    width: 100%;
+    justify-content: center;
+    padding: 0 16px;
+  }
+  .faith-ticker-track span {
+    white-space: normal;
+    text-align: center;
+    padding-right: 0;
+  }
+  .faith-ticker-track span + span {
+    display: none;
+  }
+}
