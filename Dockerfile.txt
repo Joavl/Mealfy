@@ -1,0 +1,50 @@
+# Build stage
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+# Install dependencies using the lockfile for reproducible builds
+COPY package*.json ./
+RUN npm ci
+
+# Copy the application source
+COPY . .
+
+# Vite reads VITE_* variables during the build.
+# Pass them with --build-arg when building the image.
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+
+RUN npm run build
+
+# Production stage
+FROM nginx:1.27-alpine
+
+# SPA fallback: React Router routes are served by index.html
+RUN printf '%s\n' \
+  'server {' \
+  '    listen 80;' \
+  '    listen [::]:80;' \
+  '    server_name _;' \
+  '    root /usr/share/nginx/html;' \
+  '    index index.html;' \
+  '' \
+  '    location / {' \
+  '        try_files $uri $uri/ /index.html;' \
+  '    }' \
+  '' \
+  '    location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|webp|woff2?)$ {' \
+  '        expires 7d;' \
+  '        add_header Cache-Control "public, immutable";' \
+  '        try_files $uri =404;' \
+  '    }' \
+  '}' > /etc/nginx/conf.d/default.conf
+
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1/ || exit 1
