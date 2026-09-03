@@ -19,6 +19,9 @@ function mapAuthError(err: unknown): string {
       case 'account_pending':     return 'Sua conta ainda está em análise.';
       case 'account_suspended':   return 'Sua conta foi suspensa. Contate o suporte.';
       case 'network_error':       return 'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.';
+      // Falha do servidor, não da senha: dizer "credenciais incorretas" aqui
+      // manda a pessoa trocar uma senha que está certa.
+      case 'provider_unavailable': return 'Nosso servidor está indisponível no momento. Tente novamente em instantes.';
       default:                    return 'Não foi possível entrar agora. Tente novamente.';
     }
   }

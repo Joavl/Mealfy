@@ -63,6 +63,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     storage.set(STORIES_KEY, next);
   };
 
+  /**
+   * Carrega as regiões onde a rede atua. Exige sessão.
+   *
+   * Falha própria em vez de derrubar quem chamou: sem a lista o app continua
+   * utilizável — o doador só não vê o seletor de região preenchido.
+   */
+  const loadCommunities = async (): Promise<void> => {
+    try {
+      const comms = await communityService.getCommunities();
+      setCommunities(comms);
+      setSelectedCommunity(comms[0] || null);
+    } catch (err) {
+      console.error('Não foi possível carregar as regiões', err);
+    }
+  };
+
   useEffect(() => {
     const start = Date.now();
     const initApp = async () => {
@@ -75,9 +91,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setSelectedRegionState(sessionUser.impactPreferences.preferredRegion);
           }
         }
-        const comms = await communityService.getCommunities();
-        setCommunities(comms);
-        setSelectedCommunity(comms[0] || null);
+        // Só com sessão: a lista de regiões vem de endpoint autenticado, e
+        // pedi-la deslogado devolvia 401 e abortava o resto desta função —
+        // o ranking abaixo nem chegava a ser buscado na tela de login.
+        if (sessionUser) await loadCommunities();
 
         // Atualiza stories a partir do backend (não-bloqueante — falha silenciosa).
         // Aplica o resultado mesmo VAZIO: se ninguém optou por aparecer no
@@ -111,6 +128,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (loggedUser.role === 'donor' && loggedUser.impactPreferences?.preferredRegion) {
       setSelectedRegionState(loggedUser.impactPreferences.preferredRegion);
     }
+    // Agora há sessão: é aqui que as regiões podem ser buscadas. Sem isto,
+    // quem entra sem recarregar a página fica com a lista vazia.
+    void loadCommunities();
   };
 
   // ─── Nova autenticação — delegada ao MockAuthProvider via authService ────

@@ -1,5 +1,5 @@
 import type { User, UserRole, AuthorizingEntity } from '../types';
-import { mockAuthProvider, AuthError, type RegisterData } from './authProvider';
+import { mockAuthProvider, AuthError, type RegisterData, type AuthErrorCode } from './authProvider';
 import { mockEntities } from '../mockData/users';
 import { storage } from '../utils/storage';
 import { randomDelay } from '../utils/delay';
@@ -75,6 +75,20 @@ function persistSession(user: User): void {
 export const authService = {
   // ─── Autenticação real (com fallback mock só em DEV + API inalcançável) ────
 
+  /**
+   * Traduz o erro da API em código de autenticação.
+   *
+   * Antes, QUALQUER ApiError virava `invalid_credentials`. Uma falha 500 do
+   * servidor aparecia como "E-mail ou senha incorretos" e mandava a pessoa
+   * trocar uma senha que estava certa — foi exatamente o que aconteceu com o
+   * banco fora do ar. Só 401/403 são problema de credencial.
+   */
+  _authCodeFor: (err: ApiError): AuthErrorCode => {
+    if (err.code === 'account_unavailable') return 'account_suspended';
+    if (err.status >= 500) return 'provider_unavailable';
+    return 'invalid_credentials';
+  },
+
   signInWithEmail: async (email: string, password: string): Promise<User> => {
     try {
       const { user, token } = await authApi.login(email, password);
@@ -84,10 +98,7 @@ export const authService = {
       return mapped;
     } catch (err) {
       if (err instanceof ApiError) {
-        throw new AuthError(
-          err.code === 'account_unavailable' ? 'account_suspended' : 'invalid_credentials',
-          err.message
-        );
+        throw new AuthError(authService._authCodeFor(err), err.message);
       }
       if (err instanceof ApiNetworkError && isDevFallbackAllowed()) {
         console.warn('[AUTH FALLBACK - DEV ONLY] API indisponível, usando login mock local.', err);
@@ -111,10 +122,7 @@ export const authService = {
       return mapped;
     } catch (err) {
       if (err instanceof ApiError) {
-        throw new AuthError(
-          err.code === 'account_unavailable' ? 'account_suspended' : 'invalid_credentials',
-          err.message,
-        );
+        throw new AuthError(authService._authCodeFor(err), err.message);
       }
       throw new AuthError('network_error', 'Não foi possível conectar ao servidor. Tente novamente.');
     }
