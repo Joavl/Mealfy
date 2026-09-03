@@ -22,6 +22,27 @@ interface Badge {
   unlocked: boolean;
 }
 
+/**
+ * A citação do perfil muda conforme quem está lendo.
+ *
+ * A original fala com quem doa — "quando VOCÊ alimenta uma pessoa" — e era
+ * exibida para todos os papéis, inclusive para quem recebe. Dizer isso a uma
+ * família beneficiária inverte o lugar dela na frase.
+ */
+const DONOR_QUOTE =
+  '“Não se iluda: quando você alimenta uma pessoa de verdade, ou estende a mão para cobrir um prato vago, você descobre que esse vazio nunca esteve neles, estava em você.”';
+
+const BENEFICIARY_QUOTE =
+  '“Esse prato não define a sua história. É apenas um lembrete de que você não está sozinho e de que a sua vida importa. Hoje alguém estendeu a mão. Amanhã, talvez seja você quem transforme a vida de alguém.”';
+
+const ENTITY_QUOTE =
+  '“Existem famílias que o mundo ainda não enxerga. Ao encontrá-las e cadastrá-las, você faz mais do que preencher dados: torna-se a ponte entre quem precisa e quem pode ajudar. Porque ninguém deveria permanecer invisível.”';
+
+const QUOTE_FOR_ROLE: Partial<Record<User['role'], string>> = {
+  beneficiary: BENEFICIARY_QUOTE,
+  entity: ENTITY_QUOTE,
+};
+
 const DONATION_STATUS_LABEL: Record<string, string> = {
   pending_payment: 'Aguardando pagamento',
   gift_card_purchase_pending: 'Emitindo vale',
@@ -445,12 +466,10 @@ const Profile: React.FC = () => {
           </section>
         )}
 
-        {/* ── Custom Quote (Own Profile Only) ── */}
+        {/* ── Citação (só no próprio perfil) ── */}
         {isOwnProfile && (
           <section className="quote-section">
-            <p className="quote-text">
-              “Não se iluda: quando você alimenta uma pessoa de verdade, ou estende a mão para cobrir um prato vago, você descobre que esse vazio nunca esteve neles, estava em você.”
-            </p>
+            <p className="quote-text">{QUOTE_FOR_ROLE[user.role] ?? DONOR_QUOTE}</p>
             <p className="quote-author">— Christiano Mealfy</p>
           </section>
         )}
