@@ -485,9 +485,12 @@ const Profile: React.FC = () => {
                   Carregando histórico...
                </div>
             ) : history.length === 0 ? (
-               <div className="text-center p-10 bg-white rounded-md border border-outline/5">
-                  <Heart size={32} className="text-outline/20 mx-auto mb-3" />
-                  <p className="text-sm text-outline mb-4">Você ainda não realizou apoios.</p>
+               // `p-10` não existia neste projeto (as utilitárias de padding
+               // param em p-6), então esta caixa ficava com padding ZERO e o
+               // texto colado nas bordas. Daí a classe própria.
+               <div className="history-empty">
+                  <Heart size={32} className="text-outline/20" />
+                  <p className="history-empty-text">Você ainda não realizou apoios.</p>
                   <Button variant="outline" size="small" onClick={() => navigate('/donate')}>Realizar meu primeiro apoio</Button>
                </div>
             ) : (
