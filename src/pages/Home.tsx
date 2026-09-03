@@ -10,7 +10,16 @@ import FaithCarousel from '../components/ui/FaithCarousel';
 import InstagramSection from '../components/ui/InstagramSection';
 import BottomSheet from '../components/ui/BottomSheet';
 import { useToast } from '../context/ToastContext';
+import pixQrCode from '../assets/pix-owl4tech.png';
 import './Home.css';
+
+/**
+ * Chave Pix copia-e-cola da Owl4tech — é exatamente o conteúdo codificado no
+ * QR ao lado. As duas formas vêm do mesmo payload de propósito: quem escaneia e
+ * quem cola precisam chegar no mesmo lugar.
+ */
+const PIX_PAYLOAD =
+  '00020126360014br.gov.bcb.pix0114664183870001095204000053039865802BR5925OWL4TECH INTELLIGENCE LTD6013FLORIANOPOLIS62070503***6304372E';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -24,8 +33,6 @@ const Home: React.FC = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Platform Support
-  const [supportAmountText, setSupportAmountText] = useState('');
-  const [isSupporting, setIsSupporting] = useState(false);
 
   useEffect(() => {
     setLoadingFamilies(true);
@@ -67,19 +74,14 @@ const Home: React.FC = () => {
     setIsShareModalOpen(false);
   };
 
-  const simulatePlatformSupport = () => {
-    const amt = parseFloat(supportAmountText);
-    if (isNaN(amt) || amt <= 0) {
-      showToast('Por favor, informe um valor válido para apoiar.', 'error');
-      return;
-    }
-    setIsSupporting(true);
-    setTimeout(() => {
-      setIsSupporting(false);
-      setIsSupportOpen(false);
-      showToast(`Obrigado por apoiar a plataforma com R$ ${amt.toFixed(2)}!`, 'success');
-      setSupportAmountText('');
-    }, 1500);
+  /**
+   * Substitui o "apoio" anterior, que só esperava 1,5s e agradecia por um valor
+   * que nunca era cobrado — dizia à pessoa que ela havia doado sem que nada
+   * tivesse acontecido. Agora o apoio é um Pix de verdade.
+   */
+  const copyPixKey = () => {
+    navigator.clipboard.writeText(PIX_PAYLOAD);
+    showToast('Chave Pix copiada! Cole no app do seu banco.', 'success');
   };
 
   const handleConnectInstagram = async () => {
@@ -250,29 +252,26 @@ const Home: React.FC = () => {
       {/* ── Platform Support BottomSheet (Free numeric amount) ── */}
       <BottomSheet isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} title="Apoiar Tecnologia">
         <p className="text-sm text-outline mb-4">Seu apoio voluntário ajuda a pagar os servidores e expandir o combate à fome para mais cidades brasileiras.</p>
-        
-        <div className="form-group mb-6">
-          <label className="form-label">Valor do Apoio (R$)</label>
-          <input 
-            type="number" 
-            className="form-input" 
-            placeholder="Ex: R$ 50"
-            value={supportAmountText}
-            onChange={(e) => setSupportAmountText(e.target.value)}
-            min="1"
-          />
-        </div>
 
-        <Button 
-          variant="primary" 
-          fullWidth 
-          size="large"
-          disabled={!supportAmountText || isSupporting}
-          loading={isSupporting}
-          onClick={simulatePlatformSupport}
-        >
-          {isSupporting ? 'Processando...' : 'Confirmar Apoio à Plataforma'}
-        </Button>
+        <div className="pix-support">
+          <div className="pix-qr-frame">
+            <img src={pixQrCode} alt="QR Code Pix da Owl4tech" className="pix-qr-image" />
+          </div>
+
+          <p className="pix-hint">Escaneie com o app do seu banco</p>
+
+          {/* O valor é escolhido no banco: o Pix não define quanto. Antes havia
+              um campo de valor aqui, que dava a impressão de cobrança no app. */}
+          <div className="pix-separator"><span>ou copie a chave</span></div>
+
+          <p className="pix-key" title={PIX_PAYLOAD}>{PIX_PAYLOAD}</p>
+
+          <Button variant="primary" fullWidth size="large" onClick={copyPixKey}>
+            <Copy size={18} /> Copiar chave Pix
+          </Button>
+
+          <p className="pix-recipient">Recebedor: OWL4TECH INTELLIGENCE LTD · Florianópolis</p>
+        </div>
       </BottomSheet>
 
       {/* ── Custom Share Modal ── */}
