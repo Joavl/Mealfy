@@ -9,9 +9,10 @@ export const familiesRoutes = Router();
 
 familiesRoutes.use(authGuard);
 
-familiesRoutes.get('/', list); // role-aware (admin/entity => gestão; demais => aprovadas)
-familiesRoutes.get('/map', map); // só aprovadas + localização; serialização de doador
-familiesRoutes.get('/:id', getOne);
+// Catálogo para doadores e gestão. Beneficiários acessam apenas /beneficiary/family.
+familiesRoutes.get('/', roleGuard('donor', 'entity', 'admin'), list);
+familiesRoutes.get('/map', roleGuard('donor', 'entity', 'admin'), map);
+familiesRoutes.get('/:id', roleGuard('donor', 'entity', 'admin'), getOne);
 familiesRoutes.get('/:id/donations', listFamilyDonations); // admin / entidade dona
 
 familiesRoutes.post('/', roleGuard('entity', 'admin'), create);

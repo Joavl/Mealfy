@@ -8,6 +8,7 @@
                     "build":  "prisma generate \u0026\u0026 tsc -p tsconfig.json",
                     "start":  "node dist/server.js",
                     "typecheck":  "tsc --noEmit",
+                    "test:family-access": "node --test --require ts-node/register/transpile-only test/families-beneficiary-access.test.ts",
                     "typecheck:seed":  "tsc -p tsconfig.seed.json",
                     "prisma:generate":  "prisma generate",
                     "prisma:migrate":  "prisma migrate dev",
