@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+# Versioned Git hook: blocks commits when a required static quality gate fails.
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel) || exit 1
+cd "$repo_root"
+printf '%s\n' 'Running required quality gates before commit...'
+
+if ! npm run precommit; then
+  printf '%s\n' '' >&2
+  printf '%s\n' 'Commit blocked: a required quality gate failed.' >&2
+  printf '%s\n' 'Fix the reported errors and try again.' >&2
+  exit 1
+fi

@@ -6,6 +6,7 @@ import BottomSheet from '../components/ui/BottomSheet';
 import { CreditCard, HelpCircle, Heart, Trophy, MessageCircle, LogOut, Clock, Settings, QrCode, Share2, Award, User as UserIcon, AtSign, Lock, Camera, Trash2, ShieldCheck } from 'lucide-react';
 import { isImageSrc, fileToAvatarDataUrl } from '../utils/image';
 import { useAppContext } from '../context/AppContext';
+import type { User } from '../backend/types';
 import { usersApi } from '../api/usersApi';
 import { donationService } from '../backend/services/donationService';
 import { rankingService } from '../backend/services/rankingService';
