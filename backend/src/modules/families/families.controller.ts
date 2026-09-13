@@ -27,8 +27,9 @@ export async function list(req: Request, res: Response): Promise<Response> {
 }
 
 export async function map(req: Request, res: Response): Promise<Response> {
+  const actor = actorOf(req);
   const state = typeof req.query.state === 'string' ? req.query.state : undefined;
-  const families = await familiesService.getMapFamilies({ state });
+  const families = await familiesService.getMapFamilies(actor, { state });
   return res.json({ families: families.map(toDonorFamily) });
 }
 

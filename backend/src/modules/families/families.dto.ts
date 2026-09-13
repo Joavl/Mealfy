@@ -57,6 +57,20 @@ export function toDonorFamily(f: FamilyWithDependents) {
 }
 
 /**
+ * Visão do próprio BENEFICIÁRIO. O catálogo de doadores não é reutilizado: o
+ * painel só precisa identificar sua família e acompanhar a situação cadastral.
+ */
+export function toBeneficiaryFamily(f: Family) {
+  return {
+    id: f.id,
+    responsibleName: f.responsibleName,
+    displayName: f.displayName,
+    approvalStatus: f.approvalStatus,
+    verificationStatus: f.verificationStatus,
+  };
+}
+
+/**
  * Visão de ENTIDADE / ADMIN (gestão). CPF/NIS sempre mascarados; endereço
  * completo (criptografado) NUNCA é serializado. Inclui dependentes e status.
  */

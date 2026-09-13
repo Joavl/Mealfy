@@ -16,6 +16,16 @@ export interface Actor {
 const familyInclude = { dependents: true } as const;
 
 /**
+ * A área de beneficiário tem um contrato próprio, limitado à família vinculada
+ * ao usuário autenticado. Nunca reutilize o catálogo de doadores para ela.
+ */
+function assertCanReadFamilyDirectory(actor: Actor): void {
+  if (actor.role === 'beneficiary') {
+    throw new AppError('Acesso negado', 403, 'forbidden');
+  }
+}
+
+/**
  * Liga o texto do cadastro (cidade/UF + comunidade) aos registros oficiais.
  *
  * Sem isto a família ficava com `regionId` nulo e não aparecia no mapa: o
@@ -118,8 +128,9 @@ export async function createFamily(actor: Actor, input: CreateFamilyInput) {
   return family;
 }
 
-/** Lista respeitando o papel: admin (todas), entity (suas), demais (só aprovadas). */
+/** Lista respeitando o papel: admin (todas), entity (suas), donor (só aprovadas). */
 export async function listFamiliesForActor(actor: Actor, filters: ListFamiliesQuery) {
+  assertCanReadFamilyDirectory(actor);
   const state = filters.state?.toUpperCase();
   if (actor.role === 'admin') {
     return prisma.family.findMany({
@@ -145,6 +156,7 @@ export async function listFamiliesForActor(actor: Actor, filters: ListFamiliesQu
 
 /** Leitura por id respeitando o papel; retorna a "view" adequada para serialização. */
 export async function getFamilyForActor(actor: Actor, id: string) {
+  assertCanReadFamilyDirectory(actor);
   const family = await prisma.family.findUnique({ where: { id }, include: familyInclude });
   if (!family) throw new AppError('Família não encontrada', 404, 'family_not_found');
 
@@ -154,7 +166,7 @@ export async function getFamilyForActor(actor: Actor, id: string) {
     if (family.entityId !== entityId) throw new AppError('Acesso negado', 403, 'forbidden');
     return { family, view: 'managed' as const };
   }
-  // doador/beneficiário só enxergam família aprovada (e sem PII)
+  // Doador só enxerga família aprovada (e sem PII).
   if (family.approvalStatus !== 'approved') {
     throw new AppError('Família não encontrada', 404, 'family_not_found');
   }
@@ -294,7 +306,8 @@ export async function requestDailySupport(actor: Actor, id: string, provider: Gi
  * A localização vem da REGIÃO (município do IBGE), não mais de coordenada
  * digitada no cadastro: é a precisão que interessa e expõe menos a família.
  */
-export async function getMapFamilies(filters: { state?: string }) {
+export async function getMapFamilies(actor: Actor, filters: { state?: string }) {
+  assertCanReadFamilyDirectory(actor);
   return prisma.family.findMany({
     where: {
       approvalStatus: 'approved',

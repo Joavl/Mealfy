@@ -3,7 +3,7 @@ import type { GiftCard } from '@prisma/client';
 import { AppError } from '../../shared/errors/AppError';
 import * as beneficiaryService from './beneficiary.service';
 import { toBeneficiaryGiftCard } from '../giftCards/giftCards.dto';
-import { toDonorFamily, type FamilyWithDependents } from '../families/families.dto';
+import { toBeneficiaryFamily } from '../families/families.dto';
 import { wasRequestedThisCycle, nextCycleStart } from '../../shared/utils/feedCycle';
 
 function userId(req: Request): string {
@@ -40,18 +40,16 @@ function present(gc: GiftCard, messages: CardMessage[] = []) {
  * do mock: um beneficiário real logava e via a tela vazia. O vínculo verdadeiro
  * é `families.beneficiaryUserId`, e é ele que esta rota resolve.
  *
- * Sobre o DTO: reusa a visão do doador (sem CPF/NIS nem endereço completo) e
- * acrescenta os status de aprovação/verificação, que o próprio titular precisa
- * ver para saber se o cadastro ainda está em análise.
+ * O DTO é específico e mínimo: não reutiliza a visão de doador nem expõe dados
+ * de localização, histórico de apoio ou dependentes; inclui apenas identificação
+ * do titular e os status necessários para acompanhar o cadastro.
  */
 export async function getMyFamily(req: Request, res: Response): Promise<Response> {
   const family = await beneficiaryService.getMyFamily(userId(req));
   const requestedToday = wasRequestedThisCycle(family.supportRequestedAt);
   return res.json({
     family: {
-      ...toDonorFamily(family as FamilyWithDependents),
-      approvalStatus: family.approvalStatus,
-      verificationStatus: family.verificationStatus,
+      ...toBeneficiaryFamily(family),
       // Estado da solicitação do dia: é o que o painel usa para decidir entre
       // "Solicitar apoio de hoje" e "Você já solicitou hoje".
       requestedToday,
