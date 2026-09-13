@@ -30,7 +30,7 @@ export class ApiNetworkError extends Error {
 
 export async function apiRequest<T = any>(
   endpoint: string,
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET',
   body?: any
 ): Promise<T> {
   const headers: HeadersInit = {

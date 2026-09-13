@@ -162,6 +162,7 @@ model User {
   favorites           Favorite[]
   beneficiaryFamilies Family[]      @relation("FamilyBeneficiary")
   oauthAccounts       OAuthAccount[]
+  rankingStory        RankingStory?
 
   @@map("users")
 }
@@ -197,6 +198,19 @@ model DonorProfile {
   updatedAt           DateTime @updatedAt
 
   @@map("donor_profiles")
+}
+
+/// Uma posição manual do Top 20, sempre vinculada a um usuário do tipo doador.
+model RankingStory {
+  id        String   @id @default(uuid())
+  donorId   String   @unique
+  donor     User     @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  position  Int      @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([position])
+  @@map("ranking_stories")
 }
 
 model Entity {

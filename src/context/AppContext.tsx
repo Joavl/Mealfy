@@ -10,7 +10,6 @@ import SplashScreen from '../components/ui/SplashScreen';
 
 /** Tempo mínimo de exibição do splash, para a barra de progresso ser visível. */
 const SPLASH_MIN_MS = 2600;
-const STORIES_KEY = 'stories_v1';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -33,10 +32,9 @@ interface AppContextType {
   clearSelectedRegion: () => void;
   /** Alterna o estado "salvo" de uma família para o usuário logado (Mapa) */
   toggleSavedFamily: (familyId: string) => Promise<void>;
-  /** Carrossel de stories (top 20 doadores) — editável pelo admin, persistido localmente */
+  /** Ranking público, persistido e ordenado pelo backend. */
   stories: PublicDonorProfile[];
-  /** Substitui a lista de stories (usado pelo painel admin) */
-  updateStories: (next: PublicDonorProfile[]) => void;
+  refreshStories: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -51,16 +49,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
   const [selectedRegion, setSelectedRegionState] = useState<string | null>(null);
 
-  // Stories (top 20) — vêm do ranking real (GET /ranking) e ficam em cache
-  // local só para o carrossel não piscar entre sessões. O default é VAZIO:
-  // semear com doadores fictícios os exibia como se fossem apoiadores reais.
-  const [stories, setStoriesState] = useState<PublicDonorProfile[]>(
-    () => storage.get<PublicDonorProfile[]>(STORIES_KEY, [])
-  );
-
-  const updateStories = (next: PublicDonorProfile[]) => {
-    setStoriesState(next);
-    storage.set(STORIES_KEY, next);
+  // A fonte de verdade é o ranking persistido no backend.
+  const [stories, setStories] = useState<PublicDonorProfile[]>([]);
+  const refreshStories = async (): Promise<void> => {
+    setStories(await rankingService.getTopDonors());
   };
 
   /**
@@ -96,12 +88,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         // o ranking abaixo nem chegava a ser buscado na tela de login.
         if (sessionUser) await loadCommunities();
 
-        // Atualiza stories a partir do backend (não-bloqueante — falha silenciosa).
-        // Aplica o resultado mesmo VAZIO: se ninguém optou por aparecer no
-        // ranking, o carrossel deve esvaziar em vez de manter nomes antigos.
-        rankingService.getTopDonors().then((donors) => {
-          updateStories(donors);
-        }).catch(() => {});
+        // Uma lista vazia também é uma resposta válida do ranking público.
+        refreshStories().catch(() => {});
       } catch (err) {
         console.error('Erro inicializando app', err);
       } finally {
@@ -279,7 +267,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         clearSelectedRegion,
         toggleSavedFamily,
         stories,
-        updateStories,
+        refreshStories,
       }}
     >
       {children}

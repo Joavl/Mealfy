@@ -67,7 +67,11 @@ export const adminService = {
     return true;
   },
 
-  // ─── Gift cards — operação MANUAL de estoque (fulfillment manual do roadmap) ───
+  // ─── Stories (configuração persistida, sem fallback local) ───
+  getRankingStories: () => adminApi.getRankingStories(),
+  saveRankingStories: (donorIds: string[]) => adminApi.saveRankingStories(donorIds),
+
+  // ─── Gift cards — operação MANUAL de estoque (fulfillment manual do roadmap) ──
 
   /** Estoque por provider (API-first; fallback conta o estoque mock local em dev). */
   getGiftCardStock: async () => {
