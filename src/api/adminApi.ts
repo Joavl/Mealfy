@@ -1,4 +1,5 @@
 import { apiRequest } from './apiClient';
+import type { PublicDonorProfile } from '../backend/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Contrato REAL do backend (montado em /admin — somente role admin):
@@ -39,6 +40,10 @@ export const adminApi = {
 
   // ─── Usuários ───
   listUsers: () => apiRequest('/admin/users', 'GET'),
+
+  // ─── Stories (Top 20 curado) ───
+  getRankingStories: () => apiRequest<{ stories: PublicDonorProfile[]; candidates: PublicDonorProfile[] }>('/admin/ranking-stories', 'GET'),
+  saveRankingStories: (donorIds: string[]) => apiRequest<{ stories: PublicDonorProfile[] }>('/admin/ranking-stories', 'PUT', { donorIds }),
 
   // ─── Gift cards (estoque manual) ───
   importGiftCards: (payload: ImportGiftCardsPayload) => apiRequest('/admin/gift-cards/import', 'POST', payload),

@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { AppError } from '../../shared/errors/AppError';
 import { listAuditLogs } from '../auditLogs/auditLog.service';
 import * as adminService from './admin.service';
+import * as rankingService from '../ranking/ranking.service';
 
 function adminId(req: Request): string {
   if (!req.auth) throw new AppError('Não autenticado', 401, 'unauthenticated');
@@ -22,6 +23,19 @@ export async function listEntities(_req: Request, res: Response): Promise<Respon
 export async function listUsers(_req: Request, res: Response): Promise<Response> {
   const users = await adminService.listUsers();
   return res.json({ users });
+}
+
+export async function getRankingStories(_req: Request, res: Response): Promise<Response> {
+  const [stories, candidates] = await Promise.all([
+    rankingService.getConfiguredStories(),
+    rankingService.listRankingStoryCandidates(),
+  ]);
+  return res.json({ stories, candidates });
+}
+
+export async function putRankingStories(req: Request, res: Response): Promise<Response> {
+  const stories = await rankingService.setConfiguredStories(adminId(req), req.body?.donorIds);
+  return res.json({ stories });
 }
 
 export async function approveEntity(req: Request, res: Response): Promise<Response> {

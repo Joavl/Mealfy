@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Star, Building2, Users2, UserCog, LogOut, ArrowLeft,
-  ChevronUp, ChevronDown, Trash2, Plus, Check, X, Eye, EyeOff, ShieldCheck, Save, RotateCcw,
+  ChevronUp, ChevronDown, Trash2, Plus, Check, X, ShieldCheck, Save, RotateCcw,
   Gift, Upload, RefreshCw,
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
@@ -37,45 +37,57 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => (
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { user, logout, stories, updateStories } = useAppContext();
+  const { user, logout, stories, refreshStories } = useAppContext();
   const admin = useAdminData();
 
   const [section, setSection] = useState<Section>('overview');
 
-  // ── Stories draft (edição) ──────────────────────────────────────────────
-  const [draft, setDraft] = useState<PublicDonorProfile[]>(stories);
-  const dirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(stories), [draft, stories]);
+  // ── Stories draft (ordem persistida no backend) ─────────────────────────
+  const [draft, setDraft] = useState<PublicDonorProfile[]>([]);
+  const [savedStoryIds, setSavedStoryIds] = useState<string[]>([]);
+  const [candidates, setCandidates] = useState<PublicDonorProfile[]>([]);
+  const [storiesLoading, setStoriesLoading] = useState(false);
+  const [storiesSaving, setStoriesSaving] = useState(false);
+  const dirty = useMemo(() => JSON.stringify(draft.map((story) => story.id)) !== JSON.stringify(savedStoryIds), [draft, savedStoryIds]);
 
-  const editStory = (i: number, patch: Partial<PublicDonorProfile>) =>
-    setDraft((d) => d.map((s, k) => (k === i ? { ...s, ...patch } : s)));
-
-  const togglePrivacy = (i: number, key: 'showOnRanking' | 'anonymousMode') =>
-    setDraft((d) => d.map((s, k) => {
-      if (k !== i) return s;
-      const ps = { showOnRanking: true, showInstagram: true, anonymousMode: false, ...s.privacySettings };
-      return { ...s, privacySettings: { ...ps, [key]: !ps[key] } };
-    }));
-
-  const move = (i: number, dir: -1 | 1) => {
-    const j = i + dir;
-    if (j < 0 || j >= draft.length) return;
-    setDraft((d) => { const n = [...d]; [n[i], n[j]] = [n[j], n[i]]; return n; });
+  const loadStories = async () => {
+    setStoriesLoading(true);
+    try {
+      const response = await adminService.getRankingStories();
+      const configuredStories = response?.stories ?? [];
+      setDraft(configuredStories);
+      setSavedStoryIds(configuredStories.map((story: PublicDonorProfile) => story.id));
+      setCandidates(response?.candidates ?? []);
+    } catch (error: any) {
+      showToast(error?.message || 'Não foi possível carregar os stories.', 'error');
+    } finally {
+      setStoriesLoading(false);
+    }
   };
 
-  const removeStory = (i: number) => setDraft((d) => d.filter((_, k) => k !== i));
-
-  const addStory = () => setDraft((d) => [...d, {
-    id: `d-new-${Date.now()}`, name: 'Novo apoiador', avatar: '',
-    totalDonated: 0, rankingPosition: d.length + 1, supportsCount: 0, focusRegion: '',
-    privacySettings: { showOnRanking: true, showInstagram: true, anonymousMode: false },
-  }]);
-
-  const saveStories = () => {
-    updateStories(draft.map((s, i) => ({ ...s, rankingPosition: i + 1 })));
-    showToast('Stories atualizados! Já refletem na Home.', 'success');
+  useEffect(() => { if (section === 'stories') void loadStories(); }, [section]);
+  const move = (index: number, direction: -1 | 1) => setDraft((current) => {
+    const next = index + direction;
+    if (next < 0 || next >= current.length) return current;
+    const reordered = [...current];
+    [reordered[index], reordered[next]] = [reordered[next], reordered[index]];
+    return reordered;
+  });
+  const removeStory = (index: number) => setDraft((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  const addStory = (donor: PublicDonorProfile) => setDraft((current) => current.some((story) => story.id === donor.id) || current.length >= 20 ? current : [...current, donor]);
+  const saveStories = async () => {
+    setStoriesSaving(true);
+    try {
+      await adminService.saveRankingStories(draft.map((story) => story.id));
+      await Promise.all([loadStories(), refreshStories()]);
+      showToast('Stories salvos e ranking público atualizado.', 'success');
+    } catch (error: any) {
+      showToast(error?.message || 'Não foi possível salvar os stories.', 'error');
+    } finally {
+      setStoriesSaving(false);
+    }
   };
 
-  const discardStories = () => { setDraft(stories); showToast('Alterações descartadas.', 'info'); };
 
   // ── Moderação com feedback ──────────────────────────────────────────────
   const moderateEntity = (id: string, status: ModerationStatus, name: string) => {
@@ -195,9 +207,8 @@ const AdminDashboard: React.FC = () => {
           <h1>{NAV.find((n) => n.id === section)?.label}</h1>
           {section === 'stories' && (
             <div className="admin-topbar-actions">
-              <button className="admin-btn admin-btn--ghost" onClick={addStory}><Plus size={16} /> Adicionar</button>
-              <button className="admin-btn admin-btn--ghost" onClick={discardStories} disabled={!dirty}><RotateCcw size={16} /> Descartar</button>
-              <button className="admin-btn admin-btn--primary" onClick={saveStories} disabled={!dirty}><Save size={16} /> Salvar alterações</button>
+              <button className="admin-btn admin-btn--ghost" onClick={loadStories} disabled={!dirty || storiesSaving}><RotateCcw size={16} /> Descartar</button>
+              <button className="admin-btn admin-btn--primary" onClick={saveStories} disabled={!dirty || storiesSaving}>{storiesSaving ? 'Salvando…' : <><Save size={16} /> Salvar alterações</>}</button>
             </div>
           )}
         </header>
@@ -231,46 +242,36 @@ const AdminDashboard: React.FC = () => {
           {/* ===== STORIES ===== */}
           {section === 'stories' && (
             <div className="admin-stories">
-              <p className="admin-hint">Reordene, edite e controle a visibilidade dos 20 primeiros do carrossel de impacto. As mudanças entram em vigor ao salvar.</p>
-              {draft.map((s, i) => {
-                const ps = { showOnRanking: true, anonymousMode: false, ...s.privacySettings };
-                return (
-                  <div className="admin-story-card" key={s.id}>
-                    <div className="admin-story-rank">
-                      <button className="admin-icon-btn" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Subir"><ChevronUp size={16} /></button>
-                      <span className="admin-story-pos">{i + 1}</span>
-                      <button className="admin-icon-btn" onClick={() => move(i, 1)} disabled={i === draft.length - 1} aria-label="Descer"><ChevronDown size={16} /></button>
-                    </div>
-                    <div className="admin-story-avatar" aria-hidden="true">
-                      {s.avatar && s.avatar.startsWith('http')
-                        ? <img src={s.avatar} alt="" />
-                        : <span>{(s.name || '?').slice(0, 1).toUpperCase()}</span>}
-                    </div>
-                    <div className="admin-story-fields">
-                      <div className="admin-field-row">
-                        <label>Nome<input value={s.name} onChange={(e) => editStory(i, { name: e.target.value })} /></label>
-                        <label>Instagram<input value={s.instagram || ''} placeholder="@usuario" onChange={(e) => editStory(i, { instagram: e.target.value })} /></label>
-                      </div>
-                      <div className="admin-field-row">
-                        <label>Região<input value={s.focusRegion || ''} onChange={(e) => editStory(i, { focusRegion: e.target.value })} /></label>
-                        <label>Total doado (R$)<input type="number" value={s.totalDonated} onChange={(e) => editStory(i, { totalDonated: Number(e.target.value) })} /></label>
-                      </div>
-                      <label className="admin-field-full">Avatar (URL)<input value={s.avatar || ''} placeholder="https://..." onChange={(e) => editStory(i, { avatar: e.target.value })} /></label>
-                      <div className="admin-story-toggles">
-                        <button className={`admin-toggle ${ps.showOnRanking ? 'on' : ''}`} onClick={() => togglePrivacy(i, 'showOnRanking')}>
-                          {ps.showOnRanking ? <Eye size={14} /> : <EyeOff size={14} />} {ps.showOnRanking ? 'Visível' : 'Oculto'}
-                        </button>
-                        <button className={`admin-toggle ${ps.anonymousMode ? 'on' : ''}`} onClick={() => togglePrivacy(i, 'anonymousMode')}>
-                          {ps.anonymousMode ? 'Anônimo' : 'Identificado'}
-                        </button>
-                        <button className="admin-toggle admin-toggle--danger" onClick={() => removeStory(i)}><Trash2 size={14} /> Remover</button>
-                      </div>
-                    </div>
+              <p className="admin-hint">Selecione e reordene até 20 usuários do tipo doador. Eles aparecem primeiro; depois, o app exibe os demais doadores pelo ranking automático.</p>
+              {storiesLoading ? <p className="admin-muted">Carregando stories…</p> : draft.map((story, index) => (
+                <div className="admin-story-card" key={story.id}>
+                  <div className="admin-story-rank">
+                    <button className="admin-icon-btn" onClick={() => move(index, -1)} disabled={index === 0 || storiesSaving} aria-label="Subir"><ChevronUp size={16} /></button>
+                    <span className="admin-story-pos">{index + 1}</span>
+                    <button className="admin-icon-btn" onClick={() => move(index, 1)} disabled={index === draft.length - 1 || storiesSaving} aria-label="Descer"><ChevronDown size={16} /></button>
                   </div>
-                );
-              })}
+                  <div className="admin-story-avatar" aria-hidden="true">
+                    {story.avatar?.startsWith('http') ? <img src={story.avatar} alt="" /> : <span>{(story.name || '?').slice(0, 1).toUpperCase()}</span>}
+                  </div>
+                  <div className="admin-story-fields">
+                    <strong>{story.name}</strong>
+                    <span className="admin-muted">{story.supportsCount} apoios · R$ {(story.totalDonated / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <div className="admin-story-toggles"><button className="admin-toggle admin-toggle--danger" onClick={() => removeStory(index)} disabled={storiesSaving}><Trash2 size={14} /> Remover</button></div>
+                  </div>
+                </div>
+              ))}
+              {!storiesLoading && draft.length === 0 && <p className="admin-muted">Nenhum doador selecionado.</p>}
+              <div className="admin-story-fields" style={{ marginTop: 16 }}>
+                <strong>Doadores elegíveis</strong>
+                <div className="admin-story-toggles">
+                  {candidates.filter((candidate) => !draft.some((story) => story.id === candidate.id)).map((candidate) => (
+                    <button key={candidate.id} className="admin-toggle" onClick={() => addStory(candidate)} disabled={draft.length >= 20 || storiesSaving}><Plus size={14} /> {candidate.name}</button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
+
 
           {/* ===== ENTITIES ===== */}
           {section === 'entities' && (
