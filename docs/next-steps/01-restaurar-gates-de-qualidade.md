@@ -9,3 +9,9 @@
 - **Dependências/pré-requisitos:** Node e lockfiles instaláveis.
 - **Critérios de aceite:** `npm run build`, `npm run lint` e `cd backend && npm run typecheck` retornam sucesso sem suprimir regras indiscriminadamente.
 - **Riscos e validações:** tipos corrigidos podem revelar contratos quebrados; validar ranking e perfil manualmente e por teste.
+
+## Gate local de pré-commit
+
+O repositório versiona o hook em `.githooks/pre-commit`. Após instalar as dependências da raiz e do backend, execute `npm run hooks:install`. O instalador configura localmente o caminho relativo `core.hooksPath=.githooks`, que funciona também em worktrees vinculados.
+
+Antes de cada commit, o hook executa `npm run precommit` (alias de `npm run quality:check`), que exige sucesso em `npm run lint`, `npm run build` e `npm --prefix backend run typecheck`. Se qualquer comando falhar, o commit é cancelado. O CI deve executar `npm run precommit` como check obrigatório, pois hooks locais podem ser ignorados com `--no-verify`.
