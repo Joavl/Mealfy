@@ -12,7 +12,6 @@ CREATE TABLE "ranking_stories" (
 CREATE UNIQUE INDEX "ranking_stories_donorId_key" ON "ranking_stories"("donorId");
 CREATE UNIQUE INDEX "ranking_stories_position_key" ON "ranking_stories"("position");
 CREATE INDEX "ranking_stories_position_idx" ON "ranking_stories"("position");
-CREATE INDEX "donations_status_donorId_idx" ON "donations"("status", "donorId");
 
 ALTER TABLE "ranking_stories"
   ADD CONSTRAINT "ranking_stories_donorId_fkey"
