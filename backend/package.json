@@ -9,6 +9,7 @@
         "start": "node dist/server.js",
         "typecheck": "tsc --noEmit",
         "test": "node --test --require ts-node/register/transpile-only test/environment-safety.test.ts test/data-safety-policy.test.ts test/data-safety-http.test.ts test/mailer-safety.test.ts test/seed-safety.test.ts test/families-beneficiary-access.test.ts",
+        "test:e2e": "bash ../scripts/run-e2e.sh",
         "test:family-access": "node --test --require ts-node/register/transpile-only test/families-beneficiary-access.test.ts",
         "typecheck:seed": "tsc -p tsconfig.seed.json",
         "prisma:generate": "prisma generate",

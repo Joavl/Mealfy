@@ -16,6 +16,8 @@ export interface BackendPublicUser {
 
 export interface AuthResponse { user: BackendPublicUser; token: string; }
 export type OAuthProvider = 'google' | 'facebook' | 'apple';
+export type StepUpPurpose = 'view_pix_key' | 'change_pix_key' | 'revoke_pix_key';
+export interface StepUpAuthorization { authorizationToken: string; expiresAt: string; purpose: StepUpPurpose; resourceId: string | null; }
 export interface OAuthResponse extends AuthResponse { isNew: boolean; }
 
 export const authApi = {
@@ -28,6 +30,12 @@ export const authApi = {
     apiRequest<{ message: string }>('/auth/email-verification/request', 'POST', { email }),
   confirmEmailVerification: (token: string) =>
     apiRequest<{ message: string; user: BackendPublicUser }>('/auth/email-verification/confirm', 'POST', { token }),
+  createStepUpChallenge: (password: string, purpose: StepUpPurpose, resourceId?: string) =>
+    apiRequest<{ challengeId: string; expiresAt: string }>('/auth/step-up/challenges', 'POST', { password, purpose, ...(resourceId ? { resourceId } : {}) }),
+  confirmStepUpChallenge: (challengeId: string, code: string, purpose: StepUpPurpose, resourceId?: string) =>
+    apiRequest<StepUpAuthorization>('/auth/step-up/confirmations', 'POST', { challengeId, code, purpose, ...(resourceId ? { resourceId } : {}) }),
+  validateStepUpAuthorization: (authorizationToken: string, purpose: StepUpPurpose, resourceId?: string) =>
+    apiRequest<void>('/auth/step-up/authorizations/validate', 'POST', { authorizationToken, purpose, ...(resourceId ? { resourceId } : {}) }),
   requestPasswordReset: (email: string) =>
     apiRequest<{ message: string }>('/auth/password-reset/request', 'POST', { email }),
   resetPassword: (token: string, password: string) =>

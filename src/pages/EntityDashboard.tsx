@@ -10,7 +10,8 @@ import { entityService } from '../backend/services/entityService';
 import { normalizeString } from '../backend/utils/normalizeUtils';
 import { storage } from '../backend/utils/storage';
 import { useToast } from '../context/ToastContext';
-import { Users, CirclePlus as PlusCircle, CircleCheck as CheckCircle, Clock, FileText, Check, X, ShieldCheck, ShieldAlert, Mail } from 'lucide-react';
+import { Users, UserPlus, CirclePlus as PlusCircle, CircleCheck as CheckCircle, Clock, FileText, Check, X, ShieldCheck, ShieldAlert, Mail } from 'lucide-react';
+import { entityApi, permissionLabels, type EntityOperatorPermission, type EntityOperatorSummary } from '../api/entityApi';
 import type { Family, DonorIndication, AuthorizingEntity } from '../backend/types';
 import './EntityDashboard.css';
 
@@ -24,6 +25,29 @@ const EntityDashboard: React.FC = () => {
   const [entityData, setEntityData] = useState<AuthorizingEntity | null>(null);
   const [emailLog, setEmailLog] = useState<{ family: string; date: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [operators, setOperators] = useState<EntityOperatorSummary[]>([]);
+  const [operatorsLoading, setOperatorsLoading] = useState(true);
+  const [operatorsError, setOperatorsError] = useState('');
+  const [canManageOperators, setCanManageOperators] = useState(false);
+  const [currentMembershipId, setCurrentMembershipId] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePermissions, setInvitePermissions] = useState<EntityOperatorPermission[]>(['families.read']);
+  const [inviting, setInviting] = useState(false);
+
+  const loadOperators = async () => {
+    setOperatorsLoading(true);
+    setOperatorsError('');
+    try {
+      const result = await entityApi.listOperators();
+      setOperators(result.operators);
+      setCanManageOperators(result.canManage);
+      setCurrentMembershipId(result.currentMembershipId);
+    } catch {
+      setOperatorsError('Não foi possível carregar os operadores.');
+    } finally {
+      setOperatorsLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -53,8 +77,45 @@ const EntityDashboard: React.FC = () => {
   };
 
   useEffect(() => {
+    // Existing dashboard and operator APIs are external synchronization boundaries.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
+    loadOperators();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const toggleInvitePermission = (permission: EntityOperatorPermission) => {
+    setInvitePermissions((current) => current.includes(permission)
+      ? current.filter((item) => item !== permission)
+      : [...current, permission]);
+  };
+
+  const handleInviteOperator = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!inviteEmail.trim() || invitePermissions.length === 0) return;
+    setInviting(true);
+    try {
+      await entityApi.inviteOperator(inviteEmail.trim(), invitePermissions);
+      setInviteEmail('');
+      setInvitePermissions(['families.read']);
+      showToast('Convite de operador registrado com sucesso.', 'success');
+      await loadOperators();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Não foi possível convidar o operador.', 'error');
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const handleOperatorStatus = async (operator: EntityOperatorSummary, status: 'active' | 'suspended' | 'revoked') => {
+    try {
+      await entityApi.updateOperator(operator.id, { status });
+      showToast('Vínculo do operador atualizado.', 'success');
+      await loadOperators();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Não foi possível atualizar o operador.', 'error');
+    }
+  };
 
   const handleValidateIndication = async (indId: string, name: string) => {
     try {
@@ -103,7 +164,7 @@ const EntityDashboard: React.FC = () => {
       <StoriesRanking
         donors={stories}
         currentUser={null}
-        onSelectDonor={(donor: any) => { if (!donor.isSorteio) navigate(`/profile/${donor.id}`); }}
+        onSelectDonor={(donor) => { if (!('isSorteio' in donor) || !donor.isSorteio) navigate(`/profile/${donor.id}`); }}
       />
 
       <main className="content p-4">
@@ -236,6 +297,58 @@ const EntityDashboard: React.FC = () => {
             </div>
           </section>
         )}
+
+        <section className="operators-section mb-6" aria-labelledby="operators-title">
+          <div className="operators-heading">
+            <div>
+              <h3 id="operators-title" className="section-title flex items-center gap-2"><Users size={18} /> Operadores da entidade</h3>
+              <p className="text-xs text-outline">Identidades e permissões operacionais. Nenhum dado bancário é exibido.</p>
+            </div>
+            {!operatorsLoading && <span className="operator-count">{operators.filter((operator) => operator.status === 'active').length} ativos</span>}
+          </div>
+
+          {canManageOperators && (
+            <form className="operator-invite" onSubmit={handleInviteOperator}>
+              <label htmlFor="operator-email">E-mail do operador</label>
+              <div className="operator-invite-row">
+                <input id="operator-email" type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="operador@entidade.org" required />
+                <Button type="submit" size="small" icon={<UserPlus size={16} />} loading={inviting} disabled={invitePermissions.length === 0}>Convidar</Button>
+              </div>
+              <fieldset className="permission-picker">
+                <legend>Permissões iniciais</legend>
+                {(Object.keys(permissionLabels) as EntityOperatorPermission[]).map((permission) => (
+                  <label key={permission} className="permission-option">
+                    <input type="checkbox" checked={invitePermissions.includes(permission)} onChange={() => toggleInvitePermission(permission)} />
+                    {permissionLabels[permission]}
+                  </label>
+                ))}
+              </fieldset>
+            </form>
+          )}
+
+          {operatorsLoading ? <p className="operator-state">Carregando operadores...</p> : operatorsError ? (
+            <div className="operator-state operator-state--error"><p>{operatorsError}</p><Button size="small" variant="outline" onClick={loadOperators}>Tentar novamente</Button></div>
+          ) : operators.length === 0 ? <p className="operator-state">Nenhum operador vinculado.</p> : (
+            <div className="operator-list">
+              {operators.map((operator) => (
+                <article className="operator-card" key={operator.id}>
+                  <div className="operator-identity">
+                    <div><strong>{operator.user.name}</strong><span>{operator.user.email}</span></div>
+                    <span className={`operator-status operator-status--${operator.status}`}>{operator.status === 'active' ? 'Ativo' : operator.status === 'suspended' ? 'Suspenso' : 'Removido'}</span>
+                  </div>
+                  <div className="operator-meta"><span>{operator.user.emailVerifiedAt ? 'E-mail verificado' : 'E-mail pendente'}</span></div>
+                  <div className="permission-chips">{operator.permissions.map((permission) => <span key={permission}>{permissionLabels[permission]}</span>)}</div>
+                  {canManageOperators && operator.id !== currentMembershipId && operator.status !== 'revoked' && (
+                    <div className="operator-actions">
+                      {operator.status === 'active' ? <Button size="small" variant="outline" onClick={() => handleOperatorStatus(operator, 'suspended')}>Suspender</Button> : <Button size="small" variant="outline" onClick={() => handleOperatorStatus(operator, 'active')}>Reativar</Button>}
+                      <Button size="small" variant="ghost" onClick={() => handleOperatorStatus(operator, 'revoked')}>Remover</Button>
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* ── Registered Families List ── */}
         <section className="families-list-section">

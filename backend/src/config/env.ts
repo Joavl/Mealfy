@@ -69,6 +69,8 @@ const envSchema = z.object({
   DATABASE_URL: z.string().optional(),
   // Auth (Fase 2) — opcional no schema; o jwt util exige em runtime quando usado.
   JWT_SECRET: z.string().optional(),
+  // Dedicated pepper for low-entropy step-up OTPs; never reuse or expose it to clients.
+  STEP_UP_OTP_HMAC_KEY: z.preprocess(blankToUndefined, z.string().regex(/^[0-9a-fA-F]{64}$/, 'Use exatamente 32 bytes em hexadecimal (64 caracteres)').optional()),
   // Access tokens are intentionally short lived. Password resets additionally
   // invalidate tokens issued under older session versions.
   JWT_EXPIRES_IN: z.string().default('15m'),
@@ -101,8 +103,13 @@ const envSchema = z.object({
   DIRECT_PIX_TERMS_VERSION: optionalString,
   DIRECT_PIX_RETENTION_POLICY_VERSION: optionalString,
   DIRECT_PIX_OPERATIONS_RUNBOOK_REF: optionalString,
-  // Gift cards (Fase 3) — 32 bytes em hex (64 chars); o crypto service valida o formato.
+  // Legacy gift-card encryption key. Never use it for direct Pix EVP data.
   ENCRYPTION_KEY: z.string().optional(),
+  // Dedicated versioned key material for direct Pix EVP envelope encryption and fingerprinting.
+  DIRECT_PIX_EVP_ENCRYPTION_KID: z.preprocess(blankToUndefined, z.string().trim().min(1).max(64).optional()),
+  DIRECT_PIX_EVP_ENCRYPTION_KEY: z.preprocess(blankToUndefined, z.string().regex(/^[0-9a-fA-F]{64}$/, 'Use exatamente 32 bytes em hexadecimal (64 caracteres)').optional()),
+  DIRECT_PIX_EVP_FINGERPRINT_KID: z.preprocess(blankToUndefined, z.string().trim().min(1).max(64).optional()),
+  DIRECT_PIX_EVP_FINGERPRINT_KEY: z.preprocess(blankToUndefined, z.string().regex(/^[0-9a-fA-F]{64}$/, 'Use exatamente 32 bytes em hexadecimal (64 caracteres)').optional()),
   // Pagamentos (Fase 5) — `mock` só faz Pix fictício; `stripe` faz Pix e cartão
   // (cartão é o caminho do Google Pay / Apple Pay).
   PAYMENT_PROVIDER: z.enum(['mock', 'stripe']).default('mock'),
@@ -199,6 +206,20 @@ const envSchema = z.object({
       message,
     });
 
+    const directPixEvpKeys = ['DIRECT_PIX_EVP_ENCRYPTION_KID', 'DIRECT_PIX_EVP_ENCRYPTION_KEY', 'DIRECT_PIX_EVP_FINGERPRINT_KID', 'DIRECT_PIX_EVP_FINGERPRINT_KEY'] as const;
+    const suppliedDirectPixEvpKeys = directPixEvpKeys.filter((key) => Boolean(cfg[key]));
+    if (suppliedDirectPixEvpKeys.length > 0 && suppliedDirectPixEvpKeys.length < directPixEvpKeys.length) {
+      for (const key of directPixEvpKeys) if (!cfg[key]) issue(key, 'Configuração EVP deve conter KID e chave de criptografia e fingerprint');
+    }
+    if (cfg.DIRECT_PIX_EVP_ENCRYPTION_KEY && cfg.DIRECT_PIX_EVP_ENCRYPTION_KEY === cfg.DIRECT_PIX_EVP_FINGERPRINT_KEY) {
+      issue('DIRECT_PIX_EVP_FINGERPRINT_KEY', 'A chave HMAC de EVP deve ser distinta da chave de criptografia EVP');
+    }
+    if (!cfg.STEP_UP_OTP_HMAC_KEY && cfg.APP_ENV === 'production') {
+      issue('STEP_UP_OTP_HMAC_KEY', 'Produção exige chave HMAC dedicada para OTP');
+    }
+    if (cfg.STEP_UP_OTP_HMAC_KEY && cfg.STEP_UP_OTP_HMAC_KEY === cfg.JWT_SECRET) {
+      issue('STEP_UP_OTP_HMAC_KEY', 'A chave HMAC de OTP deve ser distinta do JWT_SECRET');
+    }
     if (cfg.APP_ENV === 'production') {
       if (cfg.DIRECT_PIX_MODE === 'synthetic') issue('DIRECT_PIX_MODE', 'Produção não aceita modo sintético');
       if (cfg.EMAIL_DELIVERY_MODE !== 'smtp') issue('EMAIL_DELIVERY_MODE', 'Produção exige entrega SMTP');
@@ -206,6 +227,7 @@ const envSchema = z.object({
         if (!cfg[field]) issue(field, 'Entrega SMTP de produção exige configuração completa');
       }
       if (cfg.DIRECT_PIX_MODE === 'live') {
+        for (const key of directPixEvpKeys) if (!cfg[key]) issue(key, 'Pix direto live exige material EVP dedicado e versionado');
         const gates = [
           'DIRECT_PIX_CONTROLLER_APPROVED',
           'DIRECT_PIX_LEGAL_BASIS_APPROVED',

@@ -60,10 +60,17 @@ published_port="$("${COMPOSE[@]}" port "$SERVICE" 5432 | tail -n 1 | sed 's/.*:/
 export APP_ENV=ci
 export NODE_ENV=test
 export DIRECT_PIX_MODE=synthetic
+# Retains pre-flag Direct Pix fixture expectations; production remains fail-closed.
+export DIRECT_PIX_TEST_DEFAULT_CREATION=true
 export DIRECT_PIX_SYNTHETIC_EVPS='00000000-0000-0000-0000-000000000001'
 export EMAIL_DELIVERY_MODE=capture
 export EMAIL_CAPTURE_DIR=.tmp/e2e-mail
 export JWT_SECRET='mealfy-e2e-isolated-secret'
+export STEP_UP_OTP_HMAC_KEY='9f4c8d2a7e1b6c5039a4d8e2f7b1c6054a9e3d8f2b7c1a605e4d9f3b8c2a7e10'
+export DIRECT_PIX_EVP_ENCRYPTION_KID='e2e-aes-2026-01'
+export DIRECT_PIX_EVP_ENCRYPTION_KEY='8c5f1a0b2d3e4f5061728394a5b6c7d8e9f00112233445566778899aabbccdde'
+export DIRECT_PIX_EVP_FINGERPRINT_KID='e2e-hmac-2026-01'
+export DIRECT_PIX_EVP_FINGERPRINT_KEY='1a2b3c4d5e6f7081928374655647382910fedcba98765432100123456789abcd'
 export DATABASE_URL="postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@127.0.0.1:${published_port}/${DATABASE_NAME}?schema=public"
 export DIRECT_URL="$DATABASE_URL"
 export E2E_RUN_ID

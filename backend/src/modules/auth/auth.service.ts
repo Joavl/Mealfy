@@ -59,23 +59,20 @@ async function issueAndDeliverEmailVerification(user: { id: string; email: strin
   const rawToken = randomBytes(32).toString('base64url');
   const digest = tokenHash(rawToken);
   const expiresAt = new Date(Date.now() + env.EMAIL_VERIFICATION_TTL_MINUTES * 60 * 1000);
+  // Mark the newest proof deliverable in the same locked transaction. This keeps
+  // concurrent resends to one usable generation even before their detached mail
+  // jobs settle; a failed send removes only its own still-current generation.
   await prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${user.id}))`;
     await tx.emailVerificationToken.deleteMany({ where: { userId: user.id, usedAt: null } });
-    await tx.emailVerificationToken.create({ data: { userId: user.id, tokenHash: digest, expiresAt } });
+    await tx.emailVerificationToken.create({ data: { userId: user.id, tokenHash: digest, expiresAt, deliveredAt: new Date() } });
   });
 
   try {
     await sendEmailVerificationEmail(user.email, rawToken);
-    // Only an existing newest generation becomes usable after delivery succeeds.
-    const activated = await prisma.emailVerificationToken.updateMany({
-      where: { userId: user.id, tokenHash: digest, usedAt: null, deliveredAt: null },
-      data: { deliveredAt: new Date() },
-    });
-    if (activated.count !== 1) console.warn('[email-verification] stale_delivery_discarded');
   } catch {
     await prisma.emailVerificationToken.deleteMany({
-      where: { userId: user.id, tokenHash: digest, usedAt: null, deliveredAt: null },
+      where: { userId: user.id, tokenHash: digest, usedAt: null },
     });
     console.error('[email-verification] delivery_failed');
   }
@@ -156,6 +153,8 @@ export async function confirmPasswordReset(input: PasswordResetConfirmInput): Pr
     if (consumed.count !== 1) throw new AppError('O link de redefinição é inválido ou expirou.', 400, 'invalid_reset_token');
 
     await tx.passwordResetToken.deleteMany({ where: { userId: reset.userId, id: { not: reset.id } } });
+    await tx.stepUpChallenge.updateMany({ where: { userId: reset.userId, consumedAt: null, invalidatedAt: null }, data: { invalidatedAt: now } });
+    await tx.stepUpAuthorization.updateMany({ where: { userId: reset.userId, revokedAt: null }, data: { revokedAt: now } });
     return tx.user.update({
       where: { id: reset.userId },
       data: { passwordHash: await hashPassword(input.password), sessionVersion: { increment: 1 } },

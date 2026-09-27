@@ -1,0 +1,13 @@
+.step-up-card { display: flex; flex-direction: column; gap: 16px; width: min(100%, 480px); padding: 24px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.step-up-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; background: var(--color-primary-container); color: var(--color-primary); }
+.step-up-icon svg { width: 26px; height: 26px; }
+.step-up-heading span { color: var(--color-primary); font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.step-up-heading h2 { margin: 5px 0 0; color: var(--color-text-main); font-family: var(--font-family-heading); }
+.step-up-card form { display: flex; flex-direction: column; gap: 12px; }
+.step-up-card label { color: var(--color-text-main); font-weight: 700; }
+.step-up-card input { min-height: 48px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-highest); color: var(--color-text-main); font: inherit; }
+.step-up-card input:focus-visible { outline: 3px solid color-mix(in srgb, var(--color-primary) 35%, transparent); outline-offset: 2px; border-color: var(--color-primary); }
+.step-up-code { text-align: center; font-size: 1.45rem !important; font-weight: 800 !important; letter-spacing: .35em; }
+.step-up-card form p, .step-up-message, .step-up-error { margin: 0; color: var(--color-outline); font-size: .875rem; line-height: 1.5; }
+.step-up-message { color: var(--color-success); }
+.step-up-error { color: var(--color-error); font-weight: 700; }

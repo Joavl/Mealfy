@@ -1,6 +1,7 @@
 import { prisma } from '../../database/prisma';
+import { listOperatorsForAdmin } from '../entities/operators.service';
+export { listOperatorsForAdmin };
 import { AppError } from '../../shared/errors/AppError';
-import { createAuditLog } from '../auditLogs/auditLog.service';
 import type { UserStatus } from '@prisma/client';
 
 /** Lista entidades para moderação (admin). Inclui status da conta do usuário. */
@@ -45,17 +46,21 @@ export async function setEntityStatus(
   status: UserStatus,
   action: 'approve_entity' | 'block_entity',
 ) {
-  const entity = await prisma.entity.findUnique({ where: { id: entityId } });
-  if (!entity) throw new AppError('Entidade não encontrada', 404, 'entity_not_found');
-
-  const updated = await prisma.entity.update({ where: { id: entityId }, data: { status } });
-  // Mantém o status do usuário coerente quando bloqueado.
-  if (status === 'blocked') {
-    await prisma.user.update({ where: { id: entity.userId }, data: { status: 'blocked' } });
-  } else if (status === 'active') {
-    await prisma.user.update({ where: { id: entity.userId }, data: { status: 'active' } });
-  }
-
-  await createAuditLog({ actorUserId, action, entityType: 'entity', entityId });
-  return updated;
+  return prisma.$transaction(async (tx) => {
+    const entity = await tx.entity.findUnique({ where: { id: entityId } });
+    if (!entity) throw new AppError('Entidade não encontrada', 404, 'entity_not_found');
+    const updated = await tx.entity.update({ where: { id: entityId }, data: { status } });
+    const memberships = await tx.entityOperatorMembership.findMany({ where: { entityId, status: 'active' }, select: { userId: true } });
+    const operatorUserIds = [...new Set([entity.userId, ...memberships.map(({ userId }) => userId)])];
+    if (status === 'blocked') {
+      await tx.user.updateMany({ where: { id: { in: operatorUserIds } }, data: { sessionVersion: { increment: 1 } } });
+      await tx.stepUpAuthorization.updateMany({ where: { userId: { in: operatorUserIds }, revokedAt: null }, data: { revokedAt: new Date() } });
+    }
+    await tx.user.update({ where: { id: entity.userId }, data: { status: status === 'blocked' ? 'blocked' : 'active' } });
+    await tx.auditLog.create({ data: {
+      actorUserId, actorRole: 'admin', action, entityType: 'entity', entityId, channel: 'web_pwa', result: status,
+      metadata: { invalidatedOperatorSessions: status === 'blocked' ? operatorUserIds.length : 0 },
+    } });
+    return updated;
+  });
 }

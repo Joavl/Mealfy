@@ -1,8 +1,12 @@
 import { prisma } from '../../database/prisma';
 import { AppError } from '../../shared/errors/AppError';
+import { resolveEntityAuthority } from './entityAuthority.service';
+export { listOperators, inviteOperator, updateOperator, acceptInvitation } from './operators.service';
+export { inviteOperatorSchema, updateOperatorSchema, acceptOperatorInvitationSchema } from './operators.validator';
 
 export async function getEntityForUser(userId: string) {
-  const entity = await prisma.entity.findUnique({ where: { userId } });
+  const authority = await resolveEntityAuthority(userId);
+  const entity = await prisma.entity.findUnique({ where: { id: authority.entityId } });
   if (!entity) throw new AppError('Perfil de entidade não encontrado', 403, 'no_entity_profile');
   return entity;
 }

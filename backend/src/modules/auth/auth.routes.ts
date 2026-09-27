@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { authGuard } from '../../shared/middlewares/authGuard';
+import { createStepUpChallenge, confirmStepUpChallenge, validateStepUpAuthorization } from './stepUp.controller';
+import { stepUpRateLimit } from './stepUpRateLimit';
 import {
   register, login, requestEmailVerification, confirmEmailVerification, requestPasswordReset, confirmPasswordReset,
 } from './auth.controller';
@@ -25,5 +27,9 @@ authRoutes.post('/email-verification/confirm', authGuard, rateLimit({
   legacyHeaders: false,
   message: { message: 'Muitas tentativas. Aguarde alguns minutos.', code: 'rate_limited' },
 }), confirmEmailVerification);
+authRoutes.post('/step-up/challenges', authGuard, stepUpRateLimit, createStepUpChallenge);
+authRoutes.post('/step-up/confirmations', authGuard, stepUpRateLimit, confirmStepUpChallenge);
+authRoutes.post('/step-up/authorizations/validate', authGuard, stepUpRateLimit, validateStepUpAuthorization);
+
 authRoutes.post('/password-reset/request', requestPasswordReset);
 authRoutes.post('/password-reset/confirm', confirmPasswordReset);
