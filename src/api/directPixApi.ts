@@ -19,7 +19,13 @@ export interface DirectPixTermsAcceptance {
   acceptedAt: string;
 }
 
+export interface DirectPixReadiness {
+  ready: boolean;
+  blockers: Array<'email_not_verified'>;
+}
+
 export const directPixApi = {
+  getReadiness: () => apiRequest<DirectPixReadiness>('/direct-pix/readiness'),
   getCurrentTerms: () => apiRequest<{ terms: DirectPixTerms }>('/direct-pix/terms/current'),
   acceptTerms: (version: string, idempotencyKey: string) =>
     apiRequest<{ acceptance: DirectPixTermsAcceptance }>(

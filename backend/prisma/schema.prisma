@@ -139,25 +139,26 @@ enum OAuthProvider {
 // ─────────────────────────── MODELS ───────────────────────────
 
 model User {
-  id             String     @id @default(uuid())
-  name           String
-  email          String     @unique
-  passwordHash   String?
+  id              String     @id @default(uuid())
+  name            String
+  email           String     @unique
+  emailVerifiedAt DateTime?
+  passwordHash    String?
   // Incremented on password reset; invalidates JWTs issued before the reset.
-  sessionVersion Int        @default(0)
-  role           UserRole
-  avatarUrl      String?
-  instagram      String?
-  phone          String?
+  sessionVersion  Int        @default(0)
+  role            UserRole
+  avatarUrl       String?
+  instagram       String?
+  phone           String?
   // CPF verificado pelo Gov.br (só preenchido em login social Gov.br). Único quando presente.
-  cpf            String?    @unique
-  status         UserStatus @default(active)
+  cpf             String?    @unique
+  status          UserStatus @default(active)
   // Preferências de visibilidade no ranking — opt-in explícito (default: não aparece)
-  showOnRanking  Boolean    @default(false)
-  showInstagram  Boolean    @default(false)
-  anonymousMode  Boolean    @default(false)
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  showOnRanking   Boolean    @default(false)
+  showInstagram   Boolean    @default(false)
+  anonymousMode   Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   donorProfile              DonorProfile?
   entity                    Entity?
@@ -166,6 +167,7 @@ model User {
   oauthAccounts             OAuthAccount[]
   rankingStory              RankingStory?
   passwordResetTokens       PasswordResetToken[]
+  emailVerificationTokens   EmailVerificationToken[]
   directPixTermsAcceptances DirectPixTermsAcceptance[]
   idempotencyRecords        IdempotencyRecord[]
 
@@ -189,6 +191,23 @@ model PasswordResetToken {
   @@index([userId])
   @@index([expiresAt])
   @@map("password_reset_tokens")
+}
+
+/// Email ownership proof. Only a SHA-256 digest is persisted. Tokens are
+/// owner-bound, expiring, invalidated on resend and consumed at most once.
+model EmailVerificationToken {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  deliveredAt DateTime?
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
 }
 
 model OAuthAccount {

@@ -53,6 +53,13 @@ export function createApp(): Application {
   });
   app.use('/auth/login', authLimiter);
   app.use('/auth/register', authLimiter);
+  app.use('/auth/email-verification', rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Muitas tentativas. Aguarde alguns minutos.', code: 'rate_limited' },
+  }));
   // Short window on reset endpoints limits reset-email abuse and token guessing.
   app.use('/auth/password-reset', rateLimit({
     windowMs: 15 * 60 * 1000,

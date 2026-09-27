@@ -1,11 +1,5 @@
 import type { User, AuthorizingEntity, PublicDonorProfile } from '../types';
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Senha centralizada — exclusivamente para o ambiente de demonstração (mock).
-// Nunca expor em componentes de UI nem em mealfy_current_user.
-// ──────────────────────────────────────────────────────────────────────────────
-export const MOCK_PASSWORD = '123456';
-
 // Identidades públicas dos usuários de demonstração.
 // O tipo User não contém senha.
 export const mockUsers: User[] = [
@@ -63,21 +57,6 @@ export const mockUsers: User[] = [
     rankingPercentile: '',
     status: 'active',
   },
-];
-
-// Credenciais separadas das identidades.
-// Usadas apenas pelo MockAuthProvider — nunca por componentes ou contexto.
-export interface MockUserCredential {
-  userId: string;
-  email: string;
-  password: string;
-}
-
-export const mockCredentials: MockUserCredential[] = [
-  { userId: 'u-12345',        email: 'doador@mealfy.com',       password: MOCK_PASSWORD },
-  { userId: 'u-entity-1',     email: 'entidade@mealfy.com',     password: MOCK_PASSWORD },
-  { userId: 'u-beneficiary-1',email: 'beneficiario@mealfy.com', password: MOCK_PASSWORD },
-  { userId: 'u-admin-1',      email: 'admin@mealfy.com',        password: MOCK_PASSWORD },
 ];
 
 // ──────────────────────────────────────────────────────────────────────────────

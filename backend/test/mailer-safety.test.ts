@@ -27,10 +27,23 @@ test('capture mode stores password reset mail only in the configured local mailb
   });
 });
 
+test('verification mail capture contains only delivery metadata and the one-time proof', async () => {
+  await mailer.sendEmailVerificationEmail('Verify-Me@Example.Test', 'verification-secret');
+  const files = await readdir(captureDir);
+  assert.equal(files.length, 2);
+  const captures = await Promise.all(files.map(async (file) => JSON.parse(await readFile(path.join(captureDir, file), 'utf8')) as Record<string, unknown>));
+  const capture = captures.find(({ kind }) => kind === 'email_verification');
+  assert.deepEqual(capture, {
+    kind: 'email_verification', to: 'verify-me@example.test', verificationToken: 'verification-secret', expiresInMinutes: 30,
+  });
+  const serialized = JSON.stringify(capture).toLowerCase();
+  for (const forbidden of ['pix', 'family', 'família', 'evp', 'bank', 'banco']) assert.equal(serialized.includes(forbidden), false);
+});
+
 test('capture mode rejects multi-recipient and header-injection input without another capture', async () => {
   for (const recipient of ['a@example.test,b@example.test', 'a@example.test\nBcc: b@example.test']) {
     await assert.rejects(() => mailer.sendPasswordResetEmail(recipient, 'token'), (error: unknown) =>
       (error as { code: string }).code === 'email_recipient_forbidden');
   }
-  assert.equal((await readdir(captureDir)).length, 1);
+  assert.equal((await readdir(captureDir)).length, 2);
 });

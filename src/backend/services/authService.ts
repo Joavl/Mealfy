@@ -1,44 +1,63 @@
 import type { User, UserRole, AuthorizingEntity } from '../types';
-import { mockAuthProvider, AuthError, type RegisterData, type AuthErrorCode } from './authProvider';
-import { mockEntities } from '../mockData/users';
 import { storage } from '../utils/storage';
-import { randomDelay } from '../utils/delay';
 import { authApi, type BackendPublicUser, type OAuthProvider } from '../../api/authApi';
-import { ApiError, ApiNetworkError } from '../../api/apiClient';
+import { ApiError } from '../../api/apiClient';
 import { getToken, setToken, clearToken } from '../../api/tokenStorage';
 
-// Re-exporta para uso pelos consumidores
-export { AuthError, type AuthErrorCode } from './authProvider';
+export type AuthErrorCode =
+  | 'invalid_credentials'
+  | 'admin_blocked'
+  | 'account_pending'
+  | 'account_suspended'
+  | 'provider_unavailable'
+  | 'network_error';
+
+export class AuthError extends Error {
+  readonly code: AuthErrorCode;
+
+  constructor(code: AuthErrorCode, message: string) {
+    super(message);
+    this.code = code;
+    this.name = 'AuthError';
+  }
+}
+
+export interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  phone?: string;
+}
+
+export interface EntityRegistrationData extends Partial<AuthorizingEntity> {
+  password: string;
+}
 
 const SESSION_KEY = 'current_user';
 const USERS_DB_KEY = 'users_db';
-const ENTITIES_KEY = 'entities_db';
 
-/** Fallback mock só vale em DEV — nunca em build de staging/produção (inclusive o APK). */
-function isDevFallbackAllowed(): boolean {
-  return import.meta.env.DEV && import.meta.env.VITE_DISABLE_LOCAL_FALLBACK !== 'true';
-}
+// Remove data left by older releases that stored demo credentials in localStorage.
+// Authentication itself never reads local credentials or falls back to a mock.
+storage.remove('mock_credentials');
+storage.remove('registered_users');
 
 function mapBackendStatus(status: BackendPublicUser['status']): User['status'] {
   return status === 'blocked' ? 'suspended' : status;
 }
 
-/**
- * O backend é a fonte de verdade pra identidade (id/nome/e-mail/role/status/privacySettings).
- * Preferências que o backend ainda não modela (savedFamilyIds, impactPreferences,
- * totalDonated/ranking) continuam vindo do cache local.
- */
+/** The backend is authoritative for identity and account state. */
 function mapBackendUser(backendUser: BackendPublicUser): User {
   const sessionCache = storage.get<User | null>(SESSION_KEY, null);
-  const cached =
-    sessionCache?.id === backendUser.id
-      ? sessionCache
-      : storage.get<User[]>(USERS_DB_KEY, []).find((u) => u.id === backendUser.id) || null;
+  const cached = sessionCache?.id === backendUser.id
+    ? sessionCache
+    : storage.get<User[]>(USERS_DB_KEY, []).find((user) => user.id === backendUser.id) || null;
 
   return {
     id: backendUser.id,
     name: backendUser.name,
     email: backendUser.email,
+    emailVerifiedAt: backendUser.emailVerifiedAt,
     role: backendUser.role as UserRole,
     phone: backendUser.phone ?? undefined,
     avatar: backendUser.avatarUrl ?? undefined,
@@ -48,7 +67,6 @@ function mapBackendUser(backendUser: BackendPublicUser): User {
     rankingPosition: cached?.rankingPosition ?? 0,
     rankingPercentile: cached?.rankingPercentile ?? '',
     savedFamilyIds: cached?.savedFamilyIds,
-    // Backend é autoritativo para privacySettings; cache como fallback (usuários antigos)
     privacySettings: backendUser.privacySettings ?? cached?.privacySettings ?? {
       showOnRanking: false,
       showInstagram: false,
@@ -60,35 +78,23 @@ function mapBackendUser(backendUser: BackendPublicUser): User {
   };
 }
 
+/** Cache contains only non-secret display/profile data; never passwords or credentials. */
 function persistSession(user: User): void {
   storage.set(SESSION_KEY, user);
   const users = storage.get<User[]>(USERS_DB_KEY, []);
-  const idx = users.findIndex((u) => u.id === user.id);
-  if (idx !== -1) {
-    users[idx] = user;
-  } else {
-    users.push(user);
-  }
+  const index = users.findIndex((candidate) => candidate.id === user.id);
+  if (index === -1) users.push(user);
+  else users[index] = user;
   storage.set(USERS_DB_KEY, users);
 }
 
+function authCodeFor(err: ApiError): AuthErrorCode {
+  if (err.code === 'account_unavailable') return 'account_suspended';
+  if (err.status >= 500) return 'provider_unavailable';
+  return 'invalid_credentials';
+}
+
 export const authService = {
-  // ─── Autenticação real (com fallback mock só em DEV + API inalcançável) ────
-
-  /**
-   * Traduz o erro da API em código de autenticação.
-   *
-   * Antes, QUALQUER ApiError virava `invalid_credentials`. Uma falha 500 do
-   * servidor aparecia como "E-mail ou senha incorretos" e mandava a pessoa
-   * trocar uma senha que estava certa — foi exatamente o que aconteceu com o
-   * banco fora do ar. Só 401/403 são problema de credencial.
-   */
-  _authCodeFor: (err: ApiError): AuthErrorCode => {
-    if (err.code === 'account_unavailable') return 'account_suspended';
-    if (err.status >= 500) return 'provider_unavailable';
-    return 'invalid_credentials';
-  },
-
   signInWithEmail: async (email: string, password: string): Promise<User> => {
     try {
       const { user, token } = await authApi.login(email, password);
@@ -97,22 +103,11 @@ export const authService = {
       persistSession(mapped);
       return mapped;
     } catch (err) {
-      if (err instanceof ApiError) {
-        throw new AuthError(authService._authCodeFor(err), err.message);
-      }
-      if (err instanceof ApiNetworkError && isDevFallbackAllowed()) {
-        console.warn('[AUTH FALLBACK - DEV ONLY] API indisponível, usando login mock local.', err);
-        return mockAuthProvider.signInWithEmail(email, password);
-      }
+      if (err instanceof ApiError) throw new AuthError(authCodeFor(err), err.message);
       throw new AuthError('network_error', 'Não foi possível conectar ao servidor. Tente novamente.');
     }
   },
 
-  /**
-   * Login social real (Google/Facebook/Apple). Recebe o token que o SDK nativo
-   * do provedor devolveu, envia ao backend para verificação e persiste a sessão.
-   * Sem fallback mock: login social só faz sentido contra a API real.
-   */
   signInWithOAuth: async (provider: OAuthProvider, token: string, name?: string): Promise<User> => {
     try {
       const { user, token: jwt } = await authApi.oauth(provider, token, name);
@@ -121,39 +116,54 @@ export const authService = {
       persistSession(mapped);
       return mapped;
     } catch (err) {
-      if (err instanceof ApiError) {
-        throw new AuthError(authService._authCodeFor(err), err.message);
-      }
+      if (err instanceof ApiError) throw new AuthError(authCodeFor(err), err.message);
       throw new AuthError('network_error', 'Não foi possível conectar ao servidor. Tente novamente.');
     }
   },
 
-  /**
-   * Login com Google (simulado, só em DEV — não existe OAuth real no backend).
-   */
-  signInWithGoogle: (selectedUser: User): Promise<User> =>
-    mockAuthProvider.signInWithGoogle(selectedUser),
+  requestEmailVerification: async (email: string): Promise<void> => {
+    try { await authApi.requestEmailVerification(email); }
+    catch (err) {
+      if (err instanceof ApiError) throw new Error(err.message);
+      throw new Error('Não foi possível conectar ao servidor. Tente novamente.');
+    }
+  },
 
-  /**
-   * Retorna usuários mockados ativos para o seletor Google (DEV).
-   */
-  getActiveMockUsers: (): User[] => mockAuthProvider.getActiveMockUsers(),
+  confirmEmailVerification: async (token: string): Promise<User> => {
+    try {
+      const { user } = await authApi.confirmEmailVerification(token);
+      const mapped = mapBackendUser(user);
+      persistSession(mapped);
+      return mapped;
+    } catch (err) {
+      if (err instanceof ApiError) throw new Error(err.message);
+      throw new Error('Não foi possível conectar ao servidor. Tente novamente.');
+    }
+  },
 
-  /**
-   * Recuperação de senha (mock — backend ainda não tem endpoint de reset).
-   * Sempre resolve — nunca revela se o e-mail existe.
-   */
-  resetPassword: (email: string): Promise<void> => mockAuthProvider.resetPassword(email),
+  /** Always resolves on accepted server response; server never reveals account existence. */
+  requestPasswordReset: async (email: string): Promise<void> => {
+    try {
+      await authApi.requestPasswordReset(email);
+    } catch (err) {
+      if (err instanceof ApiError) throw new Error(err.message);
+      throw new Error('Não foi possível conectar ao servidor. Tente novamente.');
+    }
+  },
 
-  /**
-   * Cadastro de novo usuário. Backend só aceita auto-cadastro de donor/entity;
-   * demais roles (ex.: beneficiary, criado por esta tela como placeholder) seguem mock.
-   */
+  resetPassword: async (token: string, password: string): Promise<void> => {
+    try {
+      await authApi.resetPassword(token, password);
+    } catch (err) {
+      if (err instanceof ApiError) throw new Error(err.message);
+      throw new Error('Não foi possível conectar ao servidor. Tente novamente.');
+    }
+  },
+
   registerUser: async (data: RegisterData): Promise<User> => {
     if (data.role !== 'donor' && data.role !== 'entity') {
-      return mockAuthProvider.registerUser(data);
+      throw new Error('Contas de beneficiário são criadas e vinculadas por uma entidade parceira.');
     }
-
     try {
       const { user, token } = await authApi.register({
         name: data.name,
@@ -167,37 +177,32 @@ export const authService = {
       persistSession(mapped);
       return mapped;
     } catch (err) {
-      if (err instanceof ApiError) {
-        throw new Error(err.message);
-      }
-      if (err instanceof ApiNetworkError && isDevFallbackAllowed()) {
-        console.warn('[AUTH FALLBACK - DEV ONLY] API indisponível, usando cadastro mock local.', err);
-        return mockAuthProvider.registerUser(data);
-      }
+      if (err instanceof ApiError) throw new Error(err.message);
       throw new Error('Não foi possível conectar ao servidor. Tente novamente.');
     }
   },
 
-  // ─── Recuperação de sessão ─────────────────────────────────────────────────
+  /** Entity registration uses the password chosen in the form; it never creates local credentials. */
+  registerEntity: async (data: EntityRegistrationData): Promise<User> => {
+    if (!data.password) throw new Error('Informe uma senha para continuar.');
+    return authService.registerUser({
+      name: data.responsibleName || data.name || 'Entidade',
+      email: data.email || '',
+      password: data.password,
+      role: 'entity',
+      phone: data.phone,
+    });
+  },
 
   getCurrentSession: async (): Promise<User | null> => {
-    const token = await getToken();
-    if (!token) return null;
-
+    if (!(await getToken())) return null;
     try {
       const { user } = await authApi.getMe();
       const mapped = mapBackendUser(user);
       persistSession(mapped);
       return mapped;
     } catch (err) {
-      if (err instanceof ApiNetworkError && isDevFallbackAllowed()) {
-        console.warn('[AUTH FALLBACK - DEV ONLY] API indisponível, retomando sessão em cache local.', err);
-        return storage.get<User | null>(SESSION_KEY, null);
-      }
-      if (!(err instanceof ApiError)) {
-        console.error('[AUTH] Não foi possível verificar a sessão (API inalcançável).', err);
-      }
-      // Token inválido/expirado (ou API inalcançável fora de DEV) — encerra a sessão.
+      if (!(err instanceof ApiError)) console.error('[AUTH] Não foi possível verificar a sessão.', err);
       await clearToken();
       storage.remove(SESSION_KEY);
       return null;
@@ -207,70 +212,5 @@ export const authService = {
   logout: async (): Promise<void> => {
     await clearToken();
     storage.remove(SESSION_KEY);
-  },
-
-  // ─── Métodos legados — mantidos para compatibilidade com Register.tsx ──────
-
-  /**
-   * @deprecated Usado somente por fluxos legados (Register.tsx).
-   */
-  registerEntity: async (data: Partial<AuthorizingEntity>): Promise<User> => {
-    let realUser: User | null = null;
-    try {
-      const { user, token } = await authApi.register({
-        name: data.responsibleName || data.name || 'Entidade',
-        email: data.email || '',
-        password: '123456',
-        role: 'entity',
-      });
-      await setToken(token);
-      realUser = mapBackendUser(user);
-      persistSession(realUser);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        throw new Error(err.message);
-      }
-      if (!(err instanceof ApiNetworkError) || !isDevFallbackAllowed()) {
-        throw new Error('Não foi possível conectar ao servidor. Tente novamente.');
-      }
-      console.warn('[AUTH FALLBACK - DEV ONLY] API indisponível ao registrar entidade.', err);
-    }
-
-    await randomDelay(400, 700);
-
-    // Cria entidade no storage local para o EntityDashboard (ainda não conectado à API real).
-    const entities = storage.get<AuthorizingEntity[]>(ENTITIES_KEY, mockEntities);
-    const newEntity: AuthorizingEntity = {
-      id: `e-${Date.now()}`,
-      name: data.name || 'Nova Entidade',
-      cnpj: data.cnpj || '',
-      type: data.type || 'ONG',
-      responsibleName: data.responsibleName || '',
-      email: data.email || '',
-      phone: data.phone || '',
-      region: data.region || '',
-      addressOrDistrict: data.addressOrDistrict,
-      websiteOrInstagram: data.websiteOrInstagram,
-      shortDescription: data.shortDescription,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-    entities.push(newEntity);
-    storage.set(ENTITIES_KEY, entities);
-
-    if (realUser) {
-      const withEntity = { ...realUser, entityId: newEntity.id };
-      persistSession(withEntity);
-      return withEntity;
-    }
-
-    const mockUser = await mockAuthProvider.registerUser({
-      name: data.responsibleName || data.name || 'Entidade',
-      email: data.email || '',
-      password: '123456',
-      role: 'entity',
-      phone: data.phone,
-    });
-    return { ...mockUser, entityId: newEntity.id };
   },
 };

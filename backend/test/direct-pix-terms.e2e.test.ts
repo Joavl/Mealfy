@@ -76,7 +76,11 @@ async function register(role: 'donor' | 'entity', email: string): Promise<{ toke
     body: JSON.stringify({ name: `Conta ${role}`, email, password: 'Senha-E2E-segura-123', role }),
   });
   assert.equal(response.status, 201);
-  return response.json() as Promise<{ token: string; user: { id: string } }>;
+  const account = await response.json() as { token: string; user: { id: string } };
+  if (role === 'donor') {
+    await prisma.user.update({ where: { id: account.user.id }, data: { emailVerifiedAt: new Date() } });
+  }
+  return account;
 }
 
 async function currentTerms(token: string) {

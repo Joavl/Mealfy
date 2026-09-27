@@ -24,7 +24,7 @@ const ForgotPassword: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await authService.resetPassword(email.trim().toLowerCase());
+      await authService.requestPasswordReset(email.trim().toLowerCase());
       setSubmitted(true);
     } catch {
       // Mesmo em caso de erro interno, exibimos a mensagem neutra

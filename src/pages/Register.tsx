@@ -30,7 +30,7 @@ const maskCNPJ = (v: string) => onlyDigits(v).slice(0, 14)
 const maskDocument = (v: string, type: 'cpf' | 'cnpj') => (type === 'cnpj' ? maskCNPJ(v) : maskCPF(v));
 
 const validatePasswords = (pwd: string, confirm: string): string | null => {
-  if (pwd.length < 6) return 'A senha deve ter pelo menos 6 caracteres.';
+  if (pwd.length < 8) return 'A senha deve ter pelo menos 8 caracteres.';
   if (pwd !== confirm) return 'As senhas não coincidem.';
   return null;
 };
@@ -187,7 +187,7 @@ const Register: React.FC = () => {
       case 'document': return onlyDigits(data.documentNumber).length === (data.documentType === 'cnpj' ? 14 : 11);
       case 'cnpjType': return onlyDigits(data.cnpj).length === 14;
       case 'responsibleName': return data.responsibleName.trim().length > 0;
-      case 'password': return data.password.length >= 6;
+      case 'password': return data.password.length >= 8;
       case 'confirmPassword': return validatePasswords(data.password, data.confirmPassword) === null;
       case 'phone': return true;
       case 'instagram': return true;
@@ -238,6 +238,7 @@ const Register: React.FC = () => {
         type: entityData.type,
         responsibleName: entityData.responsibleName,
         email: entityData.email,
+        password: entityData.password,
         phone: entityData.phone,
         region: entityData.region,
       });
@@ -419,7 +420,7 @@ const Register: React.FC = () => {
         return (
           <>
             <h1 className="typeform-question">Crie uma senha de acesso</h1>
-            <p className="typeform-hint">Mínimo de 6 caracteres.</p>
+            <p className="typeform-hint">Mínimo de 8 caracteres.</p>
             <div className="typeform-field typeform-input-wrapper">
               <input
                 autoFocus

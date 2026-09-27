@@ -1,0 +1,16 @@
+.email-verification-page { min-height: 100vh; background: var(--color-background); }
+.email-verification-content { width: min(100% - 32px, 560px); margin: 0 auto; padding: 32px 0 56px; }
+.email-verification-card { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 28px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); text-align: center; box-shadow: var(--shadow-sm); }
+.verification-icon { display: grid; width: 64px; height: 64px; place-items: center; border-radius: 20px; background: var(--color-primary-container); color: var(--color-primary); }
+.verification-icon svg { width: 32px; height: 32px; }
+.verification-icon.verified { background: color-mix(in srgb, var(--color-success) 16%, transparent); color: var(--color-success); }
+.verification-kicker { color: var(--color-primary); font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.email-verification-card h1 { margin: 0; color: var(--color-text-main); font-family: var(--font-family-heading); font-size: clamp(1.5rem, 5vw, 2rem); }
+.email-verification-card > p { margin: 0; color: var(--color-outline); line-height: 1.6; }
+.verification-address { width: 100%; padding: 12px; border-radius: var(--radius-md); background: var(--color-surface-highest); overflow-wrap: anywhere; font-weight: 700; }
+.verification-status, .verification-note { display: flex; align-items: center; gap: 10px; }
+.verification-status { color: var(--color-primary); font-weight: 700; }
+.verification-note { align-items: flex-start; padding: 14px; border-radius: var(--radius-md); background: var(--color-surface-highest); color: var(--color-outline); font-size: .82rem; line-height: 1.45; text-align: left; }
+.verification-note svg { flex: 0 0 auto; width: 18px; }
+.verification-message { color: var(--color-success); }
+.verification-message.error { color: var(--color-error); }

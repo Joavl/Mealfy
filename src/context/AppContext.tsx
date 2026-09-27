@@ -14,10 +14,8 @@ const SPLASH_MIN_MS = 2600;
 interface AppContextType {
   isAuthenticated: boolean;
   user: User | null;
-  /** Nova autenticação por email/senha — usa MockAuthProvider */
+  /** Autenticação por e-mail/senha validada pelo backend. */
   signIn: (email: string, password: string) => Promise<void>;
-  /** Login Google simulado — recebe o usuário escolhido no modal DEV */
-  signInWithGoogle: (selectedUser: User) => Promise<void>;
   /** Encerra a sessão e limpa os dados locais do usuário */
   logout: () => Promise<void>;
   /** Recarrega o usuário da sessão local — usado por Register.tsx após cadastro */
@@ -121,17 +119,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     void loadCommunities();
   };
 
-  // ─── Nova autenticação — delegada ao MockAuthProvider via authService ────
+  // ─── Autenticação pelo backend ───────────────────────────────────────────
 
   const signIn = async (email: string, password: string): Promise<void> => {
     const loggedUser = await authService.signInWithEmail(email, password);
     applySession(loggedUser);
   };
 
-  const signInWithGoogle = async (selectedUser: User): Promise<void> => {
-    const loggedUser = await authService.signInWithGoogle(selectedUser);
-    applySession(loggedUser);
-  };
 
   // ─── Sessão e logout ────────────────────────────────────────────────────
 
@@ -254,7 +248,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         isAuthenticated,
         user,
         signIn,
-        signInWithGoogle,
         logout,
         fetchSession,
         communities,

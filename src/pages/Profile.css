@@ -1,4 +1,4 @@
-﻿.profile-page {
+.profile-page {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -103,6 +103,19 @@
   margin-top: 2px;
   padding: 0 var(--spacing-3);
 }
+
+.email-verification-badge {
+  margin-top: 8px;
+  padding: 5px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  font-size: .72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.email-verification-badge.pending { color: var(--color-primary); }
+.email-verification-badge.verified { color: var(--color-success); }
 
 .impact-summary-container {
   /* Sobreposição menor: não cobre o e-mail do header */

@@ -73,6 +73,7 @@ const envSchema = z.object({
   // invalidate tokens issued under older session versions.
   JWT_EXPIRES_IN: z.string().default('15m'),
   PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().min(5).max(60).default(30),
+  EMAIL_VERIFICATION_TTL_MINUTES: z.coerce.number().int().min(5).max(1440).default(30),
   APP_URL: z.preprocess(blankToUndefined, z.string().url().optional()),
   SMTP_HOST: optionalString,
   SMTP_PORT: optionalPort,
