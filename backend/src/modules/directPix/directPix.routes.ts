@@ -9,14 +9,27 @@ import { getCurrentOwnEvpKey, revokeOwnEvpKey, submitOwnEvpKey } from './evpKey.
 import { confirmAssistedEvpKey, listOwnAwaitingAssistedEvpKeys, submitAssistedEvpKey } from './assistedEvp.controller';
 import { getEvpReviewQueue, reviewEvpKey, secondApproveEvpKey } from './evpReview.controller';
 import { cancelDonorDeclaration, confirmReceiptByResponsible, listEntityFollowUpCases, recordAssistedReceiptResponse } from './receiptResponse.controller';
-import { createIntent, grantDisclosure, disclose, declare, familyPublicProjection } from './directPixIntent.controller';
+import { createIntent, grantDisclosure, disclose, declare, familyPublicProjection, donorPrivateTimeline, responsiblePrivateTimeline } from './directPixIntent.controller';
+import { reportHolderDivergence } from './suspension.controller';
+import { reportPriorCodePix } from './oldQrDeclaration.controller';
+import { deactivateOwnDirectPixController, directPixPrivacyGuard, exportOwnDirectPix } from './privacy.controller';
 
 export const directPixRoutes = Router();
+
+// A data subject may always retrieve or deactivate their own Direct Pix data.
+// These routes are deliberately separate from legacy account/payment operations.
+directPixRoutes.get('/privacy/export', authGuard, exportOwnDirectPix);
+directPixRoutes.post('/privacy/deactivation', authGuard, deactivateOwnDirectPixController);
+// Public availability does not reveal private data and remains unauthenticated.
+directPixRoutes.get('/families/:familyId/public-projection', familyPublicProjection);
+// Every other Direct Pix route is closed immediately after a privacy deactivation.
+directPixRoutes.use(authGuard, directPixPrivacyGuard);
 
 // The acceptance/read routes have a responsible-specific contract and remain separate
 // from donor operations to prevent accidental cross-role authorization.
 directPixRoutes.post('/family-responsible-invitations/accept', authGuard, roleGuard('beneficiary'), acceptFamilyResponsibleInvitation);
 directPixRoutes.get('/responsible/state', authGuard, getOwnFamilyResponsibleState);
+directPixRoutes.get('/responsible/timeline', authGuard, roleGuard('beneficiary'), responsiblePrivateTimeline);
 directPixRoutes.get('/responsible/evp-key-versions/current', authGuard, roleGuard('beneficiary'), getCurrentOwnEvpKey);
 directPixRoutes.post('/responsible/evp-key-versions', authGuard, roleGuard('beneficiary'), submitOwnEvpKey);
 directPixRoutes.post('/responsible/evp-key-versions/:versionId/revoke', authGuard, roleGuard('beneficiary'), revokeOwnEvpKey);
@@ -34,13 +47,15 @@ directPixRoutes.post('/evp-key-versions/:versionId/second-approval', authGuard, 
 directPixRoutes.post('/responsible/intents/:intentId/receipt-confirmations', authGuard, roleGuard('beneficiary'), confirmReceiptByResponsible);
 directPixRoutes.post('/entity/intents/:intentId/assisted-receipt-confirmations', authGuard, roleGuard('entity'), recordAssistedReceiptResponse);
 directPixRoutes.get('/entity/follow-up-cases', authGuard, roleGuard('entity'), listEntityFollowUpCases);
-directPixRoutes.get('/families/:familyId/public-projection', familyPublicProjection);
-
-directPixRoutes.use(authGuard, roleGuard('donor'));
+directPixRoutes.use(roleGuard('donor'));
 directPixRoutes.get('/readiness', getReadiness);
+directPixRoutes.get('/timeline', donorPrivateTimeline);
 directPixRoutes.get('/terms/current', requireVerifiedEmail, getCurrentTerms);
 directPixRoutes.post('/terms/acceptances', requireVerifiedEmail, acceptCurrentTerms);
 directPixRoutes.post('/intents/:intentId/cancel-declaration', cancelDonorDeclaration);
+directPixRoutes.post('/intents/:intentId/reports/divergent-holder', reportHolderDivergence);
+// Exceptional, declaratory report for a Pix made from a saved code after the normal deadline.
+directPixRoutes.post('/me/direct-pix-late-declarations/:intentId', requireVerifiedEmail, reportPriorCodePix);
 directPixRoutes.post('/intents', requireVerifiedEmail, createIntent);
 directPixRoutes.post('/intents/:id/disclosure-grants', requireVerifiedEmail, grantDisclosure);
 directPixRoutes.get('/intents/:id/disclosure', requireVerifiedEmail, disclose);

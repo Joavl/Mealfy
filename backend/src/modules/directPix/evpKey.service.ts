@@ -4,7 +4,7 @@ import { dataSafetyPolicy } from '../../config/dataSafetyPolicy';
 import { prisma } from '../../database/prisma';
 import { AppError } from '../../shared/errors/AppError';
 import { requireStepUpAuthorization } from '../auth/stepUp.service';
-import { encryptEvp } from './evpKey.crypto';
+import { encryptEvp, fingerprintEvpForWrites } from './evpKey.crypto';
 import { assertDirectPixCreationAllowed } from './featureFlags.service';
 
 const OPERATION = 'direct_pix.submit_evp_key';
@@ -111,6 +111,9 @@ export async function submitEvpKey(actorUserId: string, input: SubmitEvpInput) {
         const id = randomUUID();
         const sealed = encryptEvp(input.evp, { recordId: id, familyId: assignment.familyId, assignmentId: assignment.id, version: number });
         const created = await tx.directPixEvpKeyVersion.create({ data: { id, familyId: assignment.familyId, assignmentId: assignment.id, submittedByUserId: actorUserId, version: number, status: 'PENDING_REVIEW', ...sealed } });
+        // Keep all configured write indexes during HMAC rotation; the legacy columns remain a compatibility projection.
+        await tx.directPixEvpKeyFingerprint.createMany({ data: fingerprintEvpForWrites(input.evp).map((fingerprint) => ({ keyVersionId: created.id, ...fingerprint })), skipDuplicates: true });
+        await tx.directPixEvpKeyEnvelope.create({ data: { keyVersionId: created.id, generation: 1, encryptionKid: sealed.encryptionKid, nonce: sealed.nonce, ciphertext: sealed.ciphertext, tag: sealed.tag, aadVersion: sealed.aadVersion } });
         await tx.auditLog.create({ data: { actorUserId, action: 'direct_pix.evp.submitted', entityType: RESOURCE_TYPE, entityId: created.id, channel: 'web_pwa', correlationId: input.correlationId, idempotencyKey: input.idempotencyKey, result: 'pending_review', metadata: { familyId: assignment.familyId, assignmentId: assignment.id, version: number } } });
         await tx.outboxEvent.create({ data: { eventType: 'direct_pix.evp.submitted', aggregateType: RESOURCE_TYPE, aggregateId: created.id, dedupeKey: 'direct-pix-evp-submitted:' + created.id } });
         await tx.idempotencyRecord.update({ where: { id: idempotency.id }, data: { resourceType: RESOURCE_TYPE, resourceId: created.id, status: 'completed', completedAt: new Date() } });

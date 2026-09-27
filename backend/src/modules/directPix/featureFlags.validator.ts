@@ -11,3 +11,18 @@ export const updateDirectPixFeatureFlagSchema = z.object({
   reason: z.object({ code: z.string().regex(/^[A-Z][A-Z0-9_]{2,63}$/), note: z.string().min(1).max(500).optional() }).strict(),
 }).strict();
 export const directPixFeatureFlagKeySchema = z.enum(DIRECT_PIX_FLAG_KEYS);
+
+const legacyDrainTargetSchema = z.object({
+  scope: z.enum(DIRECT_PIX_FLAG_SCOPES),
+  entityId: z.string().uuid().optional(),
+  familyId: z.string().uuid().optional(),
+}).strict();
+
+export const legacyDrainDryRunSchema = legacyDrainTargetSchema;
+export const legacyDrainApplySchema = legacyDrainTargetSchema.extend({
+  expectedVersion: z.number().int().min(0),
+  reason: z.object({
+    code: z.string().regex(/^[A-Z][A-Z0-9_]{2,63}$/),
+    note: z.string().min(1).max(500).optional(),
+  }).strict(),
+}).strict();

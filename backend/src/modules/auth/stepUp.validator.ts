@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const stepUpPurposeSchema = z.enum(['view_pix_key', 'change_pix_key', 'revoke_pix_key', 'confirm_direct_pix_receipt']);
+export const stepUpPurposeSchema = z.enum(['view_pix_key', 'change_pix_key', 'revoke_pix_key', 'confirm_direct_pix_receipt', 'break_glass_evp']);
 const resourceId = z.string().trim().min(1).max(128).optional();
 
 export const createStepUpChallengeSchema = z.object({

@@ -77,6 +77,16 @@ export async function assertDirectPixCreationAllowed(familyId: string, entityId:
   if (!evaluation.enabled) throw new AppError('Pix direto está temporariamente indisponível.', 423, 'direct_pix_disabled');
 }
 
+/**
+ * LEGACY_WRITE is inverted by design: enabling the scoped control means the
+ * legacy Donation/Payment/GiftCard write path is drained and permanently closed
+ * for that target. Reads retain their established labels and DTOs.
+ */
+export async function assertLegacyWriteAllowed(familyId: string, entityId: string | null, client: Client = prisma): Promise<void> {
+  const evaluation = await evaluateDirectPixFeature('LEGACY_WRITE', familyId, entityId, client);
+  if (evaluation.enabled) throw new AppError('O fluxo legado de doação foi encerrado para esta família.', 410, 'legacy_write_cutover');
+}
+
 function dto(row: { id: string; key: DirectPixFeatureFlagKey; scope: DirectPixFeatureFlagScope; entityId: string | null; familyId: string | null; enabled: boolean; config: Prisma.JsonValue | null; version: number; updatedByUserId: string; updatedAt: Date }) {
   return { id: row.id, key: row.key, scope: row.scope, entityId: row.entityId, familyId: row.familyId, enabled: row.enabled, config: row.config, version: row.version, updatedByUserId: row.updatedByUserId, updatedAt: row.updatedAt.toISOString() };
 }
@@ -87,6 +97,9 @@ export async function listDirectPixFeatureFlags() {
 }
 
 export async function updateDirectPixFeatureFlag(actorUserId: string, input: UpdateDirectPixFeatureFlagInput) {
+  if (input.key === 'LEGACY_WRITE') {
+    throw new AppError('LEGACY_WRITE só pode ser habilitada pelo apply do drain legado.', 422, 'legacy_write_requires_drain_apply');
+  }
   assertReason(input.reason);
   const target = targetFor(input.scope, input.entityId, input.familyId);
   if (input.scope !== 'FAMILY' && isPilot(input.config)) throw new AppError('Piloto exige escopo de família.', 422, 'pilot_requires_family_scope');

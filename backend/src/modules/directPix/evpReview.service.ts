@@ -105,7 +105,11 @@ async function performReview(actorUserId: string, versionId: string, input: Revi
         if (decision === 'REJECT') nextStatus = 'REJECTED';
         else if (second) nextStatus = 'ACTIVE';
         else {
-          const reused = await tx.directPixEvpKeyVersion.findFirst({ where: { id: { not: version.id }, fingerprintKid: version.fingerprintKid, fingerprint: version.fingerprint }, select: { id: true } });
+          // Pair KID and digest: matching unrelated KIDs must never count as a duplicate.
+          const indexes = await tx.directPixEvpKeyFingerprint.findMany({ where: { keyVersionId: version.id }, select: { fingerprintKid: true, fingerprint: true } });
+          const reused = indexes.length === 0
+            ? await tx.directPixEvpKeyVersion.findFirst({ where: { id: { not: version.id }, fingerprintKid: version.fingerprintKid, fingerprint: version.fingerprint }, select: { id: true } })
+            : await tx.directPixEvpKeyVersion.findFirst({ where: { id: { not: version.id }, fingerprints: { some: { OR: indexes.map((entry) => ({ fingerprintKid: entry.fingerprintKid, fingerprint: entry.fingerprint })) } } }, select: { id: true } });
           if (reused) { nextStatus = 'SECOND_APPROVAL_REQUIRED'; riskCode = 'duplicate_evp_review_required'; }
           else nextStatus = 'ACTIVE';
         }

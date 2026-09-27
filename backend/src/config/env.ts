@@ -110,6 +110,9 @@ const envSchema = z.object({
   DIRECT_PIX_EVP_ENCRYPTION_KEY: z.preprocess(blankToUndefined, z.string().regex(/^[0-9a-fA-F]{64}$/, 'Use exatamente 32 bytes em hexadecimal (64 caracteres)').optional()),
   DIRECT_PIX_EVP_FINGERPRINT_KID: z.preprocess(blankToUndefined, z.string().trim().min(1).max(64).optional()),
   DIRECT_PIX_EVP_FINGERPRINT_KEY: z.preprocess(blankToUndefined, z.string().regex(/^[0-9a-fA-F]{64}$/, 'Use exatamente 32 bytes em hexadecimal (64 caracteres)').optional()),
+  // JSON supplied by the secret manager: { encryption: [{ kid, key, write }], fingerprints: [{ kid, key, write }] }.
+  // It retains legacy KIDs for read and permits multiple HMAC write keys during dual-write migration.
+  DIRECT_PIX_EVP_KEYRING: z.preprocess(blankToUndefined, z.string().max(16_384).optional()),
   // Pagamentos (Fase 5) — `mock` só faz Pix fictício; `stripe` faz Pix e cartão
   // (cartão é o caminho do Google Pay / Apple Pay).
   PAYMENT_PROVIDER: z.enum(['mock', 'stripe']).default('mock'),

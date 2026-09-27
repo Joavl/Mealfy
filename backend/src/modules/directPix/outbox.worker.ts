@@ -84,6 +84,14 @@ export class DirectPixOutboxWorker {
     if (event.aggregate_type === 'direct_pix_evp_key_version') return (await this.client.directPixEvpKeyVersion.findUnique({ where: { id: event.aggregate_id }, select: { submittedByUserId: true } }))?.submittedByUserId ?? null;
     if (event.aggregate_type === 'direct_pix_evp_key_review') return (await this.client.directPixEvpKeyReview.findUnique({ where: { id: event.aggregate_id }, select: { reviewerUserId: true } }))?.reviewerUserId ?? null;
     if (event.aggregate_type === 'family_responsible_assignment') return (await this.client.familyResponsibleAssignment.findUnique({ where: { id: event.aggregate_id }, select: { responsibleUserId: true } }))?.responsibleUserId ?? null;
+    if (event.aggregate_type === 'direct_pix_intent') {
+      const intent = await this.client.directPixIntent.findUnique({ where: { id: event.aggregate_id }, select: { responsibleAssignmentId: true } });
+      return intent ? (await this.client.familyResponsibleAssignment.findUnique({ where: { id: intent.responsibleAssignmentId }, select: { responsibleUserId: true } }))?.responsibleUserId ?? null : null;
+    }
+    if (event.aggregate_type === 'direct_pix_follow_up_case') {
+      const followUp = await this.client.directPixFollowUpCase.findUnique({ where: { id: event.aggregate_id }, select: { family: { select: { entity: { select: { userId: true } } } } } });
+      return followUp?.family?.entity?.userId ?? null;
+    }
     return null;
   }
 
