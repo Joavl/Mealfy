@@ -25,6 +25,11 @@ export async function listUsers(_req: Request, res: Response): Promise<Response>
   return res.json({ users });
 }
 
+export async function listEntityOperators(req: Request, res: Response): Promise<Response> {
+  const operators = await adminService.listOperatorsForAdmin(req.params.id);
+  return res.json({ operators });
+}
+
 export async function getRankingStories(_req: Request, res: Response): Promise<Response> {
   const [stories, candidates] = await Promise.all([
     rankingService.getConfiguredStories(),

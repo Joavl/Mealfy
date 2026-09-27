@@ -90,7 +90,7 @@ function assertUsable(user: User): void {
 }
 
 function issue(user: User): string {
-  return signToken({ sub: user.id, role: user.role });
+  return signToken({ sub: user.id, role: user.role, sv: user.sessionVersion });
 }
 
 function fallbackName(identity: OAuthIdentity): string {

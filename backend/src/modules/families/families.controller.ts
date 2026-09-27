@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { AppError } from '../../shared/errors/AppError';
+import { dataSafetyPolicy } from '../../config/dataSafetyPolicy';
 import * as familiesService from './families.service';
 import { toDonorFamily, toManagedFamily, type FamilyWithDependents } from './families.dto';
 import {
@@ -40,6 +41,7 @@ export async function getOne(req: Request, res: Response): Promise<Response> {
 }
 
 export async function create(req: Request, res: Response): Promise<Response> {
+  dataSafetyPolicy.assertFamilyDataCollectionAllowed();
   const actor = actorOf(req);
   const data = createFamilySchema.parse(req.body);
   const family = await familiesService.createFamily(actor, data);
@@ -47,6 +49,7 @@ export async function create(req: Request, res: Response): Promise<Response> {
 }
 
 export async function update(req: Request, res: Response): Promise<Response> {
+  dataSafetyPolicy.assertFamilyDataCollectionAllowed();
   const actor = actorOf(req);
   const data = updateFamilySchema.parse(req.body);
   const family = await familiesService.updateFamily(actor, req.params.id, data);

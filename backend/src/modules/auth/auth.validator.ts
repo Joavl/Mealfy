@@ -1,21 +1,10 @@
 import { z } from 'zod';
 
-/**
- * Registro público: apenas `donor` e `entity` podem se auto-cadastrar.
- * - `beneficiary` é criado pela ENTIDADE (não se auto-cadastra).
- * - `admin` é provisionado internamente (seed/outro admin), nunca via /register.
- * Enviar role 'admin'/'beneficiary' resulta em 422 (role inválido).
- */
 export const registerSchema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
   email: z.string().email('E-mail inválido'),
-  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+  password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
   role: z.enum(['donor', 'entity']),
-  /**
-   * O formulário de cadastro já coleta telefone. Sem estar declarado aqui o zod
-   * o REMOVIA silenciosamente (comportamento padrão de strip), e o usuário era
-   * criado com phone NULL sem nenhum erro aparente.
-   */
   phone: z.string().max(30).optional(),
 });
 
@@ -24,5 +13,17 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Informe a senha'),
 });
 
+export const emailVerificationRequestSchema = z.object({ email: z.string().trim().toLowerCase().email('E-mail inválido') });
+export const emailVerificationConfirmSchema = z.object({ token: z.string().min(43).max(256) });
+export const passwordResetRequestSchema = z.object({ email: z.string().email('E-mail inválido') });
+export const passwordResetConfirmSchema = z.object({
+  token: z.string().min(43).max(256),
+  password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type EmailVerificationRequestInput = z.infer<typeof emailVerificationRequestSchema>;
+export type EmailVerificationConfirmInput = z.infer<typeof emailVerificationConfirmSchema>;
+export type PasswordResetRequestInput = z.infer<typeof passwordResetRequestSchema>;
+export type PasswordResetConfirmInput = z.infer<typeof passwordResetConfirmSchema>;

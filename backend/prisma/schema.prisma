@@ -136,39 +136,240 @@ enum OAuthProvider {
   govbr
 }
 
+enum StepUpPurpose {
+  view_pix_key
+  change_pix_key
+  revoke_pix_key
+  confirm_direct_pix_receipt
+  break_glass_evp
+}
+
+enum EntityOperatorStatus {
+  active
+  suspended
+  revoked
+}
+
+enum FamilyResponsibleAssignmentEndReason {
+  reassigned
+  relationship_ended
+  account_inactive
+  data_correction
+}
+
+/// A submission is immutable; only a separately authorized reviewer can advance it.
+enum DirectPixEvpKeyVersionStatus {
+  AWAITING_RESPONSIBLE_CONFIRMATION
+  PENDING_REVIEW
+  SECOND_APPROVAL_REQUIRED
+  ACTIVE
+  REJECTED
+  SUSPENDED
+  REVOKED
+  SUPERSEDED
+}
+
+/// Direct Pix roll-out controls. All product behavior is fail-closed when a
+/// required flag is absent or cannot be read.
+enum DirectPixFeatureFlagKey {
+  ONBOARDING
+  CREATION
+  DISCLOSURE
+  JOBS
+  LEGACY_WRITE
+  KILL_SWITCH
+}
+
+enum DirectPixFeatureFlagScope {
+  GLOBAL
+  ENTITY
+  FAMILY
+}
+
+enum DirectPixIntentStatus {
+  OPEN
+  DONOR_DECLARED
+  CANCELED_BY_DONOR
+  FAMILY_CONFIRMED
+  FOLLOW_UP_REQUIRED
+}
+
+enum DirectPixDeclarationCancellationReason {
+  TRANSFER_NOT_SENT
+  DONOR_CHANGED_MIND
+  OTHER
+}
+
+enum DirectPixReceiptOutcome {
+  RECEIVED_EXACT
+  RECEIVED_DIFFERENT
+  NOT_LOCATED
+}
+
+enum DirectPixAssistedChannel {
+  IN_PERSON
+  PHONE
+}
+
+enum DirectPixFollowUpReason {
+  HOLDER_DIVERGENT
+  RECEIVED_DIFFERENT
+  NOT_LOCATED
+  CONFIRMATION_TIMEOUT
+  OLD_QR_DECLARATION
+}
+
+enum DirectPixFollowUpCaseStatus {
+  OPEN
+}
+
+enum FamilySupportCycleStatus {
+  IN_PROGRESS
+}
+
 // ─────────────────────────── MODELS ───────────────────────────
 
 model User {
-  id           String     @id @default(uuid())
-  name         String
-  email        String     @unique
-  passwordHash String?
-  role         UserRole
-  avatarUrl    String?
-  instagram    String?
-  phone        String?
+  id              String     @id @default(uuid())
+  name            String
+  email           String     @unique
+  emailVerifiedAt DateTime?
+  passwordHash    String?
+  // Incremented on password reset; invalidates JWTs issued before the reset.
+  sessionVersion  Int        @default(0)
+  role            UserRole
+  avatarUrl       String?
+  instagram       String?
+  phone           String?
   // CPF verificado pelo Gov.br (só preenchido em login social Gov.br). Único quando presente.
-  cpf          String?    @unique
-  status       UserStatus @default(active)
+  cpf             String?    @unique
+  status          UserStatus @default(active)
   // Preferências de visibilidade no ranking — opt-in explícito (default: não aparece)
-  showOnRanking Boolean   @default(false)
-  showInstagram Boolean   @default(false)
-  anonymousMode Boolean   @default(false)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  showOnRanking   Boolean    @default(false)
+  showInstagram   Boolean    @default(false)
+  anonymousMode   Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
-  donorProfile        DonorProfile?
-  entity              Entity?
-  favorites           Favorite[]
-  beneficiaryFamilies Family[]      @relation("FamilyBeneficiary")
-  oauthAccounts       OAuthAccount[]
-  rankingStory        RankingStory?
+  donorProfile                        DonorProfile?
+  entity                              Entity?
+  favorites                           Favorite[]
+  beneficiaryFamilies                 Family[]                           @relation("FamilyBeneficiary")
+  oauthAccounts                       OAuthAccount[]
+  rankingStory                        RankingStory?
+  passwordResetTokens                 PasswordResetToken[]
+  emailVerificationTokens             EmailVerificationToken[]
+  stepUpChallenges                    StepUpChallenge[]
+  stepUpAuthorizations                StepUpAuthorization[]
+  directPixEvpKeyVersions             DirectPixEvpKeyVersion[]
+  directPixEvpKeyReviews              DirectPixEvpKeyReview[]
+  directPixTermsAcceptances           DirectPixTermsAcceptance[]
+  idempotencyRecords                  IdempotencyRecord[]
+  directPixActions                    DirectPixOperatorAction[]          @relation("DirectPixActionActor")
+  entityOperatorMemberships           EntityOperatorMembership[]         @relation("EntityOperatorUser")
+  invitedEntityOperators              EntityOperatorMembership[]         @relation("EntityOperatorInviter")
+  entityOperatorInvitations           EntityOperatorInvitation[]         @relation("EntityOperatorInvitationAcceptor")
+  sentEntityOperatorInvitations       EntityOperatorInvitation[]         @relation("EntityOperatorInvitationInviter")
+  familyResponsibleAssignments        FamilyResponsibleAssignment[]      @relation("FamilyResponsibleUser")
+  invitedFamilyResponsibleAssignments FamilyResponsibleAssignment[]      @relation("FamilyResponsibleAssignmentInviter")
+  familyResponsibleInvitations        FamilyResponsibleInvitation[]      @relation("FamilyResponsibleInvitationAcceptor")
+  sentFamilyResponsibleInvitations    FamilyResponsibleInvitation[]      @relation("FamilyResponsibleInvitationInviter")
+  updatedDirectPixFeatureFlags        DirectPixFeatureFlag[]             @relation("DirectPixFeatureFlagUpdater")
+  inAppNotifications                  InAppNotification[]
+  directPixIntents                    DirectPixIntent[]
+  directPixDisclosureGrants           PixDisclosureGrant[]
+  directPixDeclarations               DirectPixDeclaration[]
+  directPixDeclarationCancellations   DirectPixDeclarationCancellation[]
+  directPixReceiptDeclarations        DirectPixReceiptConfirmation[]     @relation("DirectPixReceiptDeclarant")
+  directPixAssistedReceipts           DirectPixReceiptConfirmation[]     @relation("DirectPixReceiptOperator")
+  directPixSuspensions                DirectPixSuspension[]              @relation("DirectPixSuspensionActor")
+  directPixSuspensionSubjects         DirectPixSuspension[]              @relation("DirectPixSuspensionSubject")
+  directPixBreakGlassGrants           DirectPixBreakGlassGrant[]
+  directPixPrivacyDeactivation        DirectPixPrivacyDeactivation?
+  directPixLegalHolds                 DirectPixLegalHold[]               @relation("DirectPixLegalHoldSubject")
+
 
   @@map("users")
 }
 
 /// Identidade social vinculada a um usuário. Um usuário pode ter vários provedores
 /// (Google, Facebook, Apple, Gov.br) apontando para a mesma conta Mealfy.
+
+/// Reset-password proof: only a SHA-256 digest is persisted, so a database
+/// disclosure cannot be used directly as a reset link. A token is single use.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+/// Email ownership proof. Only a SHA-256 digest is persisted. Tokens are
+/// owner-bound, expiring, invalidated on resend and consumed at most once.
+model EmailVerificationToken {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  deliveredAt DateTime?
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+}
+
+/// Password + email OTP proof for one direct Pix purpose and optional resource.
+/// Codes are hash-only, expire after ten minutes and have bounded attempts.
+model StepUpChallenge {
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose        StepUpPurpose
+  resourceId     String?
+  codeHash       String        @unique
+  sessionVersion Int
+  expiresAt      DateTime
+  deliveredAt    DateTime?
+  failedAttempts Int           @default(0)
+  consumedAt     DateTime?
+  invalidatedAt  DateTime?
+  createdAt      DateTime      @default(now())
+
+  @@index([userId, purpose, createdAt])
+  @@index([expiresAt])
+  @@map("step_up_challenges")
+}
+
+/// Short purpose/resource-bound authorization emitted only after a valid OTP.
+model StepUpAuthorization {
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose        StepUpPurpose
+  resourceId     String?
+  tokenHash      String        @unique
+  sessionVersion Int
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  // One sensitive action consumes a proof; validation alone never consumes it.
+  consumedAt     DateTime?
+  createdAt      DateTime      @default(now())
+
+  @@index([userId, purpose, resourceId, expiresAt])
+  @@index([expiresAt])
+  @@map("step_up_authorizations")
+}
+
 model OAuthAccount {
   id             String        @id @default(uuid())
   provider       OAuthProvider
@@ -226,9 +427,124 @@ model Entity {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
-  families Family[]
+  families              Family[]
+  operatorMemberships   EntityOperatorMembership[]
+  operatorInvitations   EntityOperatorInvitation[]
+  directPixActions      DirectPixOperatorAction[]
+  directPixFeatureFlags DirectPixFeatureFlag[]
+  directPixSuspensionEntities DirectPixSuspension[] @relation("DirectPixSuspensionEntity")
 
   @@map("entities")
+}
+
+model EntityOperatorMembership {
+  id                  String                    @id @default(uuid())
+  entityId            String
+  entity              Entity                    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User                      @relation("EntityOperatorUser", fields: [userId], references: [id], onDelete: Cascade)
+  status              EntityOperatorStatus      @default(active)
+  permissions         String[]
+  invitedByUserId     String?
+  invitedByUser       User?                     @relation("EntityOperatorInviter", fields: [invitedByUserId], references: [id], onDelete: SetNull)
+  activatedAt         DateTime?                 @default(now())
+  suspendedAt         DateTime?
+  revokedAt           DateTime?
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  directPixActions    DirectPixOperatorAction[]
+  directPixEvpReviews DirectPixEvpKeyReview[]
+
+  @@unique([entityId, userId])
+  @@index([userId, status])
+  @@index([entityId, status])
+  @@map("entity_operator_memberships")
+}
+
+/// Accountable operator authority for Pix-key submit/review/follow-up actions.
+/// Review services must reject the membership that submitted the same resource version.
+model DirectPixOperatorAction {
+  id           String                   @id @default(uuid())
+  entityId     String
+  entity       Entity                   @relation(fields: [entityId], references: [id], onDelete: Restrict)
+  membershipId String
+  membership   EntityOperatorMembership @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+  actorUserId  String
+  actorUser    User                     @relation("DirectPixActionActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  resourceType String
+  resourceId   String
+  action       String
+  createdAt    DateTime                 @default(now())
+
+  @@index([resourceType, resourceId, action])
+  @@index([entityId, createdAt])
+  @@map("direct_pix_operator_actions")
+}
+
+model EntityOperatorInvitation {
+  id               String    @id @default(uuid())
+  entityId         String
+  entity           Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  email            String
+  tokenHash        String    @unique
+  permissions      String[]
+  invitedByUserId  String
+  invitedByUser    User      @relation("EntityOperatorInvitationInviter", fields: [invitedByUserId], references: [id], onDelete: Restrict)
+  acceptedByUserId String?
+  acceptedByUser   User?     @relation("EntityOperatorInvitationAcceptor", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([entityId, email])
+  @@index([expiresAt])
+  @@map("entity_operator_invitations")
+}
+
+/// Historical authority record. PostgreSQL partial unique indexes ensure exactly one active
+/// responsible per family and one active family per responsible account.
+model FamilyResponsibleAssignment {
+  id                String                                @id @default(uuid())
+  familyId          String
+  family            Family                                @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  responsibleUserId String
+  responsibleUser   User                                  @relation("FamilyResponsibleUser", fields: [responsibleUserId], references: [id], onDelete: Restrict)
+  invitationId      String?                               @unique
+  invitation        FamilyResponsibleInvitation?          @relation(fields: [invitationId], references: [id], onDelete: Restrict)
+  invitedByUserId   String
+  invitedByUser     User                                  @relation("FamilyResponsibleAssignmentInviter", fields: [invitedByUserId], references: [id], onDelete: Restrict)
+  assignedAt        DateTime                              @default(now())
+  endedAt           DateTime?
+  endReason         FamilyResponsibleAssignmentEndReason?
+  evpKeyVersions    DirectPixEvpKeyVersion[]
+
+  @@index([familyId, endedAt])
+  @@index([responsibleUserId, endedAt])
+  @@map("family_responsible_assignments")
+}
+
+/// Bearer invitations are account-bound by normalized e-mail; only the hash is stored.
+model FamilyResponsibleInvitation {
+  id               String    @id @default(uuid())
+  familyId         String
+  family           Family    @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  email            String
+  tokenHash        String    @unique
+  invitedByUserId  String
+  invitedByUser    User      @relation("FamilyResponsibleInvitationInviter", fields: [invitedByUserId], references: [id], onDelete: Restrict)
+  acceptedByUserId String?
+  acceptedByUser   User?     @relation("FamilyResponsibleInvitationAcceptor", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  assignment FamilyResponsibleAssignment?
+
+  @@index([familyId, email])
+  @@index([expiresAt])
+  @@map("family_responsible_invitations")
 }
 
 /// Município brasileiro, importado do IBGE — a lista canônica de áreas.
@@ -241,26 +557,26 @@ model Entity {
 /// O bairro/comunidade continua sendo texto livre em `Family` — é informação
 /// que o IBGE não fornece e que só quem cadastra conhece.
 model Region {
-  id        String  @id @default(uuid())
+  id         String   @id @default(uuid())
   /// Código IBGE do município (7 dígitos). Identidade estável e oficial.
-  ibgeCode  Int     @unique
-  name      String
+  ibgeCode   Int      @unique
+  name       String
   /// Nome sem acento e em minúsculas, só para busca.
   ///
   /// `contains` com `mode: insensitive` resolve caixa, mas NÃO acento: quem
   /// digitasse "sao paulo" não encontrava "São Paulo" — inaceitável, já que a
   /// maioria dos municípios brasileiros tem acento. Coluna dedicada resolve sem
   /// depender da extensão `unaccent` do Postgres.
-  nameSearch String @default("")
+  nameSearch String   @default("")
   /// UF em duas letras (SP, RJ...).
-  state     String
+  state      String
   /// Centroide da malha do IBGE. Nulo até ser buscado sob demanda: são 5.571
   /// municípios e baixar a geometria de todos de uma vez seria lento e inútil,
   /// já que só interessa onde existe família.
-  latitude  Float?
-  longitude Float?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  latitude   Float?
+  longitude  Float?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   families    Family[]
   communities Community[]
@@ -375,7 +691,7 @@ model Family {
   lastDonorInstagram        String?
   lastGiftCardProvider      GiftCardProvider?
   verificationStatus        FamilyVerificationStatus @default(unverified)
-  approvalStatus            FamilyApprovalStatus      @default(pending)
+  approvalStatus            FamilyApprovalStatus     @default(pending)
   dataSource                DataSource               @default(manual)
   socialDescription         String?
   needToday                 Boolean                  @default(true)
@@ -383,13 +699,171 @@ model Family {
   createdAt                 DateTime                 @default(now())
   updatedAt                 DateTime                 @updatedAt
 
-  dependents      FamilyDependent[]
-  beneficiaryUser User?             @relation("FamilyBeneficiary", fields: [beneficiaryUserId], references: [id], onDelete: SetNull)
+  dependents              FamilyDependent[]
+  responsibleAssignments  FamilyResponsibleAssignment[]
+  responsibleInvitations  FamilyResponsibleInvitation[]
+  directPixEvpKeyVersions DirectPixEvpKeyVersion[]
+  directPixFeatureFlags   DirectPixFeatureFlag[]
+  directPixIntents        DirectPixIntent[]
+  directPixSuspensions    DirectPixSuspension[] @relation("DirectPixSuspensionFamily")
+  directPixSupportCycles  FamilySupportCycle[]
+  directPixFollowUpCases  DirectPixFollowUpCase[]
+  beneficiaryUser         User?                         @relation("FamilyBeneficiary", fields: [beneficiaryUserId], references: [id], onDelete: SetNull)
 
   @@index([approvalStatus])
   @@index([entityId])
   @@index([beneficiaryUserId])
   @@map("families")
+}
+
+/// Direct Pix EVP aggregate. Neither raw EVP nor civil-holder details are stored.
+/// Persisted Direct Pix flags. Scope resolution is family → entity → global.
+/// `pilot` configuration may only be enabled at family scope; the service
+/// enforces a ten-family hard cap per flag and entity.
+model DirectPixFeatureFlag {
+  id              String                    @id @default(uuid())
+  key             DirectPixFeatureFlagKey
+  scope           DirectPixFeatureFlagScope
+  entityId        String?                   @map("entity_id")
+  entity          Entity?                   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  familyId        String?                   @map("family_id")
+  family          Family?                   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  enabled         Boolean                   @default(false)
+  config          Json?
+  version         Int                       @default(1)
+  updatedByUserId String                    @map("updated_by_user_id")
+  updatedByUser   User                      @relation("DirectPixFeatureFlagUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
+
+  @@index([key, scope])
+  @@index([entityId, key])
+  @@index([familyId, key])
+  @@map("direct_pix_feature_flags")
+}
+
+model DirectPixEvpKeyVersion {
+  id                        String                       @id
+  familyId                  String
+  family                    Family                       @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  assignmentId              String
+  assignment                FamilyResponsibleAssignment  @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+  submittedByUserId         String
+  submittedByUser           User                         @relation(fields: [submittedByUserId], references: [id], onDelete: Restrict)
+  version                   Int
+  status                    DirectPixEvpKeyVersionStatus @default(PENDING_REVIEW)
+  aadVersion                Int                          @default(1)
+  encryptionKid             String
+  nonce                     String
+  ciphertext                String
+  tag                       String
+  fingerprintKid            String
+  fingerprint               String
+  submittedAt               DateTime                     @default(now())
+  reviews                   DirectPixEvpKeyReview[]
+  directPixIntents          DirectPixIntent[]
+  envelopes                 DirectPixEvpKeyEnvelope[]
+  fingerprints              DirectPixEvpKeyFingerprint[]
+  directPixSuspensions      DirectPixSuspension[]
+  directPixBreakGlassGrants DirectPixBreakGlassGrant[]
+
+  @@unique([familyId, version])
+  @@index([familyId, status, submittedAt])
+  @@index([assignmentId, submittedAt])
+  @@index([fingerprintKid, fingerprint])
+  @@map("direct_pix_evp_key_versions")
+}
+
+/// Immutable re-encryption history. The highest generation is the current envelope.
+model DirectPixEvpKeyEnvelope {
+  id            String                 @id @default(uuid())
+  keyVersionId  String                 @map("key_version_id")
+  keyVersion    DirectPixEvpKeyVersion @relation(fields: [keyVersionId], references: [id], onDelete: Cascade)
+  generation    Int
+  aadVersion    Int                    @map("aad_version")
+  encryptionKid String                 @map("encryption_kid")
+  nonce         String
+  ciphertext    String
+  tag           String
+  createdAt     DateTime               @default(now()) @map("created_at")
+
+  @@unique([keyVersionId, generation])
+  @@index([encryptionKid])
+  @@map("direct_pix_evp_key_envelopes")
+}
+
+/// Versioned blind indexes permit HMAC dual-read/write without deterministic encryption.
+model DirectPixEvpKeyFingerprint {
+  id             String                 @id @default(uuid())
+  keyVersionId   String                 @map("key_version_id")
+  keyVersion     DirectPixEvpKeyVersion @relation(fields: [keyVersionId], references: [id], onDelete: Cascade)
+  fingerprintKid String                 @map("fingerprint_kid")
+  fingerprint    String
+  createdAt      DateTime               @default(now()) @map("created_at")
+
+  @@unique([keyVersionId, fingerprintKid])
+  @@index([fingerprintKid, fingerprint])
+  @@map("direct_pix_evp_key_fingerprints")
+}
+
+/// A durable, resumable operation. Progress references only opaque IDs and KIDs.
+enum DirectPixEvpRotationStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model DirectPixEvpRotationJob {
+  id                   String                     @id @default(uuid())
+  encryptionTargetKid  String?                    @map("encryption_target_kid")
+  fingerprintTargetKid String?                    @map("fingerprint_target_kid")
+  status               DirectPixEvpRotationStatus @default(RUNNING)
+  cursorKeyVersionId   String?                    @map("cursor_key_version_id")
+  processedCount       Int                        @default(0) @map("processed_count")
+  createdAt            DateTime                   @default(now()) @map("created_at")
+  updatedAt            DateTime                   @updatedAt @map("updated_at")
+  completedAt          DateTime?                  @map("completed_at")
+
+  @@index([status, createdAt])
+  @@map("direct_pix_evp_rotation_jobs")
+}
+
+/// Immutable, minimum-evidence onsite review decision. The expected holder name remains encrypted.
+enum DirectPixEvpReviewDecision {
+  APPROVE
+  REJECT
+}
+
+enum DirectPixEvpReviewReason {
+  EXACT_NAME_MATCH
+  ABBREVIATED_NAME
+  SOCIAL_NAME
+  CIVIL_NAME_UPDATE
+  HOLDER_NAME_MISMATCH
+  EVP_MISMATCH
+  OTHER_MISMATCH
+}
+
+model DirectPixEvpKeyReview {
+  id                        String                     @id
+  keyVersionId              String                     @map("key_version_id")
+  keyVersion                DirectPixEvpKeyVersion     @relation(fields: [keyVersionId], references: [id], onDelete: Restrict)
+  reviewerUserId            String                     @map("reviewer_user_id")
+  reviewerUser              User                       @relation(fields: [reviewerUserId], references: [id], onDelete: Restrict)
+  reviewerMembershipId      String                     @map("reviewer_membership_id")
+  reviewerMembership        EntityOperatorMembership   @relation(fields: [reviewerMembershipId], references: [id], onDelete: Restrict)
+  sequence                  Int
+  decision                  DirectPixEvpReviewDecision
+  reason                    DirectPixEvpReviewReason
+  expectedNameEncryptionKid String                     @map("expected_name_encryption_kid")
+  expectedNameNonce         String                     @map("expected_name_nonce")
+  expectedNameCiphertext    String                     @map("expected_name_ciphertext")
+  expectedNameTag           String                     @map("expected_name_tag")
+  createdAt                 DateTime                   @default(now()) @map("created_at")
+
+  @@unique([keyVersionId, sequence])
+  @@index([reviewerMembershipId, createdAt])
+  @@map("direct_pix_evp_key_reviews")
 }
 
 model FamilyDependent {
@@ -459,19 +933,19 @@ model DonationMessage {
 }
 
 model Payment {
-  id                String         @id @default(uuid())
-  donationId        String         @unique
+  id                String        @id @default(uuid())
+  donationId        String        @unique
   provider          String // nome do gateway (mock no MVP)
-  method            PaymentMethod  @default(pix)
-  status            PaymentStatus  @default(pending)
+  method            PaymentMethod @default(pix)
+  status            PaymentStatus @default(pending)
   amount            Int
   pixQrCode         String?
   pixCopyPaste      String?
-  externalPaymentId String?        @unique
+  externalPaymentId String?       @unique
   expiresAt         DateTime?
   paidAt            DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   events PaymentEvent[]
 
@@ -597,14 +1071,374 @@ model RecurringSupportIntent {
 }
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  actorUserId String?
-  action      String
-  entityType  String
-  entityId    String?
-  metadata    Json?
-  createdAt   DateTime @default(now())
+  id             String    @id @default(uuid())
+  actorUserId    String?
+  actorRole      UserRole? @map("actor_role")
+  action         String
+  entityType     String
+  entityId       String?
+  channel        String?
+  correlationId  String?   @map("correlation_id")
+  idempotencyKey String?   @map("idempotency_key")
+  result         String?
+  metadata       Json?
+  createdAt      DateTime  @default(now())
 
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
   @@index([entityType, entityId])
   @@map("audit_logs")
+}
+
+model DirectPixTermsVersion {
+  id          String   @id @default(uuid())
+  version     String   @unique
+  title       String
+  statements  Json
+  publishedAt DateTime @map("published_at")
+  effectiveAt DateTime @map("effective_at")
+  isCurrent   Boolean  @default(false) @map("is_current")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  acceptances DirectPixTermsAcceptance[]
+
+  @@map("direct_pix_terms_versions")
+}
+
+model DirectPixTermsAcceptance {
+  id             String                @id @default(uuid())
+  termsVersionId String                @map("terms_version_id")
+  termsVersion   DirectPixTermsVersion @relation(fields: [termsVersionId], references: [id], onDelete: Restrict)
+  version        String
+  actorUserId    String                @map("actor_user_id")
+  actorUser      User                  @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  actorRole      UserRole              @map("actor_role")
+  channel        String
+  correlationId  String                @map("correlation_id")
+  acceptedAt     DateTime              @default(now()) @map("accepted_at")
+
+  @@unique([actorUserId, termsVersionId])
+  @@index([actorUserId, acceptedAt])
+  @@map("direct_pix_terms_acceptances")
+}
+
+model IdempotencyRecord {
+  id             String    @id @default(uuid())
+  actorUserId    String    @map("actor_user_id")
+  actorUser      User      @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  operation      String
+  idempotencyKey String    @map("idempotency_key")
+  requestHash    String    @map("request_hash")
+  resourceType   String?   @map("resource_type")
+  resourceId     String?   @map("resource_id")
+  status         String
+  expiresAt      DateTime  @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  completedAt    DateTime? @map("completed_at")
+
+  @@unique([actorUserId, operation, idempotencyKey])
+  @@index([expiresAt])
+  @@map("idempotency_records")
+}
+
+enum OutboxEventState {
+  PENDING
+  PROCESSING
+  PROCESSED
+  DEAD_LETTER
+}
+
+enum JobRunStatus {
+  CLAIMED
+  PROCESSED
+  RETRIED
+  DEAD_LETTER
+}
+
+/// Transactionally written Direct Pix work. It intentionally stores opaque IDs only.
+model DirectPixIntent {
+  id                      String                        @id @default(uuid())
+  donorId                 String                        @map("donor_id")
+  donor                   User                          @relation(fields: [donorId], references: [id], onDelete: Restrict)
+  familyId                String                        @map("family_id")
+  family                  Family                        @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  responsibleAssignmentId String                        @map("responsible_assignment_id")
+  pixKeyVersionId         String                        @map("pix_key_version_id")
+  pixKeyVersion           DirectPixEvpKeyVersion        @relation(fields: [pixKeyVersionId], references: [id], onDelete: Restrict)
+  amountCents             Int                           @map("amount_cents")
+  txid                    String                        @unique
+  status                  DirectPixIntentStatus         @default(OPEN)
+  cycleStartAt            DateTime                      @map("cycle_start_at")
+  cycleEndAt              DateTime                      @map("cycle_end_at")
+  firstDisclosedAt        DateTime?                     @map("first_disclosed_at")
+  lastDisclosureExpiresAt DateTime?                     @map("last_disclosure_expires_at")
+  declarationDeadlineAt   DateTime                      @map("declaration_deadline_at")
+  cycleId                 String?                       @map("cycle_id")
+  cohortCapturedAt        DateTime?                     @map("cohort_captured_at")
+  declaredAt              DateTime?                     @map("declared_at")
+  confirmationDeadlineAt  DateTime?                     @map("confirmation_deadline_at")
+  createdAt               DateTime                      @default(now()) @map("created_at")
+  disclosureGrants        PixDisclosureGrant[]
+  declaration             DirectPixDeclaration?
+  receiptConfirmation     DirectPixReceiptConfirmation?
+  followUpCases           DirectPixFollowUpCase[]
+  oldQrDeclaration        DirectPixOldQrDeclaration?
+
+  @@index([donorId, createdAt])
+  @@index([familyId, status])
+  @@map("direct_pix_intents")
+}
+
+model PixDisclosureGrant {
+  id             String          @id @default(uuid())
+  intentId       String          @map("intent_id")
+  intent         DirectPixIntent @relation(fields: [intentId], references: [id], onDelete: Restrict)
+  actorUserId    String          @map("actor_user_id")
+  actorUser      User            @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  purpose        String
+  tokenHash      String          @unique @map("token_hash")
+  expiresAt      DateTime        @map("expires_at")
+  revokedAt      DateTime?       @map("revoked_at")
+  lastAccessedAt DateTime?       @map("last_accessed_at")
+  accessCount    Int             @default(0) @map("access_count")
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  @@index([intentId, actorUserId, expiresAt])
+  @@map("pix_disclosure_grants")
+}
+
+model FamilySupportCycle {
+  id           String                   @id @default(uuid())
+  familyId     String                   @map("family_id")
+  family       Family                   @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  cycleStartAt DateTime                 @map("cycle_start_at")
+  cycleEndAt   DateTime                 @map("cycle_end_at")
+  status       FamilySupportCycleStatus @default(IN_PROGRESS)
+  blockedAt    DateTime                 @map("blocked_at")
+  createdAt    DateTime                 @default(now()) @map("created_at")
+
+  @@unique([familyId, cycleStartAt])
+  @@map("family_support_cycles")
+}
+
+model DirectPixDeclaration {
+  id               String                            @id @default(uuid())
+  intentId         String                            @unique @map("intent_id")
+  intent           DirectPixIntent                   @relation(fields: [intentId], references: [id], onDelete: Restrict)
+  declaredByUserId String                            @map("declared_by_user_id")
+  declaredByUser   User                              @relation(fields: [declaredByUserId], references: [id], onDelete: Restrict)
+  declaredAt       DateTime                          @default(now()) @map("declared_at")
+  cancellation     DirectPixDeclarationCancellation?
+
+  @@map("direct_pix_declarations")
+}
+
+/// Immutable withdrawal; the donor declaration remains auditable.
+model DirectPixDeclarationCancellation {
+  id               String                                 @id @default(uuid())
+  declarationId    String                                 @unique @map("declaration_id")
+  declaration      DirectPixDeclaration                   @relation(fields: [declarationId], references: [id], onDelete: Restrict)
+  canceledByUserId String                                 @map("canceled_by_user_id")
+  canceledByUser   User                                   @relation(fields: [canceledByUserId], references: [id], onDelete: Restrict)
+  reason           DirectPixDeclarationCancellationReason
+  canceledAt       DateTime                               @default(now()) @map("canceled_at")
+
+  @@map("direct_pix_declaration_cancellations")
+}
+
+/// An immutable family statement, never a bank-settlement assertion.
+model DirectPixReceiptConfirmation {
+  id                          String                    @id @default(uuid())
+  intentId                    String                    @unique @map("intent_id")
+  intent                      DirectPixIntent           @relation(fields: [intentId], references: [id], onDelete: Restrict)
+  responsibleAssignmentId     String                    @map("responsible_assignment_id")
+  outcome                     DirectPixReceiptOutcome
+  receivedAmountCents         Int?                      @map("received_amount_cents")
+  declaredByResponsibleUserId String                    @map("declared_by_responsible_user_id")
+  declaredByResponsibleUser   User                      @relation("DirectPixReceiptDeclarant", fields: [declaredByResponsibleUserId], references: [id], onDelete: Restrict)
+  recordedByOperatorUserId    String?                   @map("recorded_by_operator_user_id")
+  recordedByOperatorUser      User?                     @relation("DirectPixReceiptOperator", fields: [recordedByOperatorUserId], references: [id], onDelete: Restrict)
+  assistedChannel             DirectPixAssistedChannel? @map("assisted_channel")
+  respondedAt                 DateTime                  @default(now()) @map("responded_at")
+
+  @@index([responsibleAssignmentId, respondedAt])
+  @@map("direct_pix_receipt_confirmations")
+}
+
+/// Entity-visible exception with structured reason and no financial evidence.
+model DirectPixFollowUpCase {
+  id           String                      @id @default(uuid())
+  intentId     String                      @map("intent_id")
+  intent       DirectPixIntent             @relation(fields: [intentId], references: [id], onDelete: Restrict)
+  familyId     String                      @map("family_id")
+  family       Family                      @relation(fields: [familyId], references: [id], onDelete: Restrict)
+  reason       DirectPixFollowUpReason
+  status       DirectPixFollowUpCaseStatus @default(OPEN)
+  openedAt     DateTime                    @default(now()) @map("opened_at")
+  slaStartedAt DateTime?                   @map("sla_started_at")
+  escalatedAt  DateTime?                   @map("escalated_at")
+
+  @@index([familyId, status, openedAt])
+  @@index([intentId, status])
+  @@map("direct_pix_follow_up_cases")
+}
+
+enum DirectPixSuspensionScope {
+  KEY
+  FAMILY
+  ENTITY
+  DONOR_ACCOUNT
+  RESPONSIBLE_ACCOUNT
+}
+
+model DirectPixSuspension {
+  id           String                   @id @default(uuid())
+  scope        DirectPixSuspensionScope
+  keyVersionId String?                  @map("key_version_id")
+  keyVersion   DirectPixEvpKeyVersion?  @relation(fields: [keyVersionId], references: [id], onDelete: Restrict)
+  familyId     String?                  @map("family_id")
+  family       Family?                  @relation("DirectPixSuspensionFamily", fields: [familyId], references: [id], onDelete: Restrict)
+  entityId     String?                  @map("entity_id")
+  entity       Entity?                  @relation("DirectPixSuspensionEntity", fields: [entityId], references: [id], onDelete: Restrict)
+  userId       String?                  @map("user_id")
+  user         User?                    @relation("DirectPixSuspensionSubject", fields: [userId], references: [id], onDelete: Restrict)
+  reasonCode   String                   @map("reason_code")
+  expiresAt    DateTime?                @map("expires_at")
+  revokedAt    DateTime?                @map("revoked_at")
+  actorUserId  String                   @map("actor_user_id")
+  actorUser    User                     @relation("DirectPixSuspensionActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  createdAt    DateTime                 @default(now()) @map("created_at")
+
+  @@index([scope, expiresAt, revokedAt])
+  @@index([familyId, expiresAt])
+  @@index([entityId, expiresAt])
+  @@index([userId, expiresAt])
+  @@index([keyVersionId, expiresAt])
+  @@map("direct_pix_suspensions")
+}
+
+model DirectPixBreakGlassGrant {
+  id            String                 @id @default(uuid())
+  actorUserId   String                 @map("actor_user_id")
+  actorUser     User                   @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  keyVersionId  String                 @map("key_version_id")
+  keyVersion    DirectPixEvpKeyVersion @relation(fields: [keyVersionId], references: [id], onDelete: Restrict)
+  purposeCode   String                 @map("purpose_code")
+  tokenHash     String                 @unique @map("token_hash")
+  correlationId String                 @map("correlation_id")
+  expiresAt     DateTime               @map("expires_at")
+  revokedAt     DateTime?              @map("revoked_at")
+  consumedAt    DateTime?              @map("consumed_at")
+  createdAt     DateTime               @default(now()) @map("created_at")
+
+  @@index([actorUserId, keyVersionId, expiresAt])
+  @@index([expiresAt])
+  @@map("direct_pix_break_glass_grants")
+}
+
+/// Donor-declared historical transfer made with a saved/expired direct-Pix QR.
+/// It is not settlement evidence and deliberately has no upload or payment relation.
+model DirectPixOldQrDeclaration {
+  id                String          @id @default(uuid())
+  sourceIntentId    String          @unique @map("source_intent_id")
+  sourceIntent      DirectPixIntent @relation(fields: [sourceIntentId], references: [id], onDelete: Restrict)
+  declaredByUserId  String          @map("declared_by_user_id")
+  amountCents       Int             @map("amount_cents")
+  approximateSentAt DateTime        @map("approximate_sent_at")
+  pixKeyVersionId   String          @map("pix_key_version_id")
+  sourceCycleId     String?         @map("source_cycle_id")
+  reasonCode        String          @default("SAVED_QR_CODE") @map("reason_code")
+  createdAt         DateTime        @default(now()) @map("created_at")
+
+  @@index([declaredByUserId, createdAt])
+  @@map("direct_pix_old_qr_declarations")
+}
+
+/// A subject-owned Direct Pix deactivation request. It does not delete financial
+/// history and deliberately has no relation to legacy payments or donations.
+model DirectPixPrivacyDeactivation {
+  id          String    @id @default(uuid())
+  userId      String    @unique @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  requestedAt DateTime  @default(now()) @map("requested_at")
+  completedAt DateTime? @map("completed_at")
+
+  @@index([requestedAt])
+  @@map("direct_pix_privacy_deactivations")
+}
+
+/// An explicit legal preservation instruction. Holds are scoped to a Direct Pix
+/// data subject so cleanup never relies on an implicit or undocumented exception.
+model DirectPixLegalHold {
+  id            String    @id @default(uuid())
+  subjectUserId String    @map("subject_user_id")
+  subjectUser   User      @relation("DirectPixLegalHoldSubject", fields: [subjectUserId], references: [id], onDelete: Restrict)
+  reference     String
+  createdAt     DateTime  @default(now()) @map("created_at")
+  releasedAt    DateTime? @map("released_at")
+
+  @@index([subjectUserId, releasedAt])
+  @@map("direct_pix_legal_holds")
+}
+
+model OutboxEvent {
+  id             String              @id @default(uuid())
+  eventType      String              @map("event_type")
+  aggregateType  String              @map("aggregate_type")
+  aggregateId    String              @map("aggregate_id")
+  dedupeKey      String              @unique @map("dedupe_key")
+  availableAt    DateTime            @default(now()) @map("available_at")
+  attempts       Int                 @default(0)
+  state          OutboxEventState    @default(PENDING)
+  lockedAt       DateTime?           @map("locked_at")
+  lockedBy       String?             @map("locked_by")
+  leaseExpiresAt DateTime?           @map("lease_expires_at")
+  lastErrorCode  String?             @map("last_error_code")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  processedAt    DateTime?           @map("processed_at")
+  jobRuns        JobRun[]
+  notifications  InAppNotification[]
+
+  @@index([state, availableAt])
+  @@index([state, leaseExpiresAt])
+  @@index([availableAt, processedAt])
+  @@map("outbox_events")
+}
+
+/// Canonical in-app notification, idempotent per outbox event and intentionally content-free.
+model InAppNotification {
+  id              String      @id @default(uuid())
+  outboxEventId   String      @unique @map("outbox_event_id")
+  outboxEvent     OutboxEvent @relation(fields: [outboxEventId], references: [id], onDelete: Cascade)
+  recipientUserId String      @map("recipient_user_id")
+  recipientUser   User        @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
+  eventType       String      @map("event_type")
+  aggregateType   String      @map("aggregate_type")
+  aggregateId     String      @map("aggregate_id")
+  emailSentAt     DateTime?   @map("email_sent_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  @@index([recipientUserId, createdAt])
+  @@map("in_app_notifications")
+}
+
+/// Operational record containing timings and stable codes only; never PII, EVP, QR or free text.
+model JobRun {
+  id             String       @id @default(uuid())
+  jobName        String       @map("job_name")
+  outboxEventId  String       @map("outbox_event_id")
+  outboxEvent    OutboxEvent  @relation(fields: [outboxEventId], references: [id], onDelete: Cascade)
+  scheduledFor   DateTime     @map("scheduled_for")
+  leaseOwner     String       @map("lease_owner")
+  leaseExpiresAt DateTime     @map("lease_expires_at")
+  attempt        Int
+  status         JobRunStatus @default(CLAIMED)
+  startedAt      DateTime     @default(now()) @map("started_at")
+  completedAt    DateTime?    @map("completed_at")
+  durationMs     Int?         @map("duration_ms")
+  errorCode      String?      @map("error_code")
+
+  @@index([jobName, startedAt])
+  @@index([outboxEventId, attempt])
+  @@map("job_runs")
 }

@@ -9,6 +9,7 @@ export function toPublicUser(u: User) {
     id: u.id,
     name: u.name,
     email: u.email,
+    emailVerifiedAt: u.emailVerifiedAt,
     role: u.role,
     avatarUrl: u.avatarUrl,
     instagram: u.instagram,

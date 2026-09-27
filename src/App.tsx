@@ -26,8 +26,12 @@ import Unauthorized from './pages/Unauthorized';
 import Register from './pages/Register';
 import IndicateFamily from './pages/IndicateFamily';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import AdminDashboard from './pages/AdminDashboard';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import DirectPixTerms from './pages/DirectPixTerms';
+import EmailVerification from './pages/EmailVerification';
+import EntityOperatorInvitation from './pages/EntityOperatorInvitation';
 
 import './App.css';
 
@@ -53,7 +57,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   useNativeBackButton();
 
   // We hide the bottom tab bar on certain screens
-  const hideTabBarRoutes = ['/auth', '/register', '/forgot-password', '/donate', '/success', '/unauthorized', '/admin', '/privacy'];
+  const hideTabBarRoutes = ['/auth', '/register', '/forgot-password', '/reset-password', '/donate', '/success', '/unauthorized', '/admin', '/privacy', '/direct-pix/terms', '/verify-email', '/entity-operator-invitation'];
   const isHiddenRoute = hideTabBarRoutes.some(route => location.pathname.startsWith(route));
 
   // Hide if beneficiary or admin (they have their own navigation or are simple)
@@ -80,6 +84,7 @@ function App() {
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/unauthorized" element={<Unauthorized />} />
             
             {/* Common Public/Semi-Public Routes (Restricted for Beneficiaries) */}
@@ -94,6 +99,9 @@ function App() {
             <Route path="/explore" element={<PrivateRoute allowedRoles={['donor']}><Explore /></PrivateRoute>} />
             <Route path="/map" element={<PrivateRoute allowedRoles={['donor']}><MapView /></PrivateRoute>} />
             <Route path="/donate" element={<PrivateRoute allowedRoles={['donor']}><DonationChoice /></PrivateRoute>} />
+            <Route path="/direct-pix/terms" element={<PrivateRoute allowedRoles={['donor']}><DirectPixTerms /></PrivateRoute>} />
+            <Route path="/verify-email" element={<PrivateRoute><EmailVerification /></PrivateRoute>} />
+            <Route path="/entity-operator-invitation" element={<PrivateRoute><EntityOperatorInvitation /></PrivateRoute>} />
             <Route path="/big-donation" element={<PrivateRoute allowedRoles={['donor']}><BigDonation /></PrivateRoute>} />
             <Route path="/success" element={<PrivateRoute allowedRoles={['donor']}><Success /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />

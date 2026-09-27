@@ -4,8 +4,10 @@ import { createAuditLog } from '../auditLogs/auditLog.service';
 import { wasFedThisCycle, wasRequestedThisCycle } from '../../shared/utils/feedCycle';
 import { fulfillPaidDonation } from './donationFulfillment.service';
 import { resolveGiftCardProvider } from '../giftCards/providers';
-import type { GiftCardProvider, UserRole, Family } from '@prisma/client';
+import { Prisma, type GiftCardProvider, type UserRole, type Family } from '@prisma/client';
 import type { CreateDonationInput } from './donations.validator';
+import { resolveEntityAuthority } from '../entities/entityAuthority.service';
+import { assertLegacyWriteAllowed } from '../directPix/featureFlags.service';
 
 export interface Actor {
   userId: string;
@@ -56,6 +58,7 @@ async function loadEligibleFamily(familyId: string): Promise<FamilyWithDeps> {
  */
 export async function createDonationIntent(donorUserId: string, input: CreateDonationInput) {
   const family = await loadEligibleFamily(input.familyId);
+  await assertLegacyWriteAllowed(family.id, family.entityId);
 
   // Bloqueio diário (autoritativo): 1 doação/família por ciclo (reset 08h SP).
   if (wasFedThisCycle(family.lastFedAt)) {
@@ -75,15 +78,21 @@ export async function createDonationIntent(donorUserId: string, input: CreateDon
     throw new AppError(`Sem códigos disponíveis para ${provider}.`, 409, 'no_stock');
   }
 
-  const donation = await prisma.donation.create({
-    data: {
-      donorId: donorUserId,
-      familyId: family.id,
-      amount: input.amount,
-      provider,
-      status: 'pending_payment',
-    },
-  });
+  // Re-evaluate the scoped cutover in the same serializable transaction as the
+  // legacy INSERT. A concurrent drain/apply can therefore never slip a new
+  // Donation through after it has enabled LEGACY_WRITE.
+  const donation = await prisma.$transaction(async (tx) => {
+    await assertLegacyWriteAllowed(family.id, family.entityId, tx);
+    return tx.donation.create({
+      data: {
+        donorId: donorUserId,
+        familyId: family.id,
+        amount: input.amount,
+        provider,
+        status: 'pending_payment',
+      },
+    });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
   await createAuditLog({
     actorUserId: donorUserId,
@@ -166,8 +175,8 @@ export async function getDonationForActor(actor: Actor, donationId: string) {
     return { donation, family, view: 'donor' as const };
   }
   if (actor.role === 'entity') {
-    const entity = await prisma.entity.findUnique({ where: { userId: actor.userId } });
-    if (!entity || family?.entityId !== entity.id) throw new AppError('Acesso negado', 403, 'forbidden');
+    const authority = await resolveEntityAuthority(actor.userId, 'families.read');
+    if (family?.entityId !== authority.entityId) throw new AppError('Doação não encontrada', 404, 'donation_not_found');
     return { donation, family, view: 'admin' as const };
   }
   throw new AppError('Acesso negado', 403, 'forbidden');
@@ -197,8 +206,8 @@ export async function listFamilyDonations(actor: Actor, familyId: string) {
   });
   if (!family) throw new AppError('Família não encontrada', 404, 'family_not_found');
   if (actor.role === 'entity') {
-    const entity = await prisma.entity.findUnique({ where: { userId: actor.userId } });
-    if (!entity || family.entityId !== entity.id) throw new AppError('Acesso negado', 403, 'forbidden');
+    const authority = await resolveEntityAuthority(actor.userId, 'families.read');
+    if (family.entityId !== authority.entityId) throw new AppError('Família não encontrada', 404, 'family_not_found');
   } else if (actor.role !== 'admin') {
     throw new AppError('Acesso negado', 403, 'forbidden');
   }

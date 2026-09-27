@@ -7,6 +7,8 @@ import { findRegionByCityState } from '../regions/regions.service';
 import { resolveCommunity } from '../regions/communities.service';
 import type { UserRole, GiftCardProvider } from '@prisma/client';
 import type { CreateFamilyInput, UpdateFamilyInput, ListFamiliesQuery } from './families.validator';
+import { resolveEntityAuthority } from '../entities/entityAuthority.service';
+import { dataSafetyPolicy } from '../../config/dataSafetyPolicy';
 
 export interface Actor {
   userId: string;
@@ -53,10 +55,8 @@ async function resolveLocation(
 }
 
 /** Resolve a entidade do usuário logado (papel entity). 403 se não houver. */
-async function resolveActorEntityId(actor: Actor): Promise<string> {
-  const entity = await prisma.entity.findUnique({ where: { userId: actor.userId } });
-  if (!entity) throw new AppError('Perfil de entidade não encontrado', 403, 'no_entity_profile');
-  return entity.id;
+async function resolveActorEntityId(actor: Actor, permission: 'families.read' | 'families.write' = 'families.read'): Promise<string> {
+  return (await resolveEntityAuthority(actor.userId, permission)).entityId;
 }
 
 /** Carrega a família e garante que o ator (entity) é dono; admin sempre passa. */
@@ -65,16 +65,19 @@ async function loadOwnedFamily(actor: Actor, id: string) {
   if (!family) throw new AppError('Família não encontrada', 404, 'family_not_found');
   if (actor.role === 'admin') return family;
   if (actor.role === 'entity') {
-    const entityId = await resolveActorEntityId(actor);
-    if (family.entityId !== entityId) throw new AppError('Acesso negado', 403, 'forbidden');
-    return family;
+    const entityId = await resolveActorEntityId(actor, 'families.write');
+    const owned = await prisma.family.findFirst({ where: { id, entityId }, include: familyInclude });
+    if (!owned) throw new AppError('Família não encontrada', 404, 'family_not_found');
+    return owned;
   }
   throw new AppError('Acesso negado', 403, 'forbidden');
 }
 
 export async function createFamily(actor: Actor, input: CreateFamilyInput) {
+  // Reject before authorization, parsing helpers, or persistence can observe family data.
+  dataSafetyPolicy.assertFamilyDataCollectionAllowed();
   let entityId: string | null = null;
-  if (actor.role === 'entity') entityId = await resolveActorEntityId(actor);
+  if (actor.role === 'entity') entityId = await resolveActorEntityId(actor, 'families.write');
   else if (actor.role === 'admin') entityId = input.entityId ?? null;
   else throw new AppError('Acesso negado', 403, 'forbidden');
 
@@ -163,8 +166,9 @@ export async function getFamilyForActor(actor: Actor, id: string) {
   if (actor.role === 'admin') return { family, view: 'managed' as const };
   if (actor.role === 'entity') {
     const entityId = await resolveActorEntityId(actor);
-    if (family.entityId !== entityId) throw new AppError('Acesso negado', 403, 'forbidden');
-    return { family, view: 'managed' as const };
+    const owned = await prisma.family.findFirst({ where: { id, entityId }, include: familyInclude });
+    if (!owned) throw new AppError('Família não encontrada', 404, 'family_not_found');
+    return { family: owned, view: 'managed' as const };
   }
   // Doador só enxerga família aprovada (e sem PII).
   if (family.approvalStatus !== 'approved') {
@@ -174,6 +178,8 @@ export async function getFamilyForActor(actor: Actor, id: string) {
 }
 
 export async function updateFamily(actor: Actor, id: string, input: UpdateFamilyInput) {
+  // Updates carry the same protected family data as creation in non-production.
+  dataSafetyPolicy.assertFamilyDataCollectionAllowed();
   const current = await loadOwnedFamily(actor, id);
 
   // Mudar cidade ou comunidade tem que mover a família no mapa. Os campos

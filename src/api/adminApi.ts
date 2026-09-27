@@ -1,5 +1,6 @@
 import { apiRequest } from './apiClient';
 import type { PublicDonorProfile } from '../backend/types';
+import type { EntityOperatorSummary } from './entityApi';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Contrato REAL do backend (montado em /admin — somente role admin):
@@ -34,6 +35,7 @@ export interface ImportGiftCardsPayload {
 export const adminApi = {
   // ─── Entidades ───
   listEntities: () => apiRequest('/admin/entities', 'GET'),
+  listEntityOperators: (entityId: string) => apiRequest<{ operators: EntityOperatorSummary[] }>(`/admin/entities/${entityId}/operators`, 'GET'),
   approveEntity: (entityId: string) => apiRequest(`/admin/entities/${entityId}/approve`, 'POST'),
   blockEntity: (entityId: string) => apiRequest(`/admin/entities/${entityId}/block`, 'POST'),
   getAuditLogs: (limit = 100) => apiRequest(`/admin/audit-logs?limit=${limit}`, 'GET'),

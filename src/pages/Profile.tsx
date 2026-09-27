@@ -334,7 +334,18 @@ const Profile: React.FC = () => {
                 : 'Apoiador'}
             </div>
             {isOwnProfile && (
-              <p className="user-email text-outline">{user.email || user.phone}</p>
+              <>
+                <p className="user-email text-outline">{user.email || user.phone}</p>
+                {user.email && (
+                  <button
+                    type="button"
+                    className={user.emailVerifiedAt ? 'email-verification-badge verified' : 'email-verification-badge pending'}
+                    onClick={() => navigate('/verify-email')}
+                  >
+                    {user.emailVerifiedAt ? 'E-mail verificado' : 'Verificar e-mail'}
+                  </button>
+                )}
+              </>
             )}
           </div>
         </section>
@@ -752,6 +763,26 @@ const Profile: React.FC = () => {
                 onChange={(e) => updateUserPrivacy({ anonymousMode: e.target.checked })}
               />
            </div>
+
+           <Button
+             variant="ghost"
+             className="menu-btn mt-2"
+             icon={<ShieldCheck size={20} className={user.emailVerifiedAt ? 'text-success' : 'text-outline'} />}
+             onClick={() => { setIsSettingsOpen(false); navigate('/verify-email'); }}
+           >
+             {user.emailVerifiedAt ? 'E-mail verificado' : 'Verificar e-mail'}
+           </Button>
+
+           {user.role === 'donor' && (
+             <Button
+               variant="ghost"
+               className="menu-btn mt-2"
+               icon={<ShieldCheck size={20} className="text-outline" />}
+               onClick={() => { setIsSettingsOpen(false); navigate('/direct-pix/terms'); }}
+             >
+               Termos do Pix direto
+             </Button>
+           )}
 
            <Button
              variant="ghost"
