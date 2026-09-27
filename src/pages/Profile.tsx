@@ -753,6 +753,17 @@ const Profile: React.FC = () => {
               />
            </div>
 
+           {user.role === 'donor' && (
+             <Button
+               variant="ghost"
+               className="menu-btn mt-2"
+               icon={<ShieldCheck size={20} className="text-outline" />}
+               onClick={() => { setIsSettingsOpen(false); navigate('/direct-pix/terms'); }}
+             >
+               Termos do Pix direto
+             </Button>
+           )}
+
            <Button
              variant="ghost"
              className="menu-btn mt-2"

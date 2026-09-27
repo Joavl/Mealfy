@@ -2,7 +2,7 @@ import { getToken } from './tokenStorage';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data: T;
   status: number;
 }
@@ -28,18 +28,20 @@ export class ApiNetworkError extends Error {
   }
 }
 
+// Legacy callers still rely on inference from an untyped response; typed new APIs should pass T explicitly.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function apiRequest<T = any>(
   endpoint: string,
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET',
-  body?: any
+  body?: unknown,
+  additionalHeaders?: HeadersInit,
 ): Promise<T> {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+  const headers = new Headers(additionalHeaders);
+  headers.set('Content-Type', 'application/json');
 
   const token = await getToken();
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers.set('Authorization', `Bearer ${token}`);
   }
 
   let response: Response;
@@ -56,7 +58,7 @@ export async function apiRequest<T = any>(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    console.warn(`[API] ERROR ${response.status}: ${method} ${endpoint}`, errorData);
+    console.warn(`[API] ERROR ${response.status}: ${method} ${endpoint}`, { code: errorData.code });
     throw new ApiError(errorData.message || `Erro ${response.status}`, response.status, errorData.code);
   }
 

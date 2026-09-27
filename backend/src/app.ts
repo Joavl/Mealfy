@@ -18,6 +18,7 @@ import { beneficiaryRoutes } from './modules/beneficiary/beneficiary.routes';
 import { paymentsRoutes } from './modules/payments/payments.routes';
 import { rankingRoutes } from './modules/ranking/ranking.routes';
 import { regionsRoutes } from './modules/regions/regions.routes';
+import { directPixRoutes } from './modules/directPix/directPix.routes';
 import { notFoundHandler } from './shared/middlewares/notFound';
 import { errorHandler } from './shared/middlewares/errorHandler';
 
@@ -52,6 +53,14 @@ export function createApp(): Application {
   });
   app.use('/auth/login', authLimiter);
   app.use('/auth/register', authLimiter);
+  // Short window on reset endpoints limits reset-email abuse and token guessing.
+  app.use('/auth/password-reset', rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Muitas tentativas. Aguarde alguns minutos.', code: 'rate_limited' },
+  }));
 
   // Rate limit no webhook Pix (é público; a autenticação real é a assinatura HMAC)
   const webhookLimiter = rateLimit({
@@ -87,6 +96,7 @@ export function createApp(): Application {
   app.use('/beneficiary', beneficiaryRoutes);
   app.use('/ranking', rankingRoutes);
   app.use('/regions', regionsRoutes);
+  app.use('/direct-pix', directPixRoutes);
   app.use('/admin', adminRoutes);
   app.use('/admin', giftCardsRoutes);
 

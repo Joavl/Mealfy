@@ -139,36 +139,58 @@ enum OAuthProvider {
 // ─────────────────────────── MODELS ───────────────────────────
 
 model User {
-  id           String     @id @default(uuid())
-  name         String
-  email        String     @unique
-  passwordHash String?
-  role         UserRole
-  avatarUrl    String?
-  instagram    String?
-  phone        String?
+  id             String     @id @default(uuid())
+  name           String
+  email          String     @unique
+  passwordHash   String?
+  // Incremented on password reset; invalidates JWTs issued before the reset.
+  sessionVersion Int        @default(0)
+  role           UserRole
+  avatarUrl      String?
+  instagram      String?
+  phone          String?
   // CPF verificado pelo Gov.br (só preenchido em login social Gov.br). Único quando presente.
-  cpf          String?    @unique
-  status       UserStatus @default(active)
+  cpf            String?    @unique
+  status         UserStatus @default(active)
   // Preferências de visibilidade no ranking — opt-in explícito (default: não aparece)
-  showOnRanking Boolean   @default(false)
-  showInstagram Boolean   @default(false)
-  anonymousMode Boolean   @default(false)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  showOnRanking  Boolean    @default(false)
+  showInstagram  Boolean    @default(false)
+  anonymousMode  Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
-  donorProfile        DonorProfile?
-  entity              Entity?
-  favorites           Favorite[]
-  beneficiaryFamilies Family[]      @relation("FamilyBeneficiary")
-  oauthAccounts       OAuthAccount[]
-  rankingStory        RankingStory?
+  donorProfile              DonorProfile?
+  entity                    Entity?
+  favorites                 Favorite[]
+  beneficiaryFamilies       Family[]                   @relation("FamilyBeneficiary")
+  oauthAccounts             OAuthAccount[]
+  rankingStory              RankingStory?
+  passwordResetTokens       PasswordResetToken[]
+  directPixTermsAcceptances DirectPixTermsAcceptance[]
+  idempotencyRecords        IdempotencyRecord[]
 
   @@map("users")
 }
 
 /// Identidade social vinculada a um usuário. Um usuário pode ter vários provedores
 /// (Google, Facebook, Apple, Gov.br) apontando para a mesma conta Mealfy.
+
+/// Reset-password proof: only a SHA-256 digest is persisted, so a database
+/// disclosure cannot be used directly as a reset link. A token is single use.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
 model OAuthAccount {
   id             String        @id @default(uuid())
   provider       OAuthProvider
@@ -241,26 +263,26 @@ model Entity {
 /// O bairro/comunidade continua sendo texto livre em `Family` — é informação
 /// que o IBGE não fornece e que só quem cadastra conhece.
 model Region {
-  id        String  @id @default(uuid())
+  id         String   @id @default(uuid())
   /// Código IBGE do município (7 dígitos). Identidade estável e oficial.
-  ibgeCode  Int     @unique
-  name      String
+  ibgeCode   Int      @unique
+  name       String
   /// Nome sem acento e em minúsculas, só para busca.
   ///
   /// `contains` com `mode: insensitive` resolve caixa, mas NÃO acento: quem
   /// digitasse "sao paulo" não encontrava "São Paulo" — inaceitável, já que a
   /// maioria dos municípios brasileiros tem acento. Coluna dedicada resolve sem
   /// depender da extensão `unaccent` do Postgres.
-  nameSearch String @default("")
+  nameSearch String   @default("")
   /// UF em duas letras (SP, RJ...).
-  state     String
+  state      String
   /// Centroide da malha do IBGE. Nulo até ser buscado sob demanda: são 5.571
   /// municípios e baixar a geometria de todos de uma vez seria lento e inútil,
   /// já que só interessa onde existe família.
-  latitude  Float?
-  longitude Float?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  latitude   Float?
+  longitude  Float?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   families    Family[]
   communities Community[]
@@ -375,7 +397,7 @@ model Family {
   lastDonorInstagram        String?
   lastGiftCardProvider      GiftCardProvider?
   verificationStatus        FamilyVerificationStatus @default(unverified)
-  approvalStatus            FamilyApprovalStatus      @default(pending)
+  approvalStatus            FamilyApprovalStatus     @default(pending)
   dataSource                DataSource               @default(manual)
   socialDescription         String?
   needToday                 Boolean                  @default(true)
@@ -459,19 +481,19 @@ model DonationMessage {
 }
 
 model Payment {
-  id                String         @id @default(uuid())
-  donationId        String         @unique
+  id                String        @id @default(uuid())
+  donationId        String        @unique
   provider          String // nome do gateway (mock no MVP)
-  method            PaymentMethod  @default(pix)
-  status            PaymentStatus  @default(pending)
+  method            PaymentMethod @default(pix)
+  status            PaymentStatus @default(pending)
   amount            Int
   pixQrCode         String?
   pixCopyPaste      String?
-  externalPaymentId String?        @unique
+  externalPaymentId String?       @unique
   expiresAt         DateTime?
   paidAt            DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   events PaymentEvent[]
 
@@ -597,14 +619,87 @@ model RecurringSupportIntent {
 }
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  actorUserId String?
-  action      String
-  entityType  String
-  entityId    String?
-  metadata    Json?
-  createdAt   DateTime @default(now())
+  id             String    @id @default(uuid())
+  actorUserId    String?
+  actorRole      UserRole? @map("actor_role")
+  action         String
+  entityType     String
+  entityId       String?
+  channel        String?
+  correlationId  String?   @map("correlation_id")
+  idempotencyKey String?   @map("idempotency_key")
+  result         String?
+  metadata       Json?
+  createdAt      DateTime  @default(now())
 
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
   @@index([entityType, entityId])
   @@map("audit_logs")
+}
+
+model DirectPixTermsVersion {
+  id          String   @id @default(uuid())
+  version     String   @unique
+  title       String
+  statements  Json
+  publishedAt DateTime @map("published_at")
+  effectiveAt DateTime @map("effective_at")
+  isCurrent   Boolean  @default(false) @map("is_current")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  acceptances DirectPixTermsAcceptance[]
+
+  @@map("direct_pix_terms_versions")
+}
+
+model DirectPixTermsAcceptance {
+  id             String                @id @default(uuid())
+  termsVersionId String                @map("terms_version_id")
+  termsVersion   DirectPixTermsVersion @relation(fields: [termsVersionId], references: [id], onDelete: Restrict)
+  version        String
+  actorUserId    String                @map("actor_user_id")
+  actorUser      User                  @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  actorRole      UserRole              @map("actor_role")
+  channel        String
+  correlationId  String                @map("correlation_id")
+  acceptedAt     DateTime              @default(now()) @map("accepted_at")
+
+  @@unique([actorUserId, termsVersionId])
+  @@index([actorUserId, acceptedAt])
+  @@map("direct_pix_terms_acceptances")
+}
+
+model IdempotencyRecord {
+  id             String    @id @default(uuid())
+  actorUserId    String    @map("actor_user_id")
+  actorUser      User      @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  operation      String
+  idempotencyKey String    @map("idempotency_key")
+  requestHash    String    @map("request_hash")
+  resourceType   String?   @map("resource_type")
+  resourceId     String?   @map("resource_id")
+  status         String
+  expiresAt      DateTime  @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  completedAt    DateTime? @map("completed_at")
+
+  @@unique([actorUserId, operation, idempotencyKey])
+  @@index([expiresAt])
+  @@map("idempotency_records")
+}
+
+model OutboxEvent {
+  id            String    @id @default(uuid())
+  eventType     String    @map("event_type")
+  aggregateType String    @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id")
+  dedupeKey     String    @unique @map("dedupe_key")
+  availableAt   DateTime  @default(now()) @map("available_at")
+  attempts      Int       @default(0)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  processedAt   DateTime? @map("processed_at")
+
+  @@index([availableAt, processedAt])
+  @@map("outbox_events")
 }
