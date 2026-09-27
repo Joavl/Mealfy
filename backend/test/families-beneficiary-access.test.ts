@@ -3,6 +3,12 @@ import { after, before, test } from 'node:test';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 
+process.env.APP_ENV = 'ci';
+process.env.NODE_ENV = 'test';
+process.env.DIRECT_PIX_MODE = 'synthetic';
+process.env.DIRECT_PIX_SYNTHETIC_EVPS = '00000000-0000-0000-0000-000000000001';
+process.env.EMAIL_DELIVERY_MODE = 'capture';
+process.env.EMAIL_CAPTURE_DIR = '.tmp/test-mail';
 process.env.JWT_SECRET = 'test-secret-for-family-access';
 
 // Dependencies are loaded after configuring the JWT used by authGuard.
@@ -10,6 +16,8 @@ process.env.JWT_SECRET = 'test-secret-for-family-access';
 const express = require('express') as typeof import('express');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const jwt = require('jsonwebtoken') as typeof import('jsonwebtoken');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { prisma } = require('../src/database/prisma') as typeof import('../src/database/prisma');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { familiesRoutes } = require('../src/modules/families/families.routes') as typeof import('../src/modules/families/families.routes');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -19,6 +27,11 @@ let server: http.Server;
 let baseUrl: string;
 
 before(async () => {
+  // The guard validates the database-backed session version. This focused routing
+  // test uses an in-memory stub rather than requiring a PostgreSQL instance.
+  prisma.user.findUnique = async () => ({
+    id: 'beneficiary-a', role: 'beneficiary', status: 'active', sessionVersion: 0,
+  });
   const app = express();
   app.use('/families', familiesRoutes);
   app.use(errorHandler);
@@ -33,7 +46,7 @@ after(async () => {
 });
 
 function beneficiaryAuthorization(): string {
-  const token = jwt.sign({ sub: 'beneficiary-a', role: 'beneficiary' }, process.env.JWT_SECRET!);
+  const token = jwt.sign({ sub: 'beneficiary-a', role: 'beneficiary', sv: 0 }, process.env.JWT_SECRET!);
   return `Bearer ${token}`;
 }
 

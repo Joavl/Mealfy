@@ -57,7 +57,12 @@ published_port="$("${COMPOSE[@]}" port "$SERVICE" 5432 | tail -n 1 | sed 's/.*:/
 [[ "$published_port" =~ ^[0-9]+$ ]] \
   || fail 'Docker Compose did not publish a usable PostgreSQL port.'
 
+export APP_ENV=ci
 export NODE_ENV=test
+export DIRECT_PIX_MODE=synthetic
+export DIRECT_PIX_SYNTHETIC_EVPS='00000000-0000-0000-0000-000000000001'
+export EMAIL_DELIVERY_MODE=capture
+export EMAIL_CAPTURE_DIR=.tmp/e2e-mail
 export JWT_SECRET='mealfy-e2e-isolated-secret'
 export DATABASE_URL="postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@127.0.0.1:${published_port}/${DATABASE_NAME}?schema=public"
 export DIRECT_URL="$DATABASE_URL"

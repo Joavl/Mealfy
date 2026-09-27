@@ -18,10 +18,16 @@ import {
 } from '@prisma/client';
 import { encryptGiftCardCode } from '../src/shared/crypto/crypto.service';
 
+const seedEnvironment = process.env.APP_ENV;
+const ALLOWED_SEED_ENVIRONMENTS = new Set(['development', 'ci', 'demo', 'staging']);
+if (!seedEnvironment || !ALLOWED_SEED_ENVIRONMENTS.has(seedEnvironment) || process.env.DIRECT_PIX_MODE !== 'synthetic') {
+  throw new Error('[seed] refused: requires a valid non-production APP_ENV and DIRECT_PIX_MODE=synthetic');
+}
+
 const prisma = new PrismaClient();
 
 // Senha única de DEV para todas as contas seedadas (nunca usar em produção).
-const DEV_PASSWORD = '123456';
+const DEV_PASSWORD = '12345678';
 
 const maskCode = (code: string): string => `****-${code.slice(-4)}`;
 const hashCode = (code: string): string => crypto.createHash('sha256').update(code).digest('hex');
@@ -30,15 +36,15 @@ async function seedUsers() {
   const passwordHash = await bcrypt.hash(DEV_PASSWORD, 10);
 
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@mealfy.com' },
+    where: { email: 'admin.synthetic@example.test' },
     update: { passwordHash },
-    create: { name: 'Admin Mealfy', email: 'admin@mealfy.com', role: 'admin', status: 'active', passwordHash },
+    create: { name: '[SINTÉTICO] Admin', email: 'admin.synthetic@example.test', role: 'admin', status: 'active', passwordHash },
   });
 
   const entityUser = await prisma.user.upsert({
-    where: { email: 'entidade@mealfy.com' },
+    where: { email: 'entity.synthetic@example.test' },
     update: { passwordHash },
-    create: { name: 'ONG Exemplo', email: 'entidade@mealfy.com', role: 'entity', status: 'active', passwordHash },
+    create: { name: '[SINTÉTICO] Entidade', email: 'entity.synthetic@example.test', role: 'entity', status: 'active', passwordHash },
   });
 
   const entity = await prisma.entity.upsert({
@@ -46,21 +52,21 @@ async function seedUsers() {
     update: {},
     create: {
       userId: entityUser.id,
-      name: 'ONG Exemplo',
-      cnpj: '12345678000199',
-      responsibleName: 'Maria Responsável',
-      email: 'entidade@mealfy.com',
-      phone: '11999990000',
+      name: '[SINTÉTICO] Entidade',
+      cnpj: '00000000000000',
+      responsibleName: '[SINTÉTICO] Responsável da Entidade',
+      email: 'entity.synthetic@example.test',
+      phone: '00000000000',
       status: 'active', // entidade aprovada/operacional
     },
   });
 
   const donorUser = await prisma.user.upsert({
-    where: { email: 'doador@mealfy.com' },
+    where: { email: 'donor.synthetic@example.test' },
     update: { passwordHash },
     create: {
-      name: 'Alexandre Doador',
-      email: 'doador@mealfy.com',
+      name: '[SINTÉTICO] Doador',
+      email: 'donor.synthetic@example.test',
       role: 'donor',
       status: 'active',
       instagram: '@alexandre.doador',
@@ -75,11 +81,11 @@ async function seedUsers() {
   });
 
   const beneficiaryUser = await prisma.user.upsert({
-    where: { email: 'beneficiario@mealfy.com' },
+    where: { email: 'family.synthetic@example.test' },
     update: { passwordHash },
     create: {
-      name: 'Família Silva (beneficiário)',
-      email: 'beneficiario@mealfy.com',
+      name: '[SINTÉTICO] Conta da Família',
+      email: 'family.synthetic@example.test',
       role: 'beneficiary',
       status: 'active',
       passwordHash,
@@ -96,22 +102,36 @@ async function upsertFamily(
 ) {
   await prisma.family.upsert({
     where: { id },
-    // Reconecta a entidade em famílias que já existem.
-    //
-    // `update: {}` deixava o seed sem efeito sobre linhas antigas: se a entidade
-    // for recriada (o usuário dela é apagado e o cascade leva a entidade junto),
-    // `Family.entityId` vira NULL e nunca mais era religado — a conta de entidade
-    // passava a enxergar zero famílias. Só o vínculo é atualizado de propósito:
-    // status de aprovação, `lastFedAt` e afins são estado operacional e não devem
-    // ser sobrescritos por reexecução do seed.
-    update: { entity: data.entity },
+    // Reexecuções também substituem toda identidade/localização da fixture para
+    // remover dados antigos com aparência real. Estado operacional (aprovação,
+    // apoio, última doação) permanece intacto.
+    update: {
+      responsibleName: data.responsibleName,
+      displayName: data.displayName,
+      entity: data.entity,
+      nisMasked: data.nisMasked ?? null,
+      cpfMasked: data.cpfMasked ?? null,
+      city: data.city,
+      state: data.state,
+      neighborhood: data.neighborhood ?? null,
+      community: data.community ?? null,
+      approximateAddress: data.approximateAddress ?? null,
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null,
+      socialDescription: data.socialDescription ?? null,
+    },
     create: { id, ...data },
   });
 
   for (const dep of dependents) {
     await prisma.familyDependent.upsert({
       where: { id: dep.id },
-      update: {},
+      update: {
+        name: dep.name,
+        age: dep.age,
+        relationship: dep.relationship ?? 'filho(a)',
+        isEligibleMinor: dep.age >= 0 && dep.age <= 17,
+      },
       create: {
         id: dep.id,
         familyId: id,
@@ -129,11 +149,11 @@ async function seedFamilies(entityId: string) {
   await upsertFamily(
     'seed-fam-approved-sp',
     {
-      responsibleName: 'João da Silva',
-      displayName: 'Família Silva',
+      responsibleName: '[SINTÉTICO] Responsável A',
+      displayName: '[SINTÉTICO] Família A',
       entity: { connect: { id: entityId } },
-      nisMasked: '***.***.**1-23',
-      cpfMasked: '123.***.***-09',
+      nisMasked: '***.***.***-**',
+      cpfMasked: '***.***.***-**',
       city: 'São Paulo',
       state: 'SP',
       neighborhood: 'Heliópolis',
@@ -150,8 +170,8 @@ async function seedFamilies(entityId: string) {
       socialDescription: 'Família com duas crianças em idade escolar.',
     },
     [
-      { id: 'seed-dep-sp-1', name: 'Pedro', age: 8 },
-      { id: 'seed-dep-sp-2', name: 'Ana', age: 14 },
+      { id: 'seed-dep-sp-1', name: '[SINTÉTICO] Dependente A1', age: 8 },
+      { id: 'seed-dep-sp-2', name: '[SINTÉTICO] Dependente A2', age: 14 },
     ],
   );
 
@@ -159,8 +179,8 @@ async function seedFamilies(entityId: string) {
   await upsertFamily(
     'seed-fam-approved-rj',
     {
-      responsibleName: 'Marta Souza',
-      displayName: 'Família Souza',
+      responsibleName: '[SINTÉTICO] Responsável B',
+      displayName: '[SINTÉTICO] Família B',
       entity: { connect: { id: entityId } },
       city: 'Rio de Janeiro',
       state: 'RJ',
@@ -175,15 +195,15 @@ async function seedFamilies(entityId: string) {
       approvalStatus: 'approved',
       dataSource: 'manual',
     },
-    [{ id: 'seed-dep-rj-1', name: 'Lucas', age: 5 }],
+    [{ id: 'seed-dep-rj-1', name: '[SINTÉTICO] Dependente B1', age: 5 }],
   );
 
   // Pendente de aprovação
   await upsertFamily(
     'seed-fam-pending-sp',
     {
-      responsibleName: 'Carlos Pereira',
-      displayName: 'Família Pereira',
+      responsibleName: '[SINTÉTICO] Responsável C',
+      displayName: '[SINTÉTICO] Família C',
       entity: { connect: { id: entityId } },
       city: 'São Paulo',
       state: 'SP',
@@ -197,15 +217,15 @@ async function seedFamilies(entityId: string) {
       approvalStatus: 'pending',
       dataSource: 'manual',
     },
-    [{ id: 'seed-dep-pending-1', name: 'Sofia', age: 10 }],
+    [{ id: 'seed-dep-pending-1', name: '[SINTÉTICO] Dependente C1', age: 10 }],
   );
 
   // Bloqueada/rejeitada (ex.: sem dependente elegível) — NÃO deve aparecer p/ doação
   await upsertFamily(
     'seed-fam-blocked-sp',
     {
-      responsibleName: 'Rita Gomes',
-      displayName: 'Família Gomes',
+      responsibleName: '[SINTÉTICO] Responsável D',
+      displayName: '[SINTÉTICO] Família D',
       entity: { connect: { id: entityId } },
       city: 'São Paulo',
       state: 'SP',
@@ -218,7 +238,7 @@ async function seedFamilies(entityId: string) {
       approvalStatus: 'blocked',
       dataSource: 'manual',
     },
-    [{ id: 'seed-dep-blocked-1', name: 'José', age: 25, relationship: 'irmão' }],
+    [{ id: 'seed-dep-blocked-1', name: '[SINTÉTICO] Dependente D1', age: 25, relationship: 'irmão' }],
   );
 }
 
@@ -261,8 +281,16 @@ async function seedGiftCards(adminUserId: string) {
   }
 }
 
+async function removeLegacySeedUsers(): Promise<void> {
+  const legacyEmails = ['admin@mealfy.com', 'entidade@mealfy.com', 'doador@mealfy.com', 'beneficiario@mealfy.com'];
+  // These exact addresses belonged only to the historical development seed.
+  // Family fixtures are re-linked below before the legacy users are removed.
+  await prisma.user.deleteMany({ where: { email: { in: legacyEmails } } });
+}
+
 async function main() {
   console.log('[seed] iniciando…');
+  await removeLegacySeedUsers();
   const { admin, entity, beneficiaryUser } = await seedUsers();
   await seedFamilies(entity.id);
   await seedGiftCards(admin.id);

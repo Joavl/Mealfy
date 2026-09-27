@@ -20,6 +20,35 @@ const GIFT_CARD_PROVIDER_NAMES = [
 
 const cardBrandSchema = z.enum(CARD_BRANDS);
 const giftCardProviderNameSchema = z.enum(GIFT_CARD_PROVIDER_NAMES);
+const blankToUndefined = (value: unknown) => typeof value === 'string' && value.trim() === '' ? undefined : value;
+const optionalString = z.preprocess(blankToUndefined, z.string().trim().min(1).optional());
+const optionalEmail = z.preprocess(blankToUndefined, z.string().email().optional());
+const optionalPort = z.preprocess(blankToUndefined, z.coerce.number().int().positive().optional());
+const optionalStrictBoolean = z.preprocess(
+  blankToUndefined,
+  z.enum(['true', 'false']).transform((value) => value === 'true').optional(),
+);
+const canonicalUuid = z.string().regex(
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+  'Use UUID canônico minúsculo',
+);
+const csv = <T>(item: z.ZodType<T>) => z.string().transform((raw, ctx): T[] => {
+  const parts = raw.split(',');
+  if (parts.some((part) => part === '' || part !== part.trim())) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Lista contém item vazio ou espaço inválido' });
+    return z.NEVER;
+  }
+  const result = z.array(item).nonempty().safeParse(parts);
+  if (!result.success) {
+    for (const issue of result.error.issues) ctx.addIssue(issue);
+    return z.NEVER;
+  }
+  if (new Set(result.data).size !== result.data.length) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Lista contém itens duplicados' });
+    return z.NEVER;
+  }
+  return result.data;
+});
 
 type CardBrandName = (typeof CARD_BRANDS)[number];
 type GiftCardProviderNameValue = (typeof GIFT_CARD_PROVIDER_NAMES)[number];
@@ -30,6 +59,9 @@ type GiftCardProviderNameValue = (typeof GIFT_CARD_PROVIDER_NAMES)[number];
  * DATABASE_URL e segredos passam a ser exigidos nas fases seguintes.
  */
 const envSchema = z.object({
+  // Deployment classification is deliberately independent from NODE_ENV.
+  // It has no default: an unclassified process must never gain access to real data.
+  APP_ENV: z.enum(['development', 'ci', 'demo', 'staging', 'production']),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
   CORS_ORIGIN: z.string().default('*'),
@@ -37,7 +69,37 @@ const envSchema = z.object({
   DATABASE_URL: z.string().optional(),
   // Auth (Fase 2) — opcional no schema; o jwt util exige em runtime quando usado.
   JWT_SECRET: z.string().optional(),
-  JWT_EXPIRES_IN: z.string().default('7d'),
+  // Access tokens are intentionally short lived. Password resets additionally
+  // invalidate tokens issued under older session versions.
+  JWT_EXPIRES_IN: z.string().default('15m'),
+  PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().min(5).max(60).default(30),
+  APP_URL: z.preprocess(blankToUndefined, z.string().url().optional()),
+  SMTP_HOST: optionalString,
+  SMTP_PORT: optionalPort,
+  SMTP_USER: optionalString,
+  SMTP_PASS: optionalString,
+  SMTP_FROM: optionalEmail,
+
+  // Data egress is explicit. Non-production never sends unrestricted email.
+  EMAIL_DELIVERY_MODE: z.enum(['capture', 'allowlist', 'smtp']),
+  EMAIL_CAPTURE_DIR: optionalString,
+  EMAIL_ALLOWLIST: z.preprocess(blankToUndefined, csv(z.string().email().transform((email) => email.toLowerCase())).optional()),
+
+  // Direct Pix safety mode is explicit and has no permissive default.
+  DIRECT_PIX_MODE: z.enum(['disabled', 'synthetic', 'live']),
+  // Non-production synthetic mode accepts only these conspicuous fixtures and
+  // can never produce a payable payload. Production live stays closed until all gates.
+  DIRECT_PIX_SYNTHETIC_EVPS: z.preprocess(blankToUndefined, csv(canonicalUuid).optional()),
+  DIRECT_PIX_CONTROLLER_APPROVED: optionalStrictBoolean,
+  DIRECT_PIX_LEGAL_BASIS_APPROVED: optionalStrictBoolean,
+  DIRECT_PIX_TERMS_APPROVED: optionalStrictBoolean,
+  DIRECT_PIX_RETENTION_APPROVED: optionalStrictBoolean,
+  DIRECT_PIX_OPERATIONS_APPROVED: optionalStrictBoolean,
+  DIRECT_PIX_CONTROLLER_APPROVAL_REF: optionalString,
+  DIRECT_PIX_LEGAL_BASIS_APPROVAL_REF: optionalString,
+  DIRECT_PIX_TERMS_VERSION: optionalString,
+  DIRECT_PIX_RETENTION_POLICY_VERSION: optionalString,
+  DIRECT_PIX_OPERATIONS_RUNBOOK_REF: optionalString,
   // Gift cards (Fase 3) — 32 bytes em hex (64 chars); o crypto service valida o formato.
   ENCRYPTION_KEY: z.string().optional(),
   // Pagamentos (Fase 5) — `mock` só faz Pix fictício; `stripe` faz Pix e cartão
@@ -130,20 +192,63 @@ const envSchema = z.object({
   // Dinheiro real não pode falhar na primeira doação por config faltando:
   // se o gateway ativo é o Stripe, exige as chaves já no boot.
   .superRefine((cfg, ctx) => {
-    if (cfg.PAYMENT_PROVIDER !== 'stripe') return;
-    if (!cfg.STRIPE_SECRET_KEY) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['STRIPE_SECRET_KEY'],
-        message: 'Obrigatório quando PAYMENT_PROVIDER=stripe',
-      });
+    const issue = (path: keyof typeof cfg, message: string) => ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [path],
+      message,
+    });
+
+    if (cfg.APP_ENV === 'production') {
+      if (cfg.DIRECT_PIX_MODE === 'synthetic') issue('DIRECT_PIX_MODE', 'Produção não aceita modo sintético');
+      if (cfg.EMAIL_DELIVERY_MODE !== 'smtp') issue('EMAIL_DELIVERY_MODE', 'Produção exige entrega SMTP');
+      for (const field of ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'APP_URL'] as const) {
+        if (!cfg[field]) issue(field, 'Entrega SMTP de produção exige configuração completa');
+      }
+      if (cfg.DIRECT_PIX_MODE === 'live') {
+        const gates = [
+          'DIRECT_PIX_CONTROLLER_APPROVED',
+          'DIRECT_PIX_LEGAL_BASIS_APPROVED',
+          'DIRECT_PIX_TERMS_APPROVED',
+          'DIRECT_PIX_RETENTION_APPROVED',
+          'DIRECT_PIX_OPERATIONS_APPROVED',
+        ] as const;
+        for (const gate of gates) {
+          if (cfg[gate] !== true) issue(gate, 'Gate obrigatório para dados reais em produção');
+        }
+        for (const reference of [
+          'DIRECT_PIX_CONTROLLER_APPROVAL_REF',
+          'DIRECT_PIX_LEGAL_BASIS_APPROVAL_REF',
+          'DIRECT_PIX_TERMS_VERSION',
+          'DIRECT_PIX_RETENTION_POLICY_VERSION',
+          'DIRECT_PIX_OPERATIONS_RUNBOOK_REF',
+        ] as const) {
+          if (!cfg[reference]) issue(reference, 'Aprovação de produção exige referência registrada');
+        }
+      }
+    } else {
+      if (cfg.DIRECT_PIX_MODE === 'live') issue('DIRECT_PIX_MODE', 'Modo live é proibido fora de produção');
+      if (cfg.DIRECT_PIX_MODE === 'synthetic' && !cfg.DIRECT_PIX_SYNTHETIC_EVPS?.length) {
+        issue('DIRECT_PIX_SYNTHETIC_EVPS', 'Modo sintético exige EVP sintética explícita');
+      }
+      if (cfg.EMAIL_DELIVERY_MODE === 'smtp') {
+        issue('EMAIL_DELIVERY_MODE', 'SMTP irrestrito é proibido fora de produção');
+      }
+      if (cfg.EMAIL_DELIVERY_MODE === 'capture' && !cfg.EMAIL_CAPTURE_DIR) {
+        issue('EMAIL_CAPTURE_DIR', 'Modo capture exige diretório local explícito');
+      }
+      if (cfg.EMAIL_DELIVERY_MODE === 'allowlist') {
+        if (!cfg.EMAIL_ALLOWLIST?.length) issue('EMAIL_ALLOWLIST', 'Modo allowlist exige destinatários explícitos');
+        for (const field of ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'APP_URL'] as const) {
+          if (!cfg[field]) issue(field, 'Modo allowlist exige transporte SMTP completo');
+        }
+      }
     }
-    if (!cfg.STRIPE_WEBHOOK_SECRET) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['STRIPE_WEBHOOK_SECRET'],
-        message: 'Obrigatório quando PAYMENT_PROVIDER=stripe (sem ele o webhook não é verificável)',
-      });
+
+    if (cfg.PAYMENT_PROVIDER === 'stripe') {
+      if (!cfg.STRIPE_SECRET_KEY) issue('STRIPE_SECRET_KEY', 'Obrigatório quando PAYMENT_PROVIDER=stripe');
+      if (!cfg.STRIPE_WEBHOOK_SECRET) {
+        issue('STRIPE_WEBHOOK_SECRET', 'Obrigatório quando PAYMENT_PROVIDER=stripe (sem ele o webhook não é verificável)');
+      }
     }
   });
 
