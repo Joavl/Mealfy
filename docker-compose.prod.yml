@@ -1,40 +1,19 @@
 name: mealfy-prod
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: mealfy-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-mealfy}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
-    volumes:
-      - mealfy_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mealfy}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    networks:
-      - mealfy-net
-
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: mealfy-backend
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       - APP_ENV=${APP_ENV:-staging}
       - NODE_ENV=production
       - PORT=3000
       - CORS_ORIGIN=${CORS_ORIGIN:-*}
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mealfy}?schema=public
-      - DIRECT_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-mealfy}?schema=public
+      - DATABASE_URL=${DATABASE_URL:?Defina DATABASE_URL no arquivo .env}
+      - DIRECT_URL=${DIRECT_URL:-${DATABASE_URL}}
       - JWT_SECRET=${JWT_SECRET:?Defina JWT_SECRET no arquivo .env}
       - STEP_UP_OTP_HMAC_KEY=${STEP_UP_OTP_HMAC_KEY:-}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
@@ -51,26 +30,7 @@ services:
       - EMAIL_ALLOWLIST=${EMAIL_ALLOWLIST:-}
       - DIRECT_PIX_MODE=${DIRECT_PIX_MODE:-synthetic}
       - DIRECT_PIX_SYNTHETIC_EVPS=${DIRECT_PIX_SYNTHETIC_EVPS:-00000000-0000-0000-0000-000000000001}
-      - DIRECT_PIX_CONTROLLER_APPROVED=${DIRECT_PIX_CONTROLLER_APPROVED:-false}
-      - DIRECT_PIX_LEGAL_BASIS_APPROVED=${DIRECT_PIX_LEGAL_BASIS_APPROVED:-false}
-      - DIRECT_PIX_TERMS_APPROVED=${DIRECT_PIX_TERMS_APPROVED:-false}
-      - DIRECT_PIX_RETENTION_APPROVED=${DIRECT_PIX_RETENTION_APPROVED:-false}
-      - DIRECT_PIX_OPERATIONS_APPROVED=${DIRECT_PIX_OPERATIONS_APPROVED:-false}
-      - DIRECT_PIX_CONTROLLER_APPROVAL_REF=${DIRECT_PIX_CONTROLLER_APPROVAL_REF:-}
-      - DIRECT_PIX_LEGAL_BASIS_APPROVAL_REF=${DIRECT_PIX_LEGAL_BASIS_APPROVAL_REF:-}
-      - DIRECT_PIX_TERMS_VERSION=${DIRECT_PIX_TERMS_VERSION:-}
-      - DIRECT_PIX_RETENTION_POLICY_VERSION=${DIRECT_PIX_RETENTION_POLICY_VERSION:-}
-      - DIRECT_PIX_OPERATIONS_RUNBOOK_REF=${DIRECT_PIX_OPERATIONS_RUNBOOK_REF:-}
-      - APP_URL=${APP_URL:-}
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-}
-      - SMTP_USER=${SMTP_USER:-}
-      - SMTP_PASS=${SMTP_PASS:-}
-      - SMTP_FROM=${SMTP_FROM:-}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
-      - FACEBOOK_APP_ID=${FACEBOOK_APP_ID:-}
-      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET:-}
-      - APPLE_CLIENT_ID=${APPLE_CLIENT_ID:-}
+      - APP_URL=${APP_URL:-https://app.mealfy.org}
     expose:
       - "3000"
     networks:
@@ -81,7 +41,9 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=${VITE_API_URL}
+        - VITE_API_URL=${VITE_API_URL:-https://api.mealfy.org}
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-}
+        - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-}
         - VITE_DISABLE_LOCAL_FALLBACK=true
     container_name: mealfy-frontend
     restart: unless-stopped
@@ -100,8 +62,8 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      - APP_DOMAIN=${APP_DOMAIN:?Defina APP_DOMAIN no arquivo .env}
-      - API_DOMAIN=${API_DOMAIN:?Defina API_DOMAIN no arquivo .env}
+      - APP_DOMAIN=${APP_DOMAIN:-app.mealfy.org}
+      - API_DOMAIN=${API_DOMAIN:-api.mealfy.org}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -113,7 +75,6 @@ services:
       - mealfy-net
 
 volumes:
-  mealfy_postgres_data:
   caddy_data:
   caddy_config:
 
