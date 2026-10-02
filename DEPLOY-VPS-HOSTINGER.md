@@ -1,129 +1,154 @@
-# 🚀 Guia de Deploy na VPS Hostinger (Mealfy)
+# 📖 Manual de Deploy e Atualização — Mealfy na VPS Hostinger
 
-Este guia orienta o passo a passo completo para publicar a versão **v1.0.0** (Frontend + Backend + Banco PostgreSQL + SSL automático com Caddy) na sua VPS Hostinger.
-
----
-
-## 🏗️ Arquitetura dos Serviços na VPS
-
-A VPS executará 4 containers Docker integrados:
-1. **Frontend (`mealfy-frontend`)**: React + Vite servido via Nginx otimizado.
-2. **Backend (`mealfy-backend`)**: Node.js/Express + Prisma ORM. Executa migrações do banco automaticamente no boot.
-3. **Banco de Dados (`mealfy-postgres`)**: PostgreSQL 16 com volume persistente (seguro e isolado da internet).
-4. **Proxy Reverso & SSL (`mealfy-caddy`)**: Emite e renova certificados HTTPS (Let's Encrypt) automaticamente para os seus domínios.
+Este documento é o guia definitivo para qualquer desenvolvedor que precise manter, atualizar ou subir do zero a aplicação **Mealfy** na VPS da Hostinger.
 
 ---
 
-## 📋 Pré-requisitos na Hostinger
+## 🏗️ 1. Arquitetura e Dados da Infraestrutura
 
-### 1. Apontar o DNS do seu domínio
-No painel da Hostinger (ou provedor onde comprou o domínio):
-Crie dois apontamentos do tipo **A**:
-- `mealfy.seudominio.com` (ou `@`) ➜ **IP_DA_SUA_VPS**
-- `api.seudominio.com` ➜ **IP_DA_SUA_VPS**
-
-> ⏱️ *Dica*: Aguarde alguns minutos para propagação do DNS antes de subir o Caddy.
-
-### 2. Liberar portas no Firewall da VPS
-No painel da Hostinger (VPS ➜ Segurança ➜ Firewall) ou via terminal:
-- Porta `80` (HTTP)
-- Porta `443` (HTTPS)
-- Porta `22` (SSH)
+| Item | Descrição / Valor |
+| :--- | :--- |
+| **Provedor** | Hostinger VPS (KVM 2) |
+| **Sistema Operacional** | Ubuntu 24.04 LTS |
+| **IP da VPS** | `187.127.62.140` |
+| **Usuário SSH** | `root` |
+| **Diretório do Projeto na VPS** | `/opt/Mealfy` |
+| **Frontend Web** | [https://app.mealfy.org](https://app.mealfy.org) (React + Vite + Nginx) |
+| **Backend API** | [https://api.mealfy.org](https://api.mealfy.org) (Node.js Express + Prisma) |
+| **Banco de Dados** | PostgreSQL gerenciado via **Supabase** |
+| **Proxy Reverso & SSL** | **Caddy 2** (Certificados HTTPS Let's Encrypt automáticos) |
+| **Branch de Produção** | `feat/mealfy-v1.0.0` (ou `main` conforme o fluxo do time) |
 
 ---
 
-## 🛠️ Passo a Passo na VPS (via terminal SSH)
+## 🔄 2. Como Fazer Novas Atualizações (Rotina do Desenvolvedor)
 
-### 1. Conectar na VPS
+Sempre que você ou outro desenvolvedor fizer alterações no código, commitar e enviar para o GitHub, siga estes passos para publicar a atualização na VPS:
+
+### Passo 1: Conectar na VPS via SSH
+A partir de qualquer computador (Mac, Linux ou Windows via terminal/PowerShell):
 ```bash
-ssh root@SEU_IP_DA_VPS
+ssh root@187.127.62.140
+```
+*(Informe a senha de root da VPS quando solicitada)*.
+
+### Passo 2: Entrar na pasta do projeto
+```bash
+cd /opt/Mealfy
 ```
 
-### 2. Instalar Docker e Git (caso ainda não estejam instalados)
-```bash
-# Atualizar repositórios
-apt update && apt upgrade -y
+### Passo 3: Executar o script de atualização
+Criamos um script que automatiza tudo (puxa o código do Git, reconstrói as imagens modificadas, roda migrações do banco e recarrega os containers sem downtime prolongado):
 
-# Instalar Docker e Docker Compose
+```bash
+bash scripts/deploy-vps.sh
+```
+
+> **O que esse comando faz internamente:**
+> 1. Executa `git pull origin feat/mealfy-v1.0.0`
+> 2. Executa `docker compose -f docker-compose.prod.yml up -d --build --remove-orphans`
+> 3. No boot do container backend, o Prisma executa automaticamente: `npx prisma migrate deploy`
+> 4. Exibe o status final dos containers.
+
+### Passo 4: Verificar se está tudo rodando
+```bash
+docker compose -f docker-compose.prod.yml ps
+```
+Todos os 3 containers (`mealfy-backend`, `mealfy-frontend`, `mealfy-caddy`) devem estar com status **Up / Running**.
+
+---
+
+## 🚨 3. Solução de Problemas e Comandos de Diagnóstico
+
+### Ver logs em tempo real:
+- **Backend (erros de API, banco ou rotas):**
+  ```bash
+  docker compose -f docker-compose.prod.yml logs -f --tail 100 backend
+  ```
+- **Caddy (emissão de certificados SSL e tráfego HTTPS):**
+  ```bash
+  docker compose -f docker-compose.prod.yml logs -f --tail 100 caddy
+  ```
+- **Frontend (erros de servidor Nginx):**
+  ```bash
+  docker compose -f docker-compose.prod.yml logs -f --tail 100 frontend
+  ```
+
+### Reiniciar um serviço específico sem parar os outros:
+```bash
+# Reiniciar apenas o backend:
+docker compose -f docker-compose.prod.yml restart backend
+
+# Reiniciar apenas o Caddy (SSL):
+docker compose -f docker-compose.prod.yml restart caddy
+```
+
+### Rodar scripts manuais do backend na VPS:
+Se precisar rodar comandos dentro do container do backend:
+
+- **Importar municípios e regiões do IBGE:**
+  ```bash
+  docker compose -f docker-compose.prod.yml exec backend npm run regions:import
+  ```
+
+- **Forçar migrações do Prisma manualmente:**
+  ```bash
+  docker compose -f docker-compose.prod.yml exec backend npx prisma migrate deploy
+  ```
+
+---
+
+## ⚙️ 4. Subir do Zero em Nova VPS (Setup Inicial)
+
+Caso o servidor precise ser recriado do zero em algum momento, siga este roteiro:
+
+### 1. Configurar o DNS
+No gerenciador de DNS do domínio (`mealfy.org`):
+- Registro tipo `A`: `app` ➜ `187.127.62.140`
+- Registro tipo `A`: `api` ➜ `187.127.62.140`
+
+### 2. Liberar portas do sistema operacional
+O Ubuntu por padrão pode subir com Nginx/Apache nativos. É fundamental desativá-los para não conflitarem com as portas 80/443 do Caddy:
+```bash
+systemctl stop nginx apache2 2>/dev/null || true
+systemctl disable nginx apache2 2>/dev/null || true
+```
+
+### 3. Instalar dependências (Docker e Git)
+```bash
+apt update && apt upgrade -y
 curl -fsSL https://get.docker.com | sh
 apt install -y git
 ```
 
-### 3. Clonar o projeto e a branch `feat/mealfy-v1.0.0`
+### 4. Clonar o projeto
 ```bash
 cd /opt
 git clone -b feat/mealfy-v1.0.0 https://github.com/Joavl/Mealfy.git
 cd Mealfy
 ```
 
-### 4. Configurar as variáveis de ambiente (`.env`)
+### 5. Configurar o `.env`
+Copie o modelo de produção:
 ```bash
 cp .env.production.example .env
 nano .env
 ```
+Preencha as variáveis de ambiente necessárias (domínios `app.mealfy.org`, `api.mealfy.org`, chaves do Supabase, `DATABASE_URL`, `JWT_SECRET`, etc.).
 
-Edite os campos principais:
-1. **Domínios**:
-   ```env
-   APP_DOMAIN=mealfy.seudominio.com
-   API_DOMAIN=api.seudominio.com
-   VITE_API_URL=https://api.seudominio.com
-   APP_URL=https://mealfy.seudominio.com
-   ```
-2. **Senhas e Chaves**:
-   - `POSTGRES_PASSWORD`: defina uma senha forte.
-   - `JWT_SECRET`: gere uma chave segura (rode `openssl rand -hex 32` no terminal para gerar).
-   - `STEP_UP_OTP_HMAC_KEY`: gere outra chave de 64 caracteres hex (`openssl rand -hex 32`).
-
-Salve o arquivo (`Ctrl + O`, depois `Enter`, e `Ctrl + X` para sair).
-
-### 5. Iniciar o Deploy
-Execute o script de automação:
+### 6. Subir a aplicação
 ```bash
 bash scripts/deploy-vps.sh
 ```
 
-Ou execute diretamente via Docker Compose:
-```bash
-docker compose -f docker-compose.prod.yml up -d --build
-```
-
 ---
 
-## 🔍 Comandos de Verificação e Manutenção
+## 🔐 5. Onde ficam as Variáveis de Ambiente?
 
-### Checar status dos containers:
-```bash
-docker compose -f docker-compose.prod.yml ps
-```
-
-### Ver logs em tempo real:
-- **Backend**:
+O arquivo `.env` fica localizado em `/opt/Mealfy/.env` na VPS.
+- Ele **não é comitado no Git** por motivos de segurança.
+- Se novas variáveis de ambiente forem criadas no código, lembre-se de adicioná-las tanto no `.env.production.example` (no repositório) quanto no arquivo `/opt/Mealfy/.env` (no servidor).
+- Após alterar qualquer variável no `.env` da VPS, reinicie os containers com:
   ```bash
-  docker compose -f docker-compose.prod.yml logs -f backend
+  docker compose -f docker-compose.prod.yml up -d
   ```
-- **Caddy (SSL/HTTPS)**:
-  ```bash
-  docker compose -f docker-compose.prod.yml logs -f caddy
-  ```
-- **Banco de Dados**:
-  ```bash
-  docker compose -f docker-compose.prod.yml logs -f postgres
-  ```
-
-### Importar Municípios/Regiões do IBGE (Opcional):
-Para carregar os municípios do IBGE no banco de dados da VPS:
-```bash
-docker compose -f docker-compose.prod.yml exec backend npm run regions:import
-```
-
----
-
-## 🔄 Como atualizar em futuros Deploys
-
-Quando você fizer novos commits na branch `feat/mealfy-v1.0.0`, basta rodar:
-```bash
-cd /opt/Mealfy
-bash scripts/deploy-vps.sh
-```
-O script fará o `git pull` automático, reconstruirá as imagens necessárias e atualizará os containers sem downtime prolongado.
